@@ -32,6 +32,7 @@ add_library(g3sdk::SDK ALIAS SDK)
 target_link_libraries(SDK INTERFACE g3sdk::g3)
 
 add_subdirectory(g3)
+add_subdirectory(scripts)
 
 if (NOT G3SDK_BINDING_ONLY)
 add_subdirectory(util)
