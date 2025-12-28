@@ -1,5 +1,7 @@
 #pragma once
 #include "Script.h"
+#include <g3sdk/util/Hook.h>
+#include <g3sdk/util/Memory.h>
 #include <iostream>
 
 #ifndef GE_DEBUG
