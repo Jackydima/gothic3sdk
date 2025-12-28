@@ -14,10 +14,10 @@ struct AniObject_Type
     char buffer[0x1C];
 };
 
-// SuperHACK!!!
+// (DEPRECATED) SuperHACK!!!
 // We want to adjust the Animations-String in the GetMotionDataEntity
 // In the regular game the character animation is stored in the esi-register that is usually preserved for the callee (scary to use but whatever)
-LPVOID Call_GetMotionDataEntity(LPVOID CharacterAnimation, LPVOID AniObjectPtr,
+/* LPVOID Call_GetMotionDataEntity(LPVOID CharacterAnimation, LPVOID AniObjectPtr,
                                 gEAniState p_aniState,
                                 gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight, gEPose p_Pose, gEAction p_Action,
                                 gEPhase p_Phase, gEDirection p_Direction, GEInt p_Variation,
@@ -48,8 +48,21 @@ LPVOID Call_GetMotionDataEntity(LPVOID CharacterAnimation, LPVOID AniObjectPtr,
     }
 
     return result;
-}
+}*/
 
+
+LPVOID Call_GetMotionDataEntity(LPVOID CharacterAnimation, LPVOID AniObjectPtr, gEAniState p_aniState,
+    gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight, gEPose p_Pose, gEAction p_Action,
+    gEPhase p_Phase, gEDirection p_Direction, GEInt p_Variation,
+    gEAmbientAction p_AmbientAction)
+{
+    static mCCaller CallGMDE(mCCaller::GetCallerParams(RVA_Game(0xd94b0), mERegisterType_Esi));
+    CallGMDE.SetEsi(CharacterAnimation);
+
+    return CallGMDE.GetFunction(&GetMotionDataEntity_Ext)(AniObjectPtr, p_aniState, p_UseTypeLeft, p_UseTypeRight,
+                                                          p_Pose, p_Action, p_Phase, p_Direction, p_Variation,
+                                                          p_AmbientAction);
+}
 
 static mCFunctionHook Hook_Pre_GetMotionDataEntity;
 // Rebuilt function of Pre_GetMotionDataEntity of Game.dll
@@ -137,7 +150,7 @@ LPVOID Pre_GetMotionDataEntity(gEAniState p_aniState, gEUseType p_UseTypeLeft, g
             LPVOID currentTable;
             do
             {
-                LPVOID currentTable = ReadPtr<LPVOID>(ReadPtr<LPVOID>((LPVOID)RVA_Game(0x3f46d8)),entryIndex * 0x4);
+                currentTable = ReadPtr<LPVOID>(ReadPtr<LPVOID>((LPVOID)RVA_Game(0x3f46d8)),entryIndex * 0x4);
                 //println("CurrentTableEntry PTR: %x", currentTable);
                 
                 currentActorString1 = GetOffsetPtr<bCString *>(currentTable, 0x14);
@@ -212,7 +225,7 @@ LPVOID Pre_GetMotionDataEntity(gEAniState p_aniState, gEUseType p_UseTypeLeft, g
             //println("cachedTablesPtr PTR: %x", cachedTablesPtr);
             // 
             //*(LPVOID*)((DWORD)(cachedTablesPtr)-0x4 + amount * 0x4) = ReadPtr<LPVOID>(AniObjectPtr);
-            WritePtr(ReadPtr<LPVOID>(AniObjectPtr), cachedTablesPtr, -0x4 + amount * 0x4);
+            WritePtr(ReadPtr<LPVOID>(AniObjectPtr), cachedTablesPtr, amount * 0x4 - 0x4);
 
             //println("Added Entry into the table!");
         }
@@ -221,6 +234,7 @@ LPVOID Pre_GetMotionDataEntity(gEAniState p_aniState, gEUseType p_UseTypeLeft, g
     LPVOID resourceReturned = Call_GetMotionDataEntity(CharacterAnimation, ReadPtr<LPVOID>(AniObjectPtr),
                                                         p_aniState, p_UseTypeLeft, p_UseTypeRight, p_Pose, p_Action,
                                                         p_Phase, p_Direction, p_Variation, p_AmbientAction);
+
     if (resourceReturned != NULL)
     {
         using HelpFuntion = LPVOID(__thiscall*)(void*);
@@ -283,10 +297,33 @@ LPVOID GetMotionDataEntity_Ext(LPVOID p_ThisObject, gEAniState p_aniState, gEUse
         p_ThisObject, p_aniState, p_UseTypeLeft, p_UseTypeRight, p_Pose, p_Action, p_Phase, p_Direction, p_Variation,
         p_AmbientAction);
 
-    //println("Return Val: %x", returnVal);
-
     //println("Done!");
     return returnVal;
+}
+
+static mCFunctionHook Hook_GetAniEx;
+bCString __stdcall GetAniEx(gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight, gEAction p_Action, gEPhase p_Phase,
+                            bCString &p_String, GEBool p_Bool)
+{
+    Entity Self = *Hook_GetAniEx.GetSelf<Entity *>();
+
+    bCString result = Hook_GetAniEx.GetOriginalFunction(&GetAniEx)(p_UseTypeLeft, p_UseTypeRight, p_Action, p_Phase,
+                                                                   p_String, p_Bool);
+
+    //
+    // CUSTOMIZED SECION
+    //
+
+    if (Self.NPC.Species == gESpecies_Zombie)
+    {
+        result.Replace("Hero", "Zombie");
+    }
+
+    //
+    // CUSTOMIZED SECION END
+    // 
+
+    return result;
 }
 
 
@@ -297,6 +334,8 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
                                       mERegisterType_Esi);
 
     Hook_GetMotionDataEntity.Hook(RVA_Game(0xd94b0), &GetMotionDataEntity_Ext, mCBaseHook::mEHookType_Mixed, mERegisterType_Esi);
+
+    Hook_GetAniEx.Hook(RVA_Script(0x15c10), &GetAniEx, mCBaseHook::mEHookType_ThisCall);
     
     return &GetScriptInit();
 }
