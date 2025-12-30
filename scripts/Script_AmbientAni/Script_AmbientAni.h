@@ -7,6 +7,7 @@
 #include <g3sdk/util/Logging.h>
 #include <g3sdk/util/Memory.h>
 #include <g3sdk/util/Module.h>
+#include <g3sdk/util/Util.h>
 
 LPVOID GetMotionDataEntity_Ext(LPVOID p_ThisObject, gEAniState p_aniState, gEUseType p_UseTypeLeft,
                                gEUseType p_UseTypeRight, gEPose p_Pose, gEAction p_Action, gEPhase p_Phase,

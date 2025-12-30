@@ -10,4 +10,6 @@ target_tree_sources(Script_AmbientAni
     Script_AmbientAni.cpp
     utils.h
     utils.cpp
+    resource.h
+    Script_AmbientAni.rc
 )

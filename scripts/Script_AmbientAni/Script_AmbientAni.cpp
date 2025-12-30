@@ -326,9 +326,62 @@ bCString __stdcall GetAniEx(gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight, g
     return result;
 }
 
+// Example based on Script_Animation and Script_AniName_Adp from example G3 SDK script!
+static mCFunctionHook Hook_GetAniName;
+void GE_STDCALL GetAniName(bCString &p_RetString, eCEntity *p_Entity, gEAction p_Action, bCString p_Str1,
+                                       bCString &p_Str2, GEBool p_Bool)
+{
+    Hook_GetAniName.GetOriginalFunction (&GetAniName)(p_RetString, p_Entity, p_Action, p_Str1,
+                                                                              p_Str2, p_Bool);
+
+    //
+    // CUSTOMIZED SECION
+    //
+
+    gCNPC_PS const *NPC = GetPropertySet<gCNPC_PS>(p_Entity, eEPropertySetType_NPC);
+    if (!NPC)
+        return;
+
+    if (NPC->GetSpecies() == gESpecies_Zombie)
+    {
+         p_RetString.Replace("Hero", "Zombie");
+    }
+
+    //
+    // CUSTOMIZED SECION END
+    //
+}
+
+// Example based on Script_AniName_Adp from example G3 SDK script!
+static mCFunctionHook Hook_PSAnimation_GetSkeletonName;
+GEBool GE_STDCALL PSAnimation_GetSkeletonName(PSAnimation const &This, bCString &o_SkeletonName)
+{
+    //
+    // CUSTOMIZED SECION
+    //
+
+    gCNPC_PS const *NPC = This.IsValid() ? GetPropertySet<gCNPC_PS>(This->GetEntity(), eEPropertySetType_NPC) : nullptr;
+    if (NPC)
+    {
+        if (NPC->GetSpecies() == gESpecies_Zombie)
+        {
+            o_SkeletonName = "Zombie";
+            return GETrue;
+        }
+    }
+
+    //
+    // CUSTOMIZED SECION END
+    //
+
+    return Hook_PSAnimation_GetSkeletonName.GetOriginalFunction(PSAnimation_GetSkeletonName)(This, o_SkeletonName);
+}
+
 
 extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
 {
+    // Load first Animation Script Hook if found!
+    GetScriptAdmin().LoadScriptDLL("Script_Animation.dll");
 
     Hook_Pre_GetMotionDataEntity.Hook(RVA_Game(0xda260), &Pre_GetMotionDataEntity, mCBaseHook::mEHookType_Mixed,
                                       mERegisterType_Esi);
@@ -336,6 +389,13 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
     Hook_GetMotionDataEntity.Hook(RVA_Game(0xd94b0), &GetMotionDataEntity_Ext, mCBaseHook::mEHookType_Mixed, mERegisterType_Esi);
 
     Hook_GetAniEx.Hook(RVA_Script(0x15c10), &GetAniEx, mCBaseHook::mEHookType_ThisCall);
+
+    Hook_GetAniName.Hook(RVA_Game(0x16f840), &GetAniName, mCBaseHook::mEHookType_ThisCall);
+
+    Hook_PSAnimation_GetSkeletonName
+        .Prepare(PROC_Script("?GetSkeletonName@PSAnimation@@QBE_NAAVbCString@@@Z"), &PSAnimation_GetSkeletonName)
+        .ThisCall()
+        .Hook();
     
     return &GetScriptInit();
 }
