@@ -10,18 +10,18 @@ gSScriptInit &GetScriptInit()
 // CUSTOMIZED SECION
 //
 
-static bCString g_Zombie = "Zombie";
 static bTObjArray<bCString> weaponStringList;
 
 //
 // CUSTOMIZED SECION
 //
 
-// Helper struct for allocating correct size of AniObject!
+// Helper struct for allocating correct size of AniObject! Used for deprecated hooks
+/*
 struct AniObject_Type
 {
     char buffer[0x1C];
-};
+};*/
 
 // (DEPRECATED) SuperHACK!!!
 // We want to adjust the Animations-String in the GetMotionDataEntity
@@ -67,12 +67,13 @@ void LoadConfig()
 
 
     bTObjArray<eCConfigFile::eSConfigValue> weaponList;
-    weaponList.Clear();
+    bTObjArray<eCConfigFile::eSConfigValue> scriptList;
     
     eCConfigFile config = eCConfigFile();
     if (config.ReadFile(bCString("rapierAnimation.ini")))
     {
         config.GetSectionBlock("RapierEntities", weaponList);
+        config.GetSectionBlock("LoadedScripts", scriptList);
     }
 
     println("List of weapons:");
@@ -86,13 +87,6 @@ void LoadConfig()
         {
             weaponStringList.Add(entry.m_pstrKey->GetText());
         }
-    }
-
-    bTObjArray<eCConfigFile::eSConfigValue> scriptList;
-    scriptList.Clear();
-    if (config.ReadFile(bCString("rapierAnimation.ini")))
-    {
-        config.GetSectionBlock("LoadedScripts", scriptList);
     }
 
     println("List of previous scripts:");
@@ -426,6 +420,36 @@ void GetMotionDataEntityAniString(LPVOID p_characterAnimationPtr, bCString *p_an
     //
 }
 
+static mCCallHook Hook_GetCachedMotionDataActor;
+void GetCachedMotionDataActor(LPVOID p_characterAnimationPtr, bCString *p_actorString)
+{
+    if (p_characterAnimationPtr == NULL)
+    {
+        return;
+    }
+
+    gCCharacterMovement_PS *characterMovementPtr =
+        *(gCCharacterMovement_PS **)((DWORD)(p_characterAnimationPtr) + 0x14);
+    if (characterMovementPtr == NULL)
+    {
+        return;
+    }
+
+    Entity entity = Entity(characterMovementPtr->GetEntity());
+    if (entity == None)
+    {
+        return;
+    }
+
+    //
+    // CUSTOMIZED SECION
+    //
+
+    //
+    // CUSTOMIZED SECION
+    //
+}
+
 static mCFunctionHook Hook_GetAniEx;
 bCString __stdcall GetAniEx(gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight, gEAction p_Action, gEPhase p_Phase,
                             bCString &p_String, GEBool p_Bool)
@@ -501,6 +525,13 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
     Hook_GetMotionDataEntityAniString.Prepare(RVA_Game(0xd97d5), &GetMotionDataEntityAniString)
         .InsertCall()
         .AddPtrStackArgEbp(0x78)
+        .AddStackArg(0xC)
+        .RestoreRegister()
+        .Hook();
+
+    Hook_GetCachedMotionDataActor.Prepare(RVA_Game(0xda344), &GetCachedMotionDataActor)
+        .InsertCall()
+        .AddRegArg(mERegisterType_Esi)
         .AddStackArg(0xC)
         .RestoreRegister()
         .Hook();
