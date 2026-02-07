@@ -11,7 +11,6 @@ gSScriptInit &GetScriptInit()
 //
 
 static bCString g_Zombie = "Zombie";
-static bTObjArray<bCString> weaponStringList;
 
 //
 // CUSTOMIZED SECION
