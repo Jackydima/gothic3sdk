@@ -111,7 +111,7 @@ void LoadConfig()
 void CustomizeAniString(Entity& p_entity, bCString& p_aniString)
 {
     const bCString none1H = "_None_1H_";
-    if (!p_aniString.Contains(none1H))
+    if (!p_aniString.Contains(none1H) || !p_aniString.Contains("Hero_"))
     {
         return;
     }
