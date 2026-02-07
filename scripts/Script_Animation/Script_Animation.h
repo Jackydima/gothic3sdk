@@ -29,6 +29,8 @@ LPVOID Call_GetMotionDataEntity(LPVOID CharacterAnimation, LPVOID AniObjectPtr,
 
 void GetMotionDataEntityAniString(LPVOID p_characterAnimationPtr, bCString *p_animationString);
 
+void GetCachedMotionDataActor(LPVOID p_characterAnimationPtr, bCString *p_actorString);
+
 bCString GE_STDCALL GetAniEx(gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight, gEAction p_Action, gEPhase p_Phase,
                             bCString &p_String, GEBool p_Bool);
 
