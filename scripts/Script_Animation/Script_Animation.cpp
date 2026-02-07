@@ -6,7 +6,16 @@ gSScriptInit &GetScriptInit()
     return s_ScriptInit;
 }
 
+//
+// CUSTOMIZED SECION
+//
+
 static bCString g_Zombie = "Zombie";
+static bTObjArray<bCString> weaponStringList;
+
+//
+// CUSTOMIZED SECION
+//
 
 // Helper struct for allocating correct size of AniObject!
 struct AniObject_Type
@@ -50,8 +59,92 @@ struct AniObject_Type
     return result;
 }*/
 
+void LoadConfig()
+{
+    //
+    // CUSTOMIZED SECION
+    //
 
-LPVOID Call_GetMotionDataEntity(LPVOID CharacterAnimation, LPVOID AniObjectPtr, gEAniState p_aniState,
+
+    bTObjArray<eCConfigFile::eSConfigValue> weaponList;
+    weaponList.Clear();
+    
+    eCConfigFile config = eCConfigFile();
+    if (config.ReadFile(bCString("rapierAnimation.ini")))
+    {
+        config.GetSectionBlock("RapierEntities", weaponList);
+    }
+
+    println("List of weapons:");
+    eCConfigFile::eSConfigValue entry;
+
+    for (GEInt i = 0; i < weaponList.GetCount(); i++)
+    {
+        entry = weaponList.AccessAt(i);
+        println("Entry Key: %s,\tEntry Value: %s", entry.m_pstrKey->GetText(), entry.m_pstrValue->GetText());
+        if (*entry.m_pstrValue == "1")
+        {
+            weaponStringList.Add(entry.m_pstrKey->GetText());
+        }
+    }
+
+    bTObjArray<eCConfigFile::eSConfigValue> scriptList;
+    scriptList.Clear();
+    if (config.ReadFile(bCString("rapierAnimation.ini")))
+    {
+        config.GetSectionBlock("LoadedScripts", scriptList);
+    }
+
+    println("List of previous scripts:");
+    for (GEInt i = 0; i < scriptList.GetCount(); i++)
+    {
+        entry = scriptList.AccessAt(i);
+        println("Entry Key: %s,\tEntry Value: %s", entry.m_pstrKey->GetText(), entry.m_pstrValue->GetText());
+
+        if (*entry.m_pstrValue == "1")
+        {
+            // Load all scripts before any Hooks!
+            GetScriptAdminExt().LoadScriptDLL(*entry.m_pstrKey);
+        }
+    }
+
+    //
+    // CUSTOMIZED SECION
+    //
+}
+
+
+void CustomizeAniString(Entity& p_entity, bCString& p_aniString)
+{
+    const bCString none1H = "_None_1H_";
+    if (!p_aniString.Contains(none1H))
+    {
+        return;
+    }
+
+    Entity rightWeaponEntity = p_entity.Inventory.GetItemFromSlot(gESlot_RightHand);
+
+    if (rightWeaponEntity == None 
+        || rightWeaponEntity.Interaction.GetProperty<PSInteraction::PropertyUseType>() != gEUseType_1H)
+    {
+        return;
+    }
+
+    bCString weaponEntry;
+    for (GEInt i = 0; i < weaponStringList.GetCount(); i++)
+    {
+        weaponEntry = weaponStringList.AccessAt(i);
+        if (weaponEntry == rightWeaponEntity.GetName())
+        {
+            p_aniString.Replace(none1H, "_None_Rapier_");
+            return;
+        }
+    }
+}
+
+
+// Full replacements
+/*LPVOID Call_GetMotionDataEntity(LPVOID CharacterAnimation, LPVOID AniObjectPtr, gEAniState p_aniState,
     gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight, gEPose p_Pose, gEAction p_Action,
     gEPhase p_Phase, gEDirection p_Direction, GEInt p_Variation,
     gEAmbientAction p_AmbientAction)
@@ -64,6 +157,7 @@ LPVOID Call_GetMotionDataEntity(LPVOID CharacterAnimation, LPVOID AniObjectPtr, 
                                                           p_AmbientAction);
 }
 
+// Full replacements
 static mCFunctionHook Hook_Pre_GetMotionDataEntity;
 // Rebuilt function of Pre_GetMotionDataEntity of Game.dll
 LPVOID Pre_GetMotionDataEntity(gEAniState p_aniState, gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight,
@@ -125,13 +219,10 @@ LPVOID Pre_GetMotionDataEntity(gEAniState p_aniState, gEUseType p_UseTypeLeft, g
         }
 
         // 
-        // CUSTOMIZED SECTION
+        // CUSTOMIZED SECTION 
         // 
 
-        if (NPC->GetSpecies() == gESpecies_Zombie)
-        {
-            aniActorName.SetText("Zombie");
-        }
+        // Actor String can be manipulated here!
 
         //
         // CUSTOMIZED SECTION END
@@ -246,9 +337,10 @@ LPVOID Pre_GetMotionDataEntity(gEAniState p_aniState, gEUseType p_UseTypeLeft, g
 
     //println("FUNCTION DONE WITH NOOOOOOOO SUCCESS!!!!!");
     return NULL;
-}
+}*/
 
-static mCFunctionHook Hook_GetMotionDataEntity;
+// Full replacements
+/* static mCFunctionHook Hook_GetMotionDataEntity;
 LPVOID GetMotionDataEntity_Ext(LPVOID p_ThisObject, gEAniState p_aniState, gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight,
                                   gEPose p_Pose,
     gEAction p_Action, gEPhase p_Phase, gEDirection p_Direction,
@@ -299,6 +391,39 @@ LPVOID GetMotionDataEntity_Ext(LPVOID p_ThisObject, gEAniState p_aniState, gEUse
 
     //println("Done!");
     return returnVal;
+}*/
+
+// new and more mod-friendly adjustment
+static mCCallHook Hook_GetMotionDataEntityAniString;
+void GetMotionDataEntityAniString(LPVOID p_characterAnimationPtr, bCString *p_animationString)
+{
+    //
+    // CUSTOMIZED SECION
+    //
+
+    if (p_characterAnimationPtr == NULL)
+    {
+        return;
+    }
+
+    gCCharacterMovement_PS *characterMovementPtr =
+        *(gCCharacterMovement_PS **)((DWORD)(p_characterAnimationPtr) + 0x14);
+    if (characterMovementPtr == NULL)
+    {
+        return;
+    }
+
+    Entity entity = Entity(characterMovementPtr->GetEntity());
+    if (entity == None)
+    {
+        return;
+    }
+
+    CustomizeAniString(entity, *p_animationString);
+
+    //
+    // CUSTOMIZED SECION
+    //
 }
 
 static mCFunctionHook Hook_GetAniEx;
@@ -314,10 +439,7 @@ bCString __stdcall GetAniEx(gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight, g
     // CUSTOMIZED SECION
     //
 
-    if (Self.NPC.Species == gESpecies_Zombie)
-    {
-        result.Replace("Hero", "Zombie");
-    }
+    CustomizeAniString(Self, result);
 
     //
     // CUSTOMIZED SECION END
@@ -326,7 +448,7 @@ bCString __stdcall GetAniEx(gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight, g
     return result;
 }
 
-// Example based on Script_Animation and Script_AniName_Adp from example G3 SDK script!
+
 static mCFunctionHook Hook_GetAniName;
 void GE_STDCALL GetAniName(bCString &p_RetString, eCEntity *p_Entity, gEAction p_Action, bCString p_Str1,
                                        bCString &p_Str2, GEBool p_Bool)
@@ -338,14 +460,8 @@ void GE_STDCALL GetAniName(bCString &p_RetString, eCEntity *p_Entity, gEAction p
     // CUSTOMIZED SECION
     //
 
-    gCNPC_PS const *NPC = GetPropertySet<gCNPC_PS>(p_Entity, eEPropertySetType_NPC);
-    if (!NPC)
-        return;
-
-    if (NPC->GetSpecies() == gESpecies_Zombie)
-    {
-         p_RetString.Replace("Hero", "Zombie");
-    }
+    Entity entity = Entity(p_Entity);
+    CustomizeAniString(entity, p_RetString);
 
     //
     // CUSTOMIZED SECION END
@@ -360,15 +476,6 @@ GEBool GE_STDCALL PSAnimation_GetSkeletonName(PSAnimation const &This, bCString 
     // CUSTOMIZED SECION
     //
 
-    gCNPC_PS const *NPC = This.IsValid() ? GetPropertySet<gCNPC_PS>(This->GetEntity(), eEPropertySetType_NPC) : nullptr;
-    if (NPC)
-    {
-        if (NPC->GetSpecies() == gESpecies_Zombie)
-        {
-            o_SkeletonName = "Zombie";
-            return GETrue;
-        }
-    }
 
     //
     // CUSTOMIZED SECION END
@@ -380,13 +487,23 @@ GEBool GE_STDCALL PSAnimation_GetSkeletonName(PSAnimation const &This, bCString 
 
 extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
 {
-    // Load first Animation Script Hook if found!
-    GetScriptAdmin().LoadScriptDLL("Script_Animation.dll");
+    LoadConfig();
 
-    Hook_Pre_GetMotionDataEntity.Hook(RVA_Game(0xda260), &Pre_GetMotionDataEntity, mCBaseHook::mEHookType_Mixed,
-                                      mERegisterType_Esi);
+    /**
+    * These Hooks are here to reconstruct the whole function, but are difficult
+    * to implement with multiple animation modifications
+    */
+    //Hook_Pre_GetMotionDataEntity.Hook(RVA_Game(0xda260), &Pre_GetMotionDataEntity, mCBaseHook::mEHookType_Mixed,
+    //                                  mERegisterType_Esi);
 
-    Hook_GetMotionDataEntity.Hook(RVA_Game(0xd94b0), &GetMotionDataEntity_Ext, mCBaseHook::mEHookType_Mixed, mERegisterType_Esi);
+    //Hook_GetMotionDataEntity.Hook(RVA_Game(0xd94b0), &GetMotionDataEntity_Ext, mCBaseHook::mEHookType_Mixed, mERegisterType_Esi);
+
+    Hook_GetMotionDataEntityAniString.Prepare(RVA_Game(0xd97d5), &GetMotionDataEntityAniString)
+        .InsertCall()
+        .AddPtrStackArgEbp(0x78)
+        .AddStackArg(0xC)
+        .RestoreRegister()
+        .Hook();
 
     Hook_GetAniEx.Hook(RVA_Script(0x15c10), &GetAniEx, mCBaseHook::mEHookType_ThisCall);
 
