@@ -64,35 +64,19 @@ void LoadConfig()
     //
     // CUSTOMIZED SECION
     //
-
-
-    bTObjArray<eCConfigFile::eSConfigValue> weaponList;
-    weaponList.Clear();
     
     eCConfigFile config = eCConfigFile();
-    if (config.ReadFile(bCString("rapierAnimation.ini")))
-    {
-        config.GetSectionBlock("RapierEntities", weaponList);
-    }
-
-    println("List of weapons:");
     eCConfigFile::eSConfigValue entry;
-
-    for (GEInt i = 0; i < weaponList.GetCount(); i++)
-    {
-        entry = weaponList.AccessAt(i);
-        println("Entry Key: %s,\tEntry Value: %s", entry.m_pstrKey->GetText(), entry.m_pstrValue->GetText());
-        if (*entry.m_pstrValue == "1")
-        {
-            weaponStringList.Add(entry.m_pstrKey->GetText());
-        }
-    }
 
     bTObjArray<eCConfigFile::eSConfigValue> scriptList;
     scriptList.Clear();
-    if (config.ReadFile(bCString("rapierAnimation.ini")))
+    if (config.ReadFile(bCString("zombieAnimation.ini")))
     {
         config.GetSectionBlock("LoadedScripts", scriptList);
+    }
+    else
+    {
+        println("Not 'zombieAnimation.ini' file found!");
     }
 
     println("List of previous scripts:");
@@ -116,29 +100,9 @@ void LoadConfig()
 
 void CustomizeAniString(Entity& p_entity, bCString& p_aniString)
 {
-    const bCString none1H = "_None_1H_";
-    if (!p_aniString.Contains(none1H))
+    if (p_entity.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Zombie)
     {
-        return;
-    }
-
-    Entity rightWeaponEntity = p_entity.Inventory.GetItemFromSlot(gESlot_RightHand);
-
-    if (rightWeaponEntity == None 
-        || rightWeaponEntity.Interaction.GetProperty<PSInteraction::PropertyUseType>() != gEUseType_1H)
-    {
-        return;
-    }
-
-    bCString weaponEntry;
-    for (GEInt i = 0; i < weaponStringList.GetCount(); i++)
-    {
-        weaponEntry = weaponStringList.AccessAt(i);
-        if (weaponEntry == rightWeaponEntity.GetName())
-        {
-            p_aniString.Replace(none1H, "_None_Rapier_");
-            return;
-        }
+        p_aniString.Replace("Hero", g_Zombie);
     }
 }
 
@@ -426,6 +390,41 @@ void GetMotionDataEntityAniString(LPVOID p_characterAnimationPtr, bCString *p_an
     //
 }
 
+static mCCallHook Hook_GetCachedMotionDataActor;
+void GetCachedMotionDataActor(LPVOID p_characterAnimationPtr, bCString* p_actorString)
+{
+    if (p_characterAnimationPtr == NULL)
+    {
+        return;
+    }
+
+    gCCharacterMovement_PS *characterMovementPtr =
+        *(gCCharacterMovement_PS **)((DWORD)(p_characterAnimationPtr) + 0x14);
+    if (characterMovementPtr == NULL)
+    {
+        return;
+    }
+
+    Entity entity = Entity(characterMovementPtr->GetEntity());
+    if (entity == None)
+    {
+        return;
+    }
+
+    //
+    // CUSTOMIZED SECION
+    //
+
+    if (entity.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Zombie)
+    {
+        p_actorString->SetText(g_Zombie);
+    }
+
+    //
+    // CUSTOMIZED SECION
+    //
+}
+
 static mCFunctionHook Hook_GetAniEx;
 bCString __stdcall GetAniEx(gEUseType p_UseTypeLeft, gEUseType p_UseTypeRight, gEAction p_Action, gEPhase p_Phase,
                             bCString &p_String, GEBool p_Bool)
@@ -476,6 +475,15 @@ GEBool GE_STDCALL PSAnimation_GetSkeletonName(PSAnimation const &This, bCString 
     // CUSTOMIZED SECION
     //
 
+    gCNPC_PS const *NPC = This.IsValid() ? GetPropertySet<gCNPC_PS>(This->GetEntity(), eEPropertySetType_NPC) : nullptr;
+    if (NPC)
+    {
+        if (NPC->GetSpecies() == gESpecies_Zombie)
+        {
+            o_SkeletonName = g_Zombie;
+            return GETrue;
+        }
+    }
 
     //
     // CUSTOMIZED SECION END
@@ -504,6 +512,14 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
         .AddStackArg(0xC)
         .RestoreRegister()
         .Hook();
+
+    Hook_GetCachedMotionDataActor.Prepare(RVA_Game(0xda344), &GetCachedMotionDataActor)
+        .InsertCall()
+        .AddRegArg(mERegisterType_Esi)
+        .AddStackArg(0xC)
+        .RestoreRegister()
+        .Hook();
+
 
     Hook_GetAniEx.Hook(RVA_Script(0x15c10), &GetAniEx, mCBaseHook::mEHookType_ThisCall);
 
