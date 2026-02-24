@@ -1,19 +1,19 @@
 #pragma once
 
 #include "vector"
-#include <g3sdk/util/Memory.h>
-#include <g3sdk/util/Logging.h>
+
 #include <g3sdk/util/Hook.h>
+#include <g3sdk/util/Logging.h>
+#include <g3sdk/util/Memory.h>
 
-
-//TODO 
+// TODO
 extern GEFloat npcSTRMultiplier;
 extern GEInt npcSTRAddition;
 //
-// 
+//
 // Configureable
 
-//NPC Level for Powergroup
+// NPC Level for Powergroup
 extern GEInt bossLevel;
 extern GEInt uniqueLevel;
 extern GEInt eliteLevel;
@@ -84,21 +84,21 @@ extern GEInt forgedBonus;
 extern GEInt wornPercentageMalus;
 
 //
-// 
-//Const Data for Usage:
+//
+// Const Data for Usage:
 static const GEDouble PROJECTILEMULTIPLICATOR = 27.777778;
-static const GEDouble* npcArmorMultiplierPtr = &npcArmorMultiplier;
-static const GEDouble* shootVelocityPtr = &shootVelocity;
-static const GEDouble* attackRangeAIPtr = &attackRangeAI;
-static const GEDouble* telekinesisRangePtr = &telekinesisRange;
-//static GEFloat animationSpeedBonusMid = 1.5f;
-//static GEFloat animationSpeedBonusHigh = 2.0f;
+static const GEDouble *npcArmorMultiplierPtr = &npcArmorMultiplier;
+static const GEDouble *shootVelocityPtr = &shootVelocity;
+static const GEDouble *attackRangeAIPtr = &attackRangeAI;
+static const GEDouble *telekinesisRangePtr = &telekinesisRange;
+// static GEFloat animationSpeedBonusMid = 1.5f;
+// static GEFloat animationSpeedBonusHigh = 2.0f;
 
-static char* BONETARGET = "Spine_Spine_1";
-static char* powerAimEffectName = "eff_ani_fight_bow_raise_01";
-static char* powerAimWarriorEffectName = "eff_ani_fight_bow_raise_warrior_01";
-static char* powerAimEliteEffectName = "eff_ani_fight_bow_raise_elite_01";
-static char* crosshairName = "G3_HUD_CrossHair.tga";
+static char *BONETARGET = "Spine_Spine_1";
+static char *powerAimEffectName = "eff_ani_fight_bow_raise_01";
+static char *powerAimWarriorEffectName = "eff_ani_fight_bow_raise_warrior_01";
+static char *powerAimEliteEffectName = "eff_ani_fight_bow_raise_elite_01";
+static char *crosshairName = "G3_HUD_CrossHair.tga";
 
 static bCString blessedBonusString;
 static bCString sharpBonusString;

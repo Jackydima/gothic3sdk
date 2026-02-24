@@ -1,12 +1,11 @@
 #include "SharedConfig.h"
 
-
-//TODO 
+// TODO
 GEFloat npcSTRMultiplier = 1.5;
 GEInt npcSTRAddition = 15;
 
 //
-// 
+//
 // Configureable
 
 GEInt bossLevel = 65;
