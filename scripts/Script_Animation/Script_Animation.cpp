@@ -6,11 +6,23 @@ gSScriptInit &GetScriptInit()
     return s_ScriptInit;
 }
 
+static void PatchByte(LPVOID addr, BYTE byte)
+{
+    DWORD currProt, newProt;
+    DWORD size = sizeof(BYTE);
+
+    VirtualProtect(addr, size, PAGE_EXECUTE_READWRITE, &currProt);
+    memset(addr, byte, size);
+    VirtualProtect(addr, size, currProt, &newProt);
+}
+
+
 //
 // CUSTOMIZED SECION
 //
 
 static bTObjArray<bCString> weaponStringList;
+
 
 //
 // CUSTOMIZED SECION
@@ -106,7 +118,6 @@ void LoadConfig()
     // CUSTOMIZED SECION
     //
 }
-
 
 void CustomizeAniString(Entity& p_entity, bCString& p_aniString)
 {
@@ -297,7 +308,7 @@ LPVOID Pre_GetMotionDataEntity(gEAniState p_aniState, gEUseType p_UseTypeLeft, g
             //println("amountPtr: %x", amountPtr);
             GEInt amount = *amountPtr + 1;
             
-            GEInt localArg = amount == 0 ? -1 : 0;
+            GEInt localArg = *amountPtr == 0 ? -1 : 0;
 
             using HelpFunction = void (__fastcall *) (GEInt p_Int1, GEInt p_Int2);
 
@@ -512,6 +523,9 @@ GEBool GE_STDCALL PSAnimation_GetSkeletonName(PSAnimation const &This, bCString 
 extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
 {
     LoadConfig();
+
+    // Essentially patch out caching for Animation ressources out of the animation tables
+    PatchByte(reinterpret_cast<LPVOID>(RVA_Game(0xd95de)), 0xEB); // Change near jump (2 Bytes) instruction JE (0x74) to JMP (0xEB)
 
     /**
     * These Hooks are here to reconstruct the whole function, but are difficult
