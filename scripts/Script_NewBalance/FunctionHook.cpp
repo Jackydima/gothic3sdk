@@ -385,11 +385,12 @@ GEInt GE_STDCALL CanParade(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity
     INIT_SCRIPT_EXT(Victim, DamagerOwner);
     UNREFERENCED_PARAMETER(a_iArgs);
 
-    GEBool canParadeMoveOf = GetScriptAdmin().CallScriptFromScript("CanParadeMoveOf", &Victim, &DamagerOwner, 0);
+    auto &SA = GetScriptAdmin();
+    GEBool canParadeMoveOf = SA.CallScriptFromScript("CanParadeMoveOf", &Victim, &DamagerOwner, 0);
     gEAction victimAction = Victim.Routine.GetProperty<PSRoutine::PropertyAction>();
-    GEBool isMonsterDamager = !GetScriptAdmin().CallScriptFromScript("IsHumanoid", &DamagerOwner, &None, 0);
+    GEBool isMonsterDamager = !SA.CallScriptFromScript("IsHumanoid", &DamagerOwner, &None, 0);
     gEAction damagerAction = DamagerOwner.Routine.GetProperty<PSRoutine::PropertyAction>();
-    GEBool victimInParade = GetScriptAdmin().CallScriptFromScript("IsInParadeMode", &Victim, &None, 0);
+    GEBool victimInParade = SA.CallScriptFromScript("IsInParadeMode", &Victim, &None, 0);
 
     /*
         Special Request Change

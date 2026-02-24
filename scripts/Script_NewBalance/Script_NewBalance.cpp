@@ -1220,7 +1220,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID)
     switch (dwReason)
     {
         case DLL_PROCESS_ATTACH:
-#ifndef NDEBUG
+#ifdef GE_DEBUG
             AllocConsole();
             freopen_s((FILE **)stdout, "CONOUT$", "w", stdout);
 #endif

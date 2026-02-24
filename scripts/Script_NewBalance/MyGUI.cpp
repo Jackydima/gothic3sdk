@@ -112,7 +112,7 @@ GEInt MagicAim(GEInt *p_ptr, gCScriptProcessingUnit *p_spu)
 void InitGUI()
 {
     CFFGFCWnd *dW = ((CFFGFCWnd *)0)->GetDesktopWindow();
-#ifndef NDEBUG
+#ifdef GE_DEBUG
     bCRect test = bCRect(411, 30, 411 + 200, 30 + 19);
     myView.Create("", 0x10, test, dW, UINT_MAX);
     myView.OnInitDialog();
@@ -158,7 +158,7 @@ void DoIt(CFFGFCWnd *a0)
     }
     crossHair.CenterWindow();
     crossHair.OnPaint();
-#ifndef NDEBUG
+#ifdef GE_DEBUG
     myView.OnPaint();
 #endif
 }
