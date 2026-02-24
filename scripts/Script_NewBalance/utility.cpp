@@ -72,7 +72,8 @@ void DoAOEDamage ( Entity& p_damager , Entity& p_victim ) {
             continue;
         }
 
-        GEInt damageAmount = p_damager.Damage.GetProperty<PSDamage::PropertyDamageAmount>() * ( 1 - ( distance / 1000 ) );
+        GEInt damageAmount = static_cast<GEInt>(p_damager.Damage.GetProperty<PSDamage::PropertyDamageAmount>()
+                                                * (1 - (distance / 1000)));
         //print ( "DoDamage !! to %s\n",entry.GetName().GetText() );
         entry.DoDamage ( p_damager , damageAmount , p_damager.Damage.GetProperty<PSDamage::PropertyDamageType> ( ) );
     }
@@ -135,7 +136,7 @@ void PartyMonsterSpawn ( Entity& p_summoner , Template& p_summonTemplate , GEInt
     Spawn.NPC.AccessProperty<PSNpc::PropertyLevel> ( ) = static_cast< GEInt >( Spawn.NPC.GetProperty<PSNpc::PropertyLevel> ( ) * multiplicator );
     bCMatrix newPose;
     Spawn.Interaction.SetOwner ( p_summoner );
-    if ( !Spawn.FindSpawnPose ( newPose , p_summoner , GETrue , p_int1 )) {
+    if ( !Spawn.FindSpawnPose ( newPose , p_summoner , GETrue , static_cast<GEU16>(p_int1))) {
         Spawn.Kill ( );
         print ( "Did not find SpawnPose in PartyMonsterSpawn!\n" );
         return;
@@ -490,7 +491,7 @@ GEBool CheckHandUseTypesNB ( gEUseType p_lHand , gEUseType p_rHand , Entity& ent
 // TODO: Adjusted Skill level, maybe change back :)
 GEInt GetSkillLevelsNB ( Entity& p_entity ) {
     if ( p_entity != Entity::GetPlayer ( ) ) {
-        GEU32 npcLevel = getPowerLevel(p_entity);
+        GEInt npcLevel = getPowerLevel(p_entity);
         if ( npcLevel <= noviceLevel ) // 20
             return 0;
         if ( npcLevel <= warriorLevel ) // 30
@@ -946,7 +947,7 @@ WarriorType GetWarriorType ( Entity& p_entity ) {
     return WarriorType_Novice;
 }
 
-GEU32 getLastTimeFromMap ( bCString iD, std::map<bCString , GEU32>& map ) {
+GEInt getLastTimeFromMap ( bCString iD, std::map<bCString , GEInt>& map ) {
     GEU32 worldTime = Entity::GetWorldEntity ( ).Clock.GetTimeStampInSeconds ( );
     GEU32 retVal = 0;
     for ( auto it = map.cbegin ( ); it != map.cend ( ); ) {

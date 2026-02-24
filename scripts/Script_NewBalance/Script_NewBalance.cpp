@@ -56,13 +56,17 @@ void LoadSettings ( ) {
         MonsterRageModus = config.GetInt ( "Script" , "MonsterRageModus" , MonsterRageModus );
         staminaRecoveryDelay = config.GetInt ( "Script" , "StaminaRecoveryDelay" , staminaRecoveryDelay );
         staminaRecoveryPerTick = config.GetInt ( "Script" , "StaminaRecoveryPerTick" , staminaRecoveryPerTick );
-        npcArmorMultiplier = config.GetFloat( "Script" , "NPCProtectionMultiplier" , npcArmorMultiplier );
+        npcArmorMultiplier = static_cast<GEDouble>(
+            config.GetFloat("Script", "NPCProtectionMultiplier", static_cast<GEFloat>(npcArmorMultiplier)));
         playerArmorMultiplier = config.GetFloat( "Script" , "PlayerProtectionMultiplier" , playerArmorMultiplier );
         npcWeaponDamageMultiplier = config.GetFloat( "Script" , "NPCWeaponDamageMultiplier" , npcWeaponDamageMultiplier );
         useNewBowMechanics = config.GetBool ( "Script" , "NewBowMechanics" , useNewBowMechanics );
-        attackRangeAI = config.GetFloat ( "Script" , "AttackRangeAI" , attackRangeAI );
-        telekinesisRange = config.GetFloat ( "Script" , "TelekinesisRange" , telekinesisRange );
-        shootVelocity = config.GetFloat ( "Script" , "ProjectileVelocity" , shootVelocity );
+        attackRangeAI =
+            static_cast<GEDouble>(config.GetFloat("Script", "AttackRangeAI", static_cast<GEFloat>(attackRangeAI)));
+        telekinesisRange = static_cast<GEDouble>(
+            config.GetFloat("Script", "TelekinesisRange", static_cast<GEFloat>(telekinesisRange)));
+        shootVelocity =
+            static_cast<GEDouble>(config.GetFloat("Script", "ProjectileVelocity", static_cast<GEFloat>(shootVelocity)));
         NPC_AIM_INACCURACY = config.GetFloat ( "Script" , "NPCAimInaccuracy" , NPC_AIM_INACCURACY );
         ATTACK_REACH_MULTIPLIER = config.GetFloat ( "Script" , "AttackReachMultiplier" , ATTACK_REACH_MULTIPLIER );
         startSTR = config.GetInt ( "Script" , "StartSTR" , startSTR );
@@ -81,11 +85,11 @@ void LoadSettings ( ) {
         enableAOEDamage = config.GetBool ( "Script" , "EnableAOEDamage" , enableAOEDamage );
         bCString AOENamesString = config.GetString ( "Script" , "AOENames" , "" );
         AOENames = splitTobCStrings ( AOENamesString.GetText ( ) , ',' );
-        bossLevel = config.GetU32 ( "Script" , "BossLevelCap" , bossLevel );
-        uniqueLevel = config.GetU32 ( "Script" , "UniqueLevelCap" , uniqueLevel );
-        eliteLevel = config.GetU32 ( "Script" , "EliteLevelCap" , eliteLevel );
-        warriorLevel = config.GetU32 ( "Script" , "WarriorLevelCap" , warriorLevel );
-        noviceLevel = config.GetU32 ( "Script" , "NoviceLevelCap" , noviceLevel );
+        bossLevel = config.GetInt("Script", "BossLevelCap", bossLevel);
+        uniqueLevel = config.GetInt("Script", "UniqueLevelCap", uniqueLevel);
+        eliteLevel = config.GetInt("Script", "EliteLevelCap", eliteLevel);
+        warriorLevel = config.GetInt ( "Script" , "WarriorLevelCap" , warriorLevel );
+        noviceLevel = config.GetInt("Script", "NoviceLevelCap", noviceLevel);
         KnockDownThreshold = config.GetInt ( "Script" , "KnockDownThreshold" , KnockDownThreshold );
     }
 }
@@ -305,7 +309,7 @@ gEAction GE_STDCALL AssessHit ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelf
             if ( IsNormalProjectileNB ( Damager ) == GETrue )
             {
                 //print ( "UseType Left : %d" , DamagerOwner.Inventory.GetItemFromSlot(gESlot_LeftHand).Interaction.UseType );
-                if ( useStrengthForCrossbows && DamagerOwner.Inventory.GetItemFromSlot ( gESlot_LeftHand ).Interaction.UseType == gEUseType_CrossBow ) {
+                if ( useStrengthForCrossbows && DamagerOwner.Inventory.GetItemFromSlot ( gESlot_LeftHand ).Interaction.GetProperty<PSInteraction::PropertyUseType>() == gEUseType_CrossBow ) {
                     iAttributeBonusDamage = strength / 2;
                 }
                 else {
@@ -327,7 +331,7 @@ gEAction GE_STDCALL AssessHit ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelf
                     if ( Weapon != None && Weapon.Item.IsValid() ) {
                         //arr = ( GEChar* )*( DWORD* )( *( DWORD* )&Weapon.Item + 0x74 ); // A bit Unsafe ... AccessReqAttrib1Tag()
                         gCItem_PS* item = ( gCItem_PS* )Weapon.Item.m_pEngineEntityPropertySet;
-                        bCString reqAttributeTag = item->AccessReqAttrib1Tag ( );
+                        reqAttributeTag = item->AccessReqAttrib1Tag ( );
                     }
                     //if ( arr != nullptr ) reqAttributeTag = bCString ( arr );
                     if ( playerRightWeaponType == gEUseType_Staff || reqAttributeTag.Contains ( "INT" )
@@ -382,7 +386,9 @@ gEAction GE_STDCALL AssessHit ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelf
     // Damager is transformed player or NPC
     else if ( DamagerOwner.Navigation.IsValid ( ) )
     {
-        GEInt iStrength = ScriptAdmin.CallScriptFromScript ( "GetStrength" , &DamagerOwner , &None , 0 ) * NPCStrengthMultiplicator + NPCStrengthCorrection; //STR Bonus Real
+        GEInt iStrength = static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetStrength", &DamagerOwner, &None, 0)
+                                                 * NPCStrengthMultiplicator
+                                             + NPCStrengthCorrection); // STR Bonus Real
         if ( iStrength < 10 )
             iStrength = 10;
 
@@ -445,13 +451,13 @@ gEAction GE_STDCALL AssessHit ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelf
 
     if ( ( Damager.IsItem() 
         && ( Damager.Item.GetQuality ( ) & gEItemQuality_Blessed ) == gEItemQuality_Blessed && ScriptAdmin.CallScriptFromScript ( "IsEvil" , &Victim , NULL , 0 )) )
-        FinalDamage *= 1.2;
+        FinalDamage = static_cast<GEInt>(FinalDamage * 1.2f);
 
     if ( GetHeldWeaponCategoryNB ( DamagerOwner ) == gEWeaponCategory_Melee ) {
         if ( GetScriptAdmin ( ).CallScriptFromScript ( "GetStaminaPoints" , &DamagerOwner , &None , 0 ) <= 50 )
-            FinalDamage *= 0.7;
+            FinalDamage = static_cast<GEInt>(FinalDamage * 0.7f);
         else if ( GetScriptAdmin ( ).CallScriptFromScript ( "GetStaminaPoints" , &DamagerOwner , &None , 0 ) <= 20 )
-            FinalDamage *= 0.5;
+            FinalDamage = static_cast<GEInt>(FinalDamage * 0.5f);
     }
 
     // Handelt es sich um einen Powercast? (Player and NPCs)
@@ -493,16 +499,16 @@ gEAction GE_STDCALL AssessHit ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelf
     else {
         switch ( DamageTypeEntityTestNB ( Victim , Damager ) ) {
         case VulnerabilityStatus_WEAK:
-            FinalDamage *= 1.6f;
+            FinalDamage = static_cast<GEInt>(FinalDamage * 1.6f);
             break;
         case VulnerabilityStatus_STRONG:
-            FinalDamage *= 0.5f;
+            FinalDamage = static_cast<GEInt>(FinalDamage * 0.5f);
             break;
         case VulnerabilityStatus_SLIGHTLYWEAK:
-            FinalDamage *= 1.2f;
+            FinalDamage = static_cast<GEInt>(FinalDamage * 1.2f);
             break;
         case VulnerabilityStatus_SLIGHTLYSTRONG:
-            FinalDamage *= 0.8f;
+            FinalDamage = static_cast<GEInt>(FinalDamage * 0.8f);
             break;
         }
         if ( iProtection > 90 )
@@ -557,7 +563,7 @@ gEAction GE_STDCALL AssessHit ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelf
         }
         else
         {
-            FinalDamage *= fMonsterDamageMultiplicator;
+            FinalDamage = static_cast<GEInt>(FinalDamage * fMonsterDamageMultiplicator);
         }
     }
 
@@ -605,7 +611,7 @@ gEAction GE_STDCALL AssessHit ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelf
 
     // New Multiplier for NPC vs NPC Damage
     if ( !DamagerOwner.IsPlayer ( ) && !Victim.IsPlayer ( ) ) {
-        FinalDamage2 *= NPCDamageReductionMultiplicator;
+        FinalDamage2 = static_cast<GEInt>(FinalDamage2 * NPCDamageReductionMultiplicator);
     }
 
     if ( FinalDamage2 < 5 )
@@ -720,7 +726,7 @@ gEAction GE_STDCALL AssessHit ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelf
             }
         }
         print ( "StaminaDamageMultiplier: %f\n" , staminaDamageMultiplier );
-        GEInt FinalDamage3 = FinalDamage * staminaDamageMultiplier;
+        GEInt FinalDamage3 = static_cast<GEInt>(FinalDamage * staminaDamageMultiplier);
         print ( "FinalDamage3: %d\n" , FinalDamage3 );
 
         if ( enablePerfectBlock && GetHeldWeaponCategoryNB( DamagerOwner ) == gEWeaponCategory_Melee && ( !playerOnlyPerfectBlock || Victim.IsPlayer ( ) ) ) {

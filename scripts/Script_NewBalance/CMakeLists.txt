@@ -22,4 +22,5 @@ target_tree_sources(Script_NewBalance
     Script_NewBalance.h
     SharedConfig.h
     utility.cpp
+    utility.h
 )

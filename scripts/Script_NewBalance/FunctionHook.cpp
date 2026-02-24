@@ -15,7 +15,7 @@ GEFloat GetAnimationSpeedModifier ( Entity entity , GEU32 u32 ) {
 	auto damageReceiver = static_cast< gCDamageReceiver_PS_Ext* >( entity.GetGameEntity ( )->GetPropertySet ( eEPropertySetType_DamageReceiver ) );
 	if ( damageReceiver->GetVulnerableState () == 1 && entity.Routine.GetCurrentTask ( ).Contains ( "Stumble" ) ) {
 		damageReceiver->AccessVulnerableState() = 2;
-		return 0.2;
+		return 0.2f;
 	}
 	else if ( damageReceiver->GetVulnerableState ( ) == 2 ) {
 		damageReceiver->AccessVulnerableState ( ) = 0;
@@ -23,27 +23,27 @@ GEFloat GetAnimationSpeedModifier ( Entity entity , GEU32 u32 ) {
 
 	if ( staminaPoints <= 20 ) {
 		if ( isArenaNPC )
-			multiPlier = 0.9;
+			multiPlier = 0.9f;
 		else 
-			multiPlier = 0.8;
+			multiPlier = 0.8f;
 	}
 	else if ( staminaPoints <= 50 ) {
 		if ( isArenaNPC )
-			multiPlier = 0.95;
+			multiPlier = 0.95f;
 		else 
-			multiPlier = 0.9;
+			multiPlier = 0.9f;
 	}
 
 	if ( action == gEAction_SprintAttack )
-		return 1.5;
+		return 1.5f;
 	if ( species == gESpecies_Troll ) {
 		if ( action == gEAction_PowerAttack )
-			return 1.3;
-		return 1;
+			return 1.3f;
+		return 1.0f;
 	}
 
 	if ( entity.NPC.IsDiseased ( ) ) 
-		multiPlier *= 0.9;
+		multiPlier *= 0.9f;
 
 	if ( isArenaNPC )
 		multiPlier *= npcArenaSpeedMultiplier; // default 1.25
@@ -70,7 +70,7 @@ GEFloat GetAnimationSpeedModifier ( Entity entity , GEU32 u32 ) {
 	case gEAction_LieDead:
 	case gEAction_LiePiercedKO:
 	case gEAction_LiePiercedDead:
-		return 1;
+		return 1.0f;
 	case gEAction_Aim:
 	case gEAction_Reload:
 		if ( entity == Player ) {
@@ -85,51 +85,51 @@ GEFloat GetAnimationSpeedModifier ( Entity entity , GEU32 u32 ) {
 			Entity weapon = entity.GetWeapon ( GETrue );
 			if ( weapon.Interaction.GetUseType ( ) == gEUseType_CrossBow ) {
 				if ( getPowerLevel ( entity ) >= uniqueLevel )
-					return 2.5;
+					return 2.5f;
 				if ( getPowerLevel ( entity ) >= warriorLevel )
-					return 1.75;
+					return 1.75f;
 			}
 			if ( getPowerLevel ( entity ) >= uniqueLevel )
 				return animationSpeedBonusHigh;
 			if ( getPowerLevel ( entity ) >= warriorLevel )
 				return animationSpeedBonusMid;
 		}
-		return 1;
+		return 1.0f;
 	case gEAction_Cast:
 	case gEAction_PowerCast:
 		if ( entity.GetName ( ).Contains ( "Xardas" ) )
-			return 1.3;
-		return 1;
+			return 1.3f;
+		return 1.0f;
 	case gEAction_Attack:
 		if ( isHumanInFistMode )
-			return 0.54;
+			return 0.54f;
 		if ( CheckHandUseTypesNB ( gEUseType_None , gEUseType_1H , entity ) )
-			return 0.6 * multiPlier;
+			return 0.6f * multiPlier;
 		if ( CheckHandUseTypesNB ( gEUseType_Shield , gEUseType_1H , entity ) )
-			return 0.6 * multiPlier;
+			return 0.6f * multiPlier;
 		if ( CheckHandUseTypesNB ( gEUseType_Torch , gEUseType_1H , entity ) )
-			return 0.6 * multiPlier;
+			return 0.6f * multiPlier;
 		if ( CheckHandUseTypesNB ( gEUseType_1H , gEUseType_1H , entity ) )
-			return 0.6 * multiPlier;
+			return 0.6f * multiPlier;
 		if ( CheckHandUseTypesNB ( gEUseType_None , gEUseType_2H , entity ) )
-			return 0.7 * multiPlier;
+			return 0.7f * multiPlier;
 		if ( CheckHandUseTypesNB ( gEUseType_None , gEUseType_Axe , entity ) )
-			return 0.7 * multiPlier;
+			return 0.7f * multiPlier;
 		if ( CheckHandUseTypesNB ( gEUseType_None , gEUseType_Staff , entity ) )
-			return 0.7 * multiPlier;
+			return 0.7f * multiPlier;
 		if ( CheckHandUseTypesNB ( gEUseType_None , gEUseType_Halberd , entity ) )
-			return 0.7 * multiPlier;
+			return 0.7f * multiPlier;
 		return 1 * multiPlier;
 	case gEAction_PowerAttack:
 		if ( isHumanInFistMode )
-			return 0.6;
+			return 0.6f;
 		if ( species == gESpecies_Orc && u32 == 0 )
-			return 1.3 * multiPlier; //orcs
+			return 1.3f * multiPlier; //orcs
 		if ( u32 == 0 ) {
-			return 1.5 * multiPlier;
+			return 1.5f * multiPlier;
 		}
 		if ( ( CheckHandUseTypesNB ( gEUseType_1H , gEUseType_1H , entity ) ))
-			return 0.9 * multiPlier;
+			return 0.9f * multiPlier;
 	case gEAction_QuickAttackR:
 	case gEAction_QuickAttackL:
 	case gEAction_PierceAttack:
@@ -137,31 +137,31 @@ GEFloat GetAnimationSpeedModifier ( Entity entity , GEU32 u32 ) {
 	case gEAction_PierceStumble:
 		return 1 * multiPlier;
 	case gEAction_WhirlAttack:
-		return 0.9;
+		return 0.9f;
 	case gEAction_SimpleWhirl:
-		return 1.3 * multiPlier;
+		return 1.3f * multiPlier;
 	case gEAction_Parade:
 	case gEAction_ParadeR:
 	case gEAction_ParadeL:
-		return 2.5 * multiPlier; // default 2.3
+		return 2.5f * multiPlier; // default 2.3
 	case gEAction_ParadeStumble:
 	case gEAction_ParadeStumbleR:
 	case gEAction_ParadeStumbleL:
-		return 2.0 * multiPlier;
+		return 2.0f * multiPlier;
 	case gEAction_HeavyParadeStumble:
 		if ( CheckHandUseTypesNB ( gEUseType_1H , gEUseType_1H , entity ) )
-			return 0.7 * multiPlier;
+			return 0.7f * multiPlier;
 		return 1 * multiPlier;
 	case gEAction_QuickStumble:
 		return 2 * multiPlier;
 	case gEAction_Stumble:
 	case gEAction_StumbleR:
 	case gEAction_StumbleL:
-		return 1.3 * multiPlier;
+		return 1.3f * multiPlier;
 	case gEAction_Summon:
-		return 1.5 * multiPlier;
+		return 1.5f * multiPlier;
 	case gEAction_FlameSword:
-		return 0.7 * multiPlier;
+		return 0.7f * multiPlier;
 
 	case gEAction_Cock:
 		if ( entity == Entity::GetPlayer ( ) ) {
@@ -200,7 +200,7 @@ GEInt OnPowerAim_Loop ( gCScriptProcessingUnit* p_PSU ) {
 	/**
 	* Here the regular Bow Animation has 50 Frames: The Statetime for 100% is 1.95 Seconds
 	*/
-	GEFloat hitMultiplier = stateTime / 1.95;
+	GEFloat hitMultiplier = stateTime / 1.95f;
 	if ( Self == Entity::GetPlayer ( ) ) {
 		if ( Self.Inventory.IsSkillActive ( "Perk_Bow_3" ) )
 			hitMultiplier *= animationSpeedBonusHigh;
@@ -230,7 +230,7 @@ GEInt OnPowerAim_Loop ( gCScriptProcessingUnit* p_PSU ) {
 		Func2 func2 = ( Func2 )RVA_ScriptGame ( 0x2e50 );
 		if ( action == gEAction_AbortAttack ) {
 			func1 ( Self );
-			func2 ( -1 , -1 , Self );
+            func2(-1, BYTE(- 1), Self);
 			Self.Routine.FullStop ( );
 			Self.Routine.SetTask ( "PS_Ranged_Reload" );
 			Self.Routine.SetState ( "PS_Ranged_Reload" );
@@ -246,8 +246,8 @@ GEInt OnPowerAim_Loop ( gCScriptProcessingUnit* p_PSU ) {
 	return 1;
 }
 
-static std::map<bCString , GEU32> LastHealthDamageMap = {};
-static std::map<bCString , GEU32> LastStaminaUsageMap = {};
+static std::map<bCString , GEInt> LastHealthDamageMap = {};
+static std::map<bCString , GEInt> LastStaminaUsageMap = {};
 static GEInt healthRecoveryDelay = 60;
 
 GEInt HealthUpdateOnTickHelper ( Entity& p_entity , GEInt p_healthValue ) {
@@ -289,7 +289,7 @@ GEInt GE_STDCALL AddHitPoints ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelf
 GEInt UpdateHitPointsOnTick ( Entity p_entity ) {
 	GEInt retVal = 0;
 	gEAIMode aiMode = p_entity.Routine.GetProperty<PSRoutine::PropertyAIMode> ( );
-	GEBool aBActive = eCApplication::GetInstance ( ).GetEngineSetup ( ).AlternativeBalancing;
+	//GEBool aBActive = eCApplication::GetInstance ( ).GetEngineSetup ( ).AlternativeBalancing;
 	if ( aiMode == gEAIMode_Dead ) {
 		return 0;
 	}
@@ -352,6 +352,7 @@ GEInt UpdateHitPointsOnTick ( Entity p_entity ) {
 GEInt GE_STDCALL CanParade ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntity , Entity* a_pOtherEntity , GEU32 a_iArgs )
 {
 	INIT_SCRIPT_EXT ( Victim , DamagerOwner );
+    UNREFERENCED_PARAMETER(a_iArgs);
 
 	GEBool canParadeMoveOf = GetScriptAdmin ( ).CallScriptFromScript ( "CanParadeMoveOf" , &Victim , &DamagerOwner , 0 );
 	gEAction victimAction = Victim.Routine.GetProperty<PSRoutine::PropertyAction> ( );
@@ -364,7 +365,7 @@ GEInt GE_STDCALL CanParade ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEnt
 	*/
 
 	if ( useExtendedBlocking ) {
-		gEUseType rightWeaponUseType = Victim.Inventory.GetItemFromSlot ( gESlot_RightHand ).Interaction.GetUseType ( );
+		//gEUseType rightWeaponUseType = Victim.Inventory.GetItemFromSlot ( gESlot_RightHand ).Interaction.GetUseType ( );
 
 		// Special return true for Blocking Hackattacks with a 2H Weapon, Axe, Halbert, Staff
 		GEBool victimHolding2HWeap = IsHoldingTwoHandedWeapon ( Victim );
@@ -401,7 +402,7 @@ GEInt GE_STDCALL CanParade ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEnt
 	}
 	else {
 		// Special return for Blocking Monsterdamage with a 2H Weapon, Axe, Halbert, Staff and 1H When skilled up
-		GEBool victimHolding2HWeap = IsHoldingTwoHandedWeapon ( Victim );
+		//GEBool victimHolding2HWeap = IsHoldingTwoHandedWeapon ( Victim );
 		GEInt weaponLevel = getWeaponLevelNB ( Victim );
 		if ( isBigMonster ( DamagerOwner ) ) {
 			weaponLevel -= 1;
@@ -520,7 +521,7 @@ GEInt GE_STDCALL MagicTransform ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSe
 	}
 	GetScriptAdmin ( ).CallScriptFromScript ( "SendPerceptionTransform" , &Self , &None, 0 );
 
-	Self.StartTransform ( spawnedEntity , transformDuration , GEFalse );
+	Self.StartTransform(spawnedEntity, static_cast<GEFloat>(transformDuration), GEFalse);
 	GEInt leftHand = speciesLeftHand ( spawnedEntity );
 	GEInt rightHand = speciesRightHand ( spawnedEntity );
 
@@ -588,7 +589,7 @@ void GE_STDCALL StartTransform ( Entity* p_targetEntity , GEFloat p_duration , G
 	player.NPC.EnableStatusEffects ( gEStatusEffect::gEStatusEffect_Transformed, GETrue );
 
 	if ( isDruid )
-		targetLevel *= 1.5;
+        targetLevel = static_cast<GEInt>(targetLevel * 1.5f);
 
 	if ( isWaterMage )
 		targetLevel += 10;
@@ -622,46 +623,6 @@ void GE_STDCALL StartTransform ( Entity* p_targetEntity , GEFloat p_duration , G
 	}
 }
 
-//TODO:
-static mCFunctionHook Hook_PS_Melee_Attack;
-GEInt PS_Melee_Attack ( int* p_ptr , gCScriptProcessingUnit* p_PSU ) {
-	Entity Self = (Entity)p_PSU->GetSelfEntity ( );
-	if ( IsInRecovery ( Self ) ) {
-		return 0;
-	}
-	return Hook_PS_Melee_Attack.GetOriginalFunction ( &PS_Melee_Attack )( p_ptr , p_PSU );
-}
-//TODO:
-static mCFunctionHook Hook_PS_Melee_PowerAttack;
-GEInt PS_Melee_PowerAttack ( int* p_ptr , gCScriptProcessingUnit* p_PSU ) {
-	Entity Self = (Entity)p_PSU->GetSelfEntity ( );
-	if ( IsInRecovery ( Self ) ) {
-		return 0;
-	}
-	return Hook_PS_Melee_PowerAttack.GetOriginalFunction ( &PS_Melee_PowerAttack )( p_ptr , p_PSU );
-}
-//TODO:
-static mCFunctionHook Hook_GetAniName; 
-void GetAniName ( bCString* p_retString , eCEntity* p_entity , gEAction p_action , bCString p_actionString , bCString* p_directionString , GEBool p_bool ) {
-	gCScriptProcessingUnit* selfPSU = Hook_GetAniName.GetSelf< gCScriptProcessingUnit*> ( );
-	Hook_GetAniName.GetOriginalFunction ( &GetAniName )( p_retString , p_entity , p_action , p_actionString , p_directionString , p_bool );
-	/*
-	//std::cout << "\nEntity: " << p_entity->GetName ( )
-		<< "\nAction: " << p_action
-		<< "\nActionString: " << p_actionString.GetText ( )
-		<< "\nDirection: " << p_directionString->GetText ( )
-		<< "\nBool: " << p_bool
-		<< "\nAniName: " << p_retString->GetText ( )
-		<< "\n";*/
-	GEInt index = p_retString->Find ( "2H" );
-	if ( index != -1 ) {
-		p_retString->Replace ( "2H" , "1H" );
-		if ( p_retString->Contains ( "FinishingAttack" ) && p_action != gEAction_FinishingAttack ) 
-			p_retString->Replace ( "FinishingAttack" , "PierceAttack" );
-	}
-	
-}
-
 static mCFunctionHook Hook_MagicSleep;
 GEInt GE_STDCALL MagicSleep ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntity , Entity* a_pOtherEntity , GEI32 a_iArgs ) {
 	INIT_SCRIPT_EXT ( Self , Other );
@@ -677,7 +638,7 @@ GEInt GE_STDCALL MagicSleep ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEn
 GEInt GE_STDCALL GetProtection ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntity , Entity* a_pOtherEntity , GEI32 a_iArgs ) {
 	INIT_SCRIPT_EXT ( Self , Other );
 	GEInt protection = GetProtectionHUD ( a_pSPU , a_pSelfEntity , a_pOtherEntity , a_iArgs );
-	return protection * playerArmorMultiplier;
+	return static_cast<GEInt>(protection * playerArmorMultiplier);
 }
 
 GEInt GE_STDCALL GetProtectionHUD ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntity , Entity* a_pOtherEntity , GEI32 a_iArgs ) {
@@ -712,13 +673,13 @@ GEInt GE_STDCALL GetProtectionHUD ( gCScriptProcessingUnit* a_pSPU , Entity* a_p
 
 	if ( !Self.IsPlayer ( ) || Self.NPC.IsTransformed ( ) ) {
 		protection = GetScriptAdmin ( ).CallScriptFromScript ( "GetLevelMax" , a_pSelfEntity , &None );
-		protection *= npcArmorMultiplier;
+		protection = static_cast<GEInt>(protection * npcArmorMultiplier);
 		GEInt stackIndexLeftHand = Self.Inventory.FindStackIndex ( gESlot::gESlot_LeftHand );
 		GEInt stackIndexLeftHandBack = Self.Inventory.FindStackIndex ( gESlot::gESlot_BackLeft );
 		if ( Self.Inventory.GetUseType ( stackIndexLeftHand ) == gEUseType_Shield || Self.Inventory.GetUseType ( stackIndexLeftHandBack ) == gEUseType_Shield ) {
-			protection *= 1.25;
+			protection = static_cast<GEInt>(protection * 1.25f);
 		}
-		protection /= playerArmorMultiplier;
+		protection = static_cast<GEInt>(protection / playerArmorMultiplier);
 		return protection;
 	}
 	else {
@@ -784,7 +745,7 @@ GEInt GE_STDCALL GetProtectionHUD ( gCScriptProcessingUnit* a_pSPU , Entity* a_p
 		if ( bodyEntity.Item.IsRobe ( ) && Self.Inventory.IsSkillActive("Perk_LightArmor") ) { 
 			//elemental damage is more effective for robes
 			if ( damageType == gEDamageType_Fire || damageType == gEDamageType_Ice || damageType == gEDamageType_Lightning ) {
-				protection += ( itemProt * 1.5 );
+                protection = static_cast<GEInt>(protection + (itemProt * 1.5f));
 			}
 			else {
 				protection += itemProt;
@@ -792,7 +753,7 @@ GEInt GE_STDCALL GetProtectionHUD ( gCScriptProcessingUnit* a_pSPU , Entity* a_p
 		}
 		// Add 50% Extra Protection for ONLY the Body Armor now, maybe add helmet aswell
 		else if ( Self.Inventory.IsSkillActive ( "Perk_HeavyArmor" ) ) {
-			protection += (itemProt * 0.5);
+			protection = static_cast<GEInt>(protection + (itemProt * 0.5f));
 		}
 		return protection;
 	}
@@ -956,29 +917,11 @@ GEInt StaminaUpdateOnTickHelper ( Entity& p_entity , GEInt p_staminaValue ) {
 	return p_staminaValue;
 }
 
-static GEU32 getLastStaminaUsageTime ( bCString iD ) {
-	GEU32 worldTime = Entity::GetWorldEntity ( ).Clock.GetTimeStampInSeconds ( );
-	GEU32 retVal = 0;
-	for ( auto it = LastStaminaUsageMap.cbegin ( ); it != LastStaminaUsageMap.cend ( ); ) {
-		if ( worldTime - it->second > 400 )
-			LastStaminaUsageMap.erase ( it++ );
-		else
-			++it;
-	}
-	try {
-		retVal = worldTime - LastStaminaUsageMap.at ( iD );
-	}
-	catch ( std::exception e ) {
-		retVal = ULONG_MAX;
-	}
-	return retVal;
-}
-
 static mCFunctionHook Hook_StaminaUpdateOnTick;
 GEInt StaminaUpdateOnTick ( Entity p_entity ) {
 	const GEInt standardStaminaRecovery = staminaRecoveryPerTick + GetScriptAdmin().CallScriptFromScript("GetStaminaPointsMax",&p_entity,&None,0) / 100;
 	//TODO Change that again;
-	GEInt retStaminaDelta = 0;
+	//GEInt retStaminaDelta = 0;
 
 	if ( p_entity.IsPlayer ( ) && p_entity.Routine.GetProperty<PSRoutine::PropertyAction> ( ) == gEAction::gEAction_Aim ) {
 		if ( GetScriptAdmin ( ).CallScriptFromScript ( "GetStaminaPoints" , &p_entity , &None , 0 ) <= 7 ) {
@@ -1064,7 +1007,8 @@ GEInt GetAttitudeSummons ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntit
 		if ( !( Self.Party.GetPartyLeader ( ).NPC.GetCurrentTarget ( ) == Other
 			&& Self.Party.GetPartyLeader ( ).NPC.GetProperty<PSNpc::PropertyCombatState> ( ) == 1 ) ) {
 
-			GEInt retVal = ScriptAdmin.CallScriptFromScript ( "GetAttitude" , &Self.Party.GetPartyLeader ( ) , &Other , a_iArgs );
+			Entity selfLeader = Self.Party.GetPartyLeader();
+            GEInt retVal = ScriptAdmin.CallScriptFromScript("GetAttitude", &selfLeader, &Other, a_iArgs);
 			if ( retVal != 4 )
 				return 2;
 			return retVal;
@@ -1077,7 +1021,8 @@ GEInt GetAttitudeSummons ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntit
 		if ( !( Other.Party.GetPartyLeader ( ).NPC.GetCurrentTarget ( ) == Self
 			&& Other.Party.GetPartyLeader ( ).NPC.GetProperty<PSNpc::PropertyCombatState> ( ) == 1 ) ) {
 
-			GEInt retVal = ScriptAdmin.CallScriptFromScript ( "GetAttitude" , &Other.Party.GetPartyLeader ( ) , &Self , a_iArgs );
+			Entity otherLeader = Other.Party.GetPartyLeader();
+            GEInt retVal = ScriptAdmin.CallScriptFromScript("GetAttitude", &otherLeader, &Self, a_iArgs);
 			if ( retVal != 4 )
 				return 2;
 			return retVal;
@@ -1108,12 +1053,12 @@ GEInt GetQualityBonus ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntity ,
 	GEU32 itemQuality = Self.Item.GetQuality ( );
 
 	if ( ( itemQuality & gEItemQuality_Worn ) == gEItemQuality_Worn ) {
-		retValue -= ( a_iArgs * ((GEFloat)( 100 - wornPercentageMalus ) / 100.0f ) );
+        retValue = static_cast<GEInt>(retValue - (a_iArgs * ((GEFloat)(100 - wornPercentageMalus) / 100.0f)));
 	}
 
 	if ( ( itemQuality & gEItemQuality_Sharp ) == gEItemQuality_Sharp ) {
 		if ( useSharpPercentage ) {
-			GEU32 l_sharpBonus = a_iArgs * ( ( GEFloat )sharpBonus / 100.0f );
+            GEU32 l_sharpBonus = static_cast<GEU32>(a_iArgs * ((GEFloat)sharpBonus / 100.0f));
 			if ( l_sharpBonus < 10 )
 				l_sharpBonus = 10;
 			retValue += l_sharpBonus;
@@ -1139,12 +1084,12 @@ GEInt OnPlayerGetDamage ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntity
 	GEU32 itemQuality = *( GEU32* )(a_iArgs+0x4);
 
 	if ( ( itemQuality & gEItemQuality_Worn ) == gEItemQuality_Worn ) {
-		retValue -= ( *( GEU32* )a_iArgs * ( ( GEFloat )( 100 - wornPercentageMalus ) / 100.0f ) );
+        retValue = static_cast<GEInt>(retValue - (*(GEU32 *)a_iArgs * ((GEFloat)(100 - wornPercentageMalus) / 100.0f)));
 	}
 
 	if ( ( itemQuality & gEItemQuality_Sharp ) == gEItemQuality_Sharp ) {
 		if ( useSharpPercentage ) {
-			GEU32 l_sharpBonus = *( GEU32* )a_iArgs * ( ( GEFloat )sharpBonus / 100.0f );
+			GEU32 l_sharpBonus = static_cast<GEU32>(*( GEU32* )a_iArgs * ( ( GEFloat )sharpBonus / 100.0f ));
 			if ( l_sharpBonus < 10 )
 				l_sharpBonus = 10;
 			retValue += l_sharpBonus;
@@ -1181,7 +1126,7 @@ GEInt MagicProjectile ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntity ,
 	SpawnedProjectile.EnableCollisionWith ( Self , GEFalse );
 
 	bCVector Vec = SpawnedProjectile.GetPose ( ).AccessZAxis ( );
-	Vec.AccessY ( ) += 0.01;
+	Vec.AccessY ( ) += 0.01f;
 	Vec.Normalize ( );
 
 	// Free Aim Logic //
@@ -1263,7 +1208,8 @@ void OnTouch ( eCEntity* p_entity , eCContactIterator* p_contactIterator ) {
 			GEInt damageAmount = damagePS.GetProperty<PSDamage::PropertyDamageAmount> ( );
 			if ( owner.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_PowerCast )
 				damageAmount *= 2; // TODO: DamageManaMultiplier
-			damageAmount *= damagePS.GetProperty<PSDamage::PropertyDamageHitMultiplier> ( );
+            damageAmount =
+                static_cast<GEInt>(static_cast<GEFloat>(damageAmount) * damagePS.GetProperty<PSDamage::PropertyDamageHitMultiplier>());
 			spawn.Damage.AccessProperty<PSDamage::PropertyDamageAmount> ( ) = damageAmount;
 			GEInt manaUsed = damagePS.GetProperty<PSDamage::PropertyManaUsed> ( );
 			spawn.Damage.AccessProperty< PSDamage::PropertyManaUsed> ( ) = manaUsed;
@@ -1335,6 +1281,7 @@ void MagicPartyMemberRemoverNew ( Entity& p_summoner , Template& p_monsterSummon
 
 DECLARE_SCRIPT ( MagicSummonDemon ) {
 	INIT_SCRIPT_EXT ( Self , Other );
+    UNREFERENCED_PARAMETER(a_iArgs);
 
 	Template Spawn = "Demon";
 	if ( Self.IsPlayer ( ) && GetScriptAdminExt ( ).CallScriptFromScript ( "GetIntelligence" , &Self , &None ) >= 350 ) {
@@ -1352,6 +1299,7 @@ DECLARE_SCRIPT ( MagicSummonDemon ) {
 
 DECLARE_SCRIPT ( MagicSummonGoblin ) {
 	INIT_SCRIPT_EXT ( Self , Other );
+    UNREFERENCED_PARAMETER(a_iArgs);
 
 	Template Spawn = "Goblin";
 	if ( Self.IsPlayer ( ) && GetScriptAdminExt ( ).CallScriptFromScript ( "GetIntelligence" , &Self , &None ) >= 250 ) {
@@ -1370,6 +1318,7 @@ DECLARE_SCRIPT ( MagicSummonGoblin ) {
 
 DECLARE_SCRIPT ( MagicSummonGolem ) {
 	INIT_SCRIPT_EXT ( Self , Other );
+    UNREFERENCED_PARAMETER(a_iArgs);
 
 	Template Spawn = "Golem";
 	if ( Self.IsPlayer ( ) && GetScriptAdminExt ( ).CallScriptFromScript ( "GetIntelligence" , &Self , &None ) >= 350 ) {
@@ -1386,6 +1335,7 @@ DECLARE_SCRIPT ( MagicSummonGolem ) {
 
 DECLARE_SCRIPT ( MagicSummonSkeleton ) {
 	INIT_SCRIPT_EXT ( Self , Other );
+    UNREFERENCED_PARAMETER(a_iArgs);
 
 	Template Spawn = "Skeleton_Sword";
 		if ( Self.IsPlayer ( ) && GetScriptAdminExt ( ).CallScriptFromScript ( "GetIntelligence" , &Self , &None ) >= 250 ) {
@@ -1402,6 +1352,7 @@ DECLARE_SCRIPT ( MagicSummonSkeleton ) {
 
 DECLARE_SCRIPT ( MagicSummonCompanion ) { 
 	INIT_SCRIPT_EXT ( Self , Other );
+    UNREFERENCED_PARAMETER(a_iArgs);
 
 	Template Spawn = Self.Interaction.GetSpell ( ).Magic.GetSpawn ( ).GetTemplate ( );
 	GEFloat multiplicator = 1.0f;
@@ -1416,6 +1367,8 @@ DECLARE_SCRIPT ( MagicSummonCompanion ) {
 
 GEInt MagicSummonArmyOfDarkness ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntity , Entity* a_pOtherEntity , GEInt p_args ) {
 	INIT_SCRIPT_EXT ( Self , Other );
+    UNREFERENCED_PARAMETER(p_args);
+
 	GEInt amount = 4;
 	GEInt position = 0;
 	using MSR = void( * )( Entity p_entity);
@@ -1433,6 +1386,7 @@ GEInt MagicSummonArmyOfDarkness ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSe
 
 GEInt GE_STDCALL CleanUpPlunderInv ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntity , Entity* a_pOtherEntity , GEI32 a_iArgs ) {
 	INIT_SCRIPT_EXT ( Self , Other );
+    UNREFERENCED_PARAMETER(a_iArgs);
 
 	// Remove Weapons of Demons and Remove Weapons of Summoned Creatures!
 	if ( Self.NPC.Species == gESpecies_Demon || Self.Party.PartyMemberType == gEPartyMemberType_Summoned ) {
@@ -1454,6 +1408,7 @@ GEInt GE_STDCALL CleanUpPlunderInv ( gCScriptProcessingUnit* a_pSPU , Entity* a_
 
 DECLARE_SCRIPT ( DropHandItems ) {
 	INIT_SCRIPT_EXT ( Self , Other );
+    UNREFERENCED_PARAMETER(a_iArgs);
 
 	GEBool decay = GEFalse;
 	if ( Self.Party.PartyMemberType == gEPartyMemberType_Summoned || Self.NPC.Species == gESpecies_Demon ) {
@@ -1664,11 +1619,6 @@ void HookFunctions ( ) {
 	//Hook_GetAniName
 	//	.Prepare ( RVA_Game ( 0x16f840 ) , &GetAniName , mCBaseHook::mEHookType_ThisCall )
 	//	.Hook ( );
-}
-
-ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION ( MenTest )
-{
-	return 0;
 }
 
 /*ME_DEFINE_AND_REGISTER_SCRIPT ( MagicSummonWolfPack )

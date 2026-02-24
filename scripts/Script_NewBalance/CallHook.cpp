@@ -31,7 +31,7 @@ void Shoot_Velocity ( gCScriptProcessingUnit* p_PSU , Entity* p_self , Entity* p
 		return;
 
 	Entity projectileItem = p_self->Inventory.GetItemFromSlot ( gESlot_RightHand );
-	p_projectile->AccessProperty<PSProjectile::PropertyShootVelocity> ( ) = shootVelocity;
+	p_projectile->AccessProperty<PSProjectile::PropertyShootVelocity> ( ) = static_cast<GEFloat>(shootVelocity);
 
 	if ( false ) // Config later
 		return;
@@ -59,11 +59,13 @@ void Shoot_Velocity ( gCScriptProcessingUnit* p_PSU , Entity* p_self , Entity* p
 	bCVector targetVec = targetVecPos - projectileItem.GetPosition ( );
 	
 	// Absolute Randomness of shots
-	targetVecPos.AccessX ( ) += ( Entity::GetRandomNumber ( 200*NPC_AIM_INACCURACY ) - 100* NPC_AIM_INACCURACY );
+    targetVecPos.AccessX() +=
+        (Entity::GetRandomNumber(static_cast<GEInt>(200 * NPC_AIM_INACCURACY)) - 100 * NPC_AIM_INACCURACY);
 	//targetVec.AccessY ( ) += ( Entity::GetRandomNumber ( 50 ) - 25 );
-	targetVecPos.AccessZ ( ) += ( Entity::GetRandomNumber ( 200*NPC_AIM_INACCURACY ) - 100 * NPC_AIM_INACCURACY );
+    targetVecPos.AccessZ() +=
+        (Entity::GetRandomNumber(static_cast<GEInt>(200 * NPC_AIM_INACCURACY)) - 100 * NPC_AIM_INACCURACY);
 
-	bCVector newTargetDirectionVec = ( targetVecPos + ( p_target->GetGameEntity ( )->GetLinearVelocity ( ) * time ) ) - projectileItem.GetPosition ( );
+	bCVector newTargetDirectionVec = ( targetVecPos + ( p_target->GetGameEntity ( )->GetLinearVelocity ( ) * static_cast<GEFloat>(time) ) ) - projectileItem.GetPosition ( );
 
 	// Speed relative Randomness of shots
 	GEFloat xDiff = newTargetDirectionVec.GetX ( ) - targetVec.GetX();
@@ -93,7 +95,7 @@ void CombatMoveScale ( void* p_Ptr , gCScriptProcessingUnit* p_PSU, bCVector* ve
 	case gEAction_ParadeStumbleL:
 	case gEAction_ParadeStumbleR:
 	case gEAction_PierceStumble:
-		vec->Scale ( 0.5 );
+		vec->Scale ( 0.5f );
 		break;
 	case gEAction_LieKnockDown:
 	case gEAction_LieKnockOut:
@@ -101,17 +103,17 @@ void CombatMoveScale ( void* p_Ptr , gCScriptProcessingUnit* p_PSU, bCVector* ve
 		break;
 	case gEAction_HackAttack:
 		if ( Self.NPC.GetProperty<PSNpc::PropertySpecies> ( ) == gESpecies_Orc )
-			vec->Scale ( 2.17 * ATTACK_REACH_MULTIPLIER );
+			vec->Scale ( 2.17f * ATTACK_REACH_MULTIPLIER );
 		else 
-			vec->Scale ( 1.2 * ATTACK_REACH_MULTIPLIER );
+			vec->Scale ( 1.2f * ATTACK_REACH_MULTIPLIER );
 		break;
 	case gEAction_QuickAttack:
 	case gEAction_QuickAttackR:
 	case gEAction_QuickAttackL:
-		vec->Scale ( 0.85 * ATTACK_REACH_MULTIPLIER );
+		vec->Scale ( 0.85f * ATTACK_REACH_MULTIPLIER );
 		break;
 	case gEAction_PowerAttack:
-		vec->Scale ( 1.2 * ATTACK_REACH_MULTIPLIER );
+		vec->Scale ( 1.2f * ATTACK_REACH_MULTIPLIER );
 		break;
 	default:
 		vec->Scale ( ATTACK_REACH_MULTIPLIER );

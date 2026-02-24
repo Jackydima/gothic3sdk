@@ -14,11 +14,11 @@ extern GEInt npcSTRAddition;
 // Configureable
 
 //NPC Level for Powergroup
-extern GEU32 bossLevel;
-extern GEU32 uniqueLevel;
-extern GEU32 eliteLevel;
-extern GEU32 warriorLevel;
-extern GEU32 noviceLevel;
+extern GEInt bossLevel;
+extern GEInt uniqueLevel;
+extern GEInt eliteLevel;
+extern GEInt warriorLevel;
+extern GEInt noviceLevel;
 
 extern GEInt KnockDownThreshold;
 extern GEInt MonsterRageModus;
@@ -64,14 +64,14 @@ extern GEInt staminaRecoveryDelay;
 extern GEInt staminaRecoveryPerTick;
 extern GEFloat fMonsterDamageMultiplicator; // Default 0.5
 extern GEDouble npcArmorMultiplier;
-extern GEDouble playerArmorMultiplier;
+extern GEFloat playerArmorMultiplier;
 extern GEInt startSTR;
 extern GEInt startDEX;
 extern GEDouble attackRangeAI;
 extern GEDouble telekinesisRange;
 extern GEDouble shootVelocity;
-extern GEDouble NPC_AIM_INACCURACY;
-extern GEDouble ATTACK_REACH_MULTIPLIER;
+extern GEFloat NPC_AIM_INACCURACY;
+extern GEFloat ATTACK_REACH_MULTIPLIER;
 extern GEInt elementalPerkBonusResistance;
 
 extern GEFloat animationSpeedBonusMid;

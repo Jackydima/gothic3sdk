@@ -11,10 +11,26 @@
 #include "SharedConfig.h"
 
 
-#ifndef NDEBUG
-#define print(format, ...) std::fprintf(stdout, format, __VA_ARGS__)
+#ifndef GE_DEBUG
+template <typename... Args>
+void print(const char *format, Args... args)
+{}
+
+template <typename... Args>
+void println(const char *format, Args... args)
+{}
 #else
-#define print(format, ...) ;
+template <typename... Args>
+void print(const char *format, Args... args)
+{
+    std::fprintf(stdout, format, args...);
+}
+template <typename... Args>
+void println(const char *format, Args... args)
+{
+    std::fprintf(stdout, format, args...);
+    std::fprintf(stdout, "\n");
+}
 #endif
 
 enum VulnerabilityStatus {
@@ -68,4 +84,4 @@ GEBool IsInRecovery ( Entity& p_entity );
 GEInt speciesLeftHand ( Entity p_entity );
 GEInt speciesRightHand ( Entity p_entity );
 WarriorType GetWarriorType ( Entity& p_entity );
-GEU32 getLastTimeFromMap ( bCString iD , std::map<bCString , GEU32>& map );
+GEInt getLastTimeFromMap ( bCString iD , std::map<bCString , GEInt>& map );

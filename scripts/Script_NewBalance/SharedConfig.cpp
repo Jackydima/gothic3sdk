@@ -9,11 +9,11 @@ GEInt npcSTRAddition = 15;
 // 
 // Configureable
 
-GEU32 bossLevel = 65;
-GEU32 uniqueLevel = 45;
-GEU32 eliteLevel = 35;
-GEU32 warriorLevel = 30;
-GEU32 noviceLevel = 20;
+GEInt bossLevel = 65;
+GEInt uniqueLevel = 45;
+GEInt eliteLevel = 35;
+GEInt warriorLevel = 30;
+GEInt noviceLevel = 20;
 
 GEInt KnockDownThreshold = 5;
 GEInt MonsterRageModus = 0;
@@ -53,20 +53,20 @@ GEFloat NPCStrengthMultiplicator = 1.8f;
 GEFloat NPCStrengthCorrection = -50.0f;
 GEFloat NPCDamageReductionMultiplicator = 0.5f;
 GEInt poiseThreshold = -2;
-GEFloat npcArenaSpeedMultiplier = 1.1;
-GEFloat npcWeaponDamageMultiplier = 0.15;
+GEFloat npcArenaSpeedMultiplier = 1.1f;
+GEFloat npcWeaponDamageMultiplier = 0.15f;
 GEInt staminaRecoveryDelay = 20;
 GEInt staminaRecoveryPerTick = 13;
-GEFloat fMonsterDamageMultiplicator = 0.5; // Default 0.5
+GEFloat fMonsterDamageMultiplicator = 0.5f; // Default 0.5
 GEDouble npcArmorMultiplier = 1.5;
-GEDouble playerArmorMultiplier = 0.4;
+GEFloat playerArmorMultiplier = 0.4f;
 GEInt startSTR = 0;
 GEInt startDEX = 0;
 GEDouble attackRangeAI = 3000.0;
 GEDouble telekinesisRange = 4000.0;
 GEDouble shootVelocity = 300.0;
-GEDouble NPC_AIM_INACCURACY = 0.40;
-GEDouble ATTACK_REACH_MULTIPLIER = 1.75;
+GEFloat NPC_AIM_INACCURACY = 0.40f;
+GEFloat ATTACK_REACH_MULTIPLIER = 1.75f;
 GEInt elementalPerkBonusResistance = 35;
 GEFloat animationSpeedBonusMid = 1.5f;
 GEFloat animationSpeedBonusHigh = 2.0f;
