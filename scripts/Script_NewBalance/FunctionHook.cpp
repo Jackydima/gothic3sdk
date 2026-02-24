@@ -630,7 +630,7 @@ void GE_STDCALL StartTransform(Entity *p_targetEntity, GEFloat p_duration, GEBoo
 
     GEInt playerLevel = Self.NPC.GetProperty<PSNpc::PropertyLevel>();
     GEBool isDruid = Self.Inventory.IsSkillActive("Perk_Druid");
-    GEBool isWaterMage = Self.Inventory.IsSkillActive("Perk_WaterMage");
+    GEBool isWaterMage = Self.Inventory.IsSkillActive("Perk_Watermage");
     GEBool hasManaRegen = Self.Inventory.IsSkillActive("Perk_MasterMage");
     GEInt targetLevel = p_targetEntity->NPC.GetProperty<PSNpc::PropertyLevelMax>();
 

@@ -293,7 +293,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     if (Player == DamagerOwner && !Player.NPC.IsTransformed())
     {
         // PC-ATTR-BONUS
-        GEInt iAttributeBonusDamage;
+        GEInt iAttributeBonusDamage = 0;
 
         // Magic damage
         if (IsSpellContainerNB(Damager))
@@ -363,7 +363,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
                         reqAttributeTag = item->AccessReqAttrib1Tag();
                     }
                     // if ( arr != nullptr ) reqAttributeTag = bCString ( arr );
-                    if (playerRightWeaponType == gEUseType_Staff || reqAttributeTag.Contains("INT")
+                    if (playerRightWeaponType == gEUseType_Staff || reqAttributeTag == "INT"
                         || (DamagerOwner.Inventory.GetItemFromSlot(gESlot_RightHand) != None
                             && DamagerOwner.Inventory.GetItemFromSlot(gESlot_RightHand).IsItem()
                             && DamagerOwner.Inventory.GetItemFromSlot(gESlot_RightHand).Item.GetQuality()
@@ -371,7 +371,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
                     {
                         if ((playerRightWeaponType == gEUseType_1H
                              && Player.Inventory.GetUseType(leftWeaponStackIndex) == gEUseType_1H)
-                            || reqAttributeTag.Contains("DEX"))
+                            || reqAttributeTag == "DEX")
                         {
                             iAttributeBonusDamage =
                                 static_cast<GEInt>(dexterity * 0.3 + intelligence * 0.35
@@ -403,7 +403,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
                     {
                         iAttributeBonusDamage = static_cast<GEInt>(strength * 0.3 + dexterity * 0.35);
                     }
-                    else if (reqAttributeTag.Contains("DEX"))
+                    else if (reqAttributeTag == "DEX")
                     {
                         iAttributeBonusDamage = static_cast<GEInt>(strength * 0.2 + dexterity * 0.4);
                     }
@@ -602,8 +602,6 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     //
     // Schritt 3: Angriffsart
     //
-    if (DamageTypeEntityTestNB(Victim, Damager) == VulnerabilityStatus_IMMUNE && FinalDamage2 > 5)
-        FinalDamage2 = 5;
 
     // Monster attacks Orc or Human (NPC)
     if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &Victim, &None, 0)
@@ -677,6 +675,9 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     }
 
     if (FinalDamage2 < 5)
+        FinalDamage2 = 5;
+
+    if (DamageTypeEntityTestNB(Victim, Damager) == VulnerabilityStatus_IMMUNE && FinalDamage2 > 5)
         FinalDamage2 = 5;
 
     //
@@ -764,7 +765,8 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     else if (!Victim.NPC.IsFrozen()
              && (ScriptAdmin.CallScriptFromScript("CanParade", &Victim, &DamagerOwner, 0)
                  || (Victim.Routine.GetStateTime() < 0.1f
-                     && Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAniState_Parade)
+                     && Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAniState_Parade
+                     && Victim.IsInFOV(DamagerOwner))
                  // This can maybe a good feature , when registering attacks right in the beginning
                  || (Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAniState_SitKnockDown
                      && GetHeldWeaponCategoryNB(Victim) == gEWeaponCategory_Melee && Victim.IsInFOV(DamagerOwner)
@@ -801,7 +803,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         if (enablePerfectBlock && GetHeldWeaponCategoryNB(DamagerOwner) == gEWeaponCategory_Melee
             && (!playerOnlyPerfectBlock || Victim.IsPlayer()))
         {
-            if (lastHit > 12
+            if (lastHit > 12 && Victim.IsInFOV(DamagerOwner)
                 && (Victim.Routine.GetStateTime() < 0.05
                     || (DamagerOwnerAction != gEAction_PowerAttack && DamagerOwnerAction != gEAction_HackAttack
                         && DamagerOwnerAction != gEAction_SprintAttack && Victim.Routine.GetStateTime() < 0.1f))
