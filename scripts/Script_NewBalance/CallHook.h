@@ -1,23 +1,22 @@
 #pragma once
 
+#include "SharedConfig.h"
+#include "utility.h"
+
 #include <g3sdk/Script.h>
 
-#include "utility.h"
-#include "SharedConfig.h"
+void FixDualOneHanded(gCScriptProcessingUnit *p_PSU);
 
+void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_target, PSProjectile *p_projectile);
 
-void FixDualOneHanded ( gCScriptProcessingUnit* p_PSU );
+void CombatMoveScale(void *p_Ptr, gCScriptProcessingUnit *p_PSU, bCVector *vec);
 
-void Shoot_Velocity ( gCScriptProcessingUnit* p_PSU , Entity* p_self , Entity* p_target, PSProjectile* p_projectile );
+void PS_Ranged_PowerAim(void *p_Ptr, gCScriptProcessingUnit *p_PSU, void *esp);
 
-void CombatMoveScale ( void* p_Ptr , gCScriptProcessingUnit* p_PSU, bCVector* vec );
+void ZS_Ranged_PowerAim(void *p_Ptr, gCScriptProcessingUnit *p_PSU, void *esp);
 
-void PS_Ranged_PowerAim ( void* p_Ptr , gCScriptProcessingUnit* p_PSU, void* esp );
+void AssureProjectiles(GEInt registerBaseStack);
 
-void ZS_Ranged_PowerAim ( void* p_Ptr , gCScriptProcessingUnit* p_PSU, void* esp );
+void GiveXPPowerlevel(gCNPC_PS *p_npc);
 
-void AssureProjectiles ( GEInt registerBaseStack );
-
-void GiveXPPowerlevel ( gCNPC_PS* p_npc );
-
-void HookCallHooks ( );
+void HookCallHooks();

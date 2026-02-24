@@ -9,8 +9,3 @@ target_tree_sources(Script_AdjustedTheft
     Script_AdjustedTheft.cpp
     Script_AdjustedTheft.h
 )
-add_custom_command(TARGET Script_AdjustedTheft POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-            "$<TARGET_FILE:Script_AdjustedTheft>"
-            "${SCRIPT_OUTPUT_DIR}"
-)

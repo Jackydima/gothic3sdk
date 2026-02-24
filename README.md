@@ -33,6 +33,12 @@ cmake -S . -B build -G "Visual Studio 17 2022" -A Win32
 cmake --build build --config Release -j
 ```
 
+Update: For newer cmake versions use the adjusted suported minumum policy version
+```
+cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cmake --build build --config Release -j
+```
+
 The above sequence creates a build directory, generates a Visual Studio solution, and then builds the project in Release mode.
 If you prefer working from within Visual Studio, you can skip the last build step and instead open the generated solution in Visual Studio and then build from there.
 

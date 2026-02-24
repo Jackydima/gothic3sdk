@@ -6,21 +6,34 @@ gSScriptInit &GetScriptInit()
     return s_ScriptInit;
 }
 
+static void PatchByte(LPVOID addr, BYTE byte)
+{
+    DWORD currProt, newProt;
+    DWORD size = sizeof(BYTE);
+
+    VirtualProtect(addr, size, PAGE_EXECUTE_READWRITE, &currProt);
+    memset(addr, byte, size);
+    VirtualProtect(addr, size, currProt, &newProt);
+}
+
+
 //
 // CUSTOMIZED SECION
 //
 
-static bCString g_Zombie = "Zombie";
+static bTObjArray<bCString> weaponStringList;
+
 
 //
 // CUSTOMIZED SECION
 //
 
-// Helper struct for allocating correct size of AniObject!
+// Helper struct for allocating correct size of AniObject! Used for deprecated hooks
+/*
 struct AniObject_Type
 {
     char buffer[0x1C];
-};
+};*/
 
 // (DEPRECATED) SuperHACK!!!
 // We want to adjust the Animations-String in the GetMotionDataEntity
@@ -63,19 +76,29 @@ void LoadConfig()
     //
     // CUSTOMIZED SECION
     //
+
+
+    bTObjArray<eCConfigFile::eSConfigValue> weaponList;
+    bTObjArray<eCConfigFile::eSConfigValue> scriptList;
     
     eCConfigFile config = eCConfigFile();
-    eCConfigFile::eSConfigValue entry;
-
-    bTObjArray<eCConfigFile::eSConfigValue> scriptList;
-    scriptList.Clear();
-    if (config.ReadFile(bCString("zombieAnimation.ini")))
+    if (config.ReadFile(bCString("rapierAnimation.ini")))
     {
+        config.GetSectionBlock("RapierEntities", weaponList);
         config.GetSectionBlock("LoadedScripts", scriptList);
     }
-    else
+
+    println("List of weapons:");
+    eCConfigFile::eSConfigValue entry;
+
+    for (GEInt i = 0; i < weaponList.GetCount(); i++)
     {
-        println("Not 'zombieAnimation.ini' file found!");
+        entry = weaponList.AccessAt(i);
+        println("Entry Key: %s,\tEntry Value: %s", entry.m_pstrKey->GetText(), entry.m_pstrValue->GetText());
+        if (*entry.m_pstrValue == "1")
+        {
+            weaponStringList.Add(entry.m_pstrKey->GetText());
+        }
     }
 
     println("List of previous scripts:");
@@ -96,12 +119,31 @@ void LoadConfig()
     //
 }
 
-
 void CustomizeAniString(Entity& p_entity, bCString& p_aniString)
 {
-    if (p_entity.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Zombie)
+    const bCString none1H = "_None_1H_";
+    if (!p_aniString.Contains(none1H) || !p_aniString.Contains("Hero_"))
     {
-        p_aniString.Replace("Hero", g_Zombie);
+        return;
+    }
+
+    Entity rightWeaponEntity = p_entity.Inventory.GetItemFromSlot(gESlot_RightHand);
+
+    if (rightWeaponEntity == None 
+        || rightWeaponEntity.Interaction.GetProperty<PSInteraction::PropertyUseType>() != gEUseType_1H)
+    {
+        return;
+    }
+
+    bCString weaponEntry;
+    for (GEInt i = 0; i < weaponStringList.GetCount(); i++)
+    {
+        weaponEntry = weaponStringList.AccessAt(i);
+        if (weaponEntry == rightWeaponEntity.GetName())
+        {
+            p_aniString.Replace(none1H, "_None_Rapier_");
+            return;
+        }
     }
 }
 
@@ -266,7 +308,7 @@ LPVOID Pre_GetMotionDataEntity(gEAniState p_aniState, gEUseType p_UseTypeLeft, g
             //println("amountPtr: %x", amountPtr);
             GEInt amount = *amountPtr + 1;
             
-            GEInt localArg = amount == 0 ? -1 : 0;
+            GEInt localArg = *amountPtr == 0 ? -1 : 0;
 
             using HelpFunction = void (__fastcall *) (GEInt p_Int1, GEInt p_Int2);
 
@@ -390,7 +432,7 @@ void GetMotionDataEntityAniString(LPVOID p_characterAnimationPtr, bCString *p_an
 }
 
 static mCCallHook Hook_GetCachedMotionDataActor;
-void GetCachedMotionDataActor(LPVOID p_characterAnimationPtr, bCString* p_actorString)
+void GetCachedMotionDataActor(LPVOID p_characterAnimationPtr, bCString *p_actorString)
 {
     if (p_characterAnimationPtr == NULL)
     {
@@ -413,11 +455,6 @@ void GetCachedMotionDataActor(LPVOID p_characterAnimationPtr, bCString* p_actorS
     //
     // CUSTOMIZED SECION
     //
-
-    if (entity.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Zombie)
-    {
-        p_actorString->SetText(g_Zombie);
-    }
 
     //
     // CUSTOMIZED SECION
@@ -474,15 +511,6 @@ GEBool GE_STDCALL PSAnimation_GetSkeletonName(PSAnimation const &This, bCString 
     // CUSTOMIZED SECION
     //
 
-    gCNPC_PS const *NPC = This.IsValid() ? GetPropertySet<gCNPC_PS>(This->GetEntity(), eEPropertySetType_NPC) : nullptr;
-    if (NPC)
-    {
-        if (NPC->GetSpecies() == gESpecies_Zombie)
-        {
-            o_SkeletonName = g_Zombie;
-            return GETrue;
-        }
-    }
 
     //
     // CUSTOMIZED SECION END
@@ -495,6 +523,9 @@ GEBool GE_STDCALL PSAnimation_GetSkeletonName(PSAnimation const &This, bCString 
 extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
 {
     LoadConfig();
+
+    // Essentially patch out caching for Animation ressources out of the animation tables
+    PatchByte(reinterpret_cast<LPVOID>(RVA_Game(0xd95de)), 0xEB); // Change near jump (2 Bytes) instruction JE (0x74) to JMP (0xEB)
 
     /**
     * These Hooks are here to reconstruct the whole function, but are difficult
@@ -518,7 +549,6 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
         .AddStackArg(0xC)
         .RestoreRegister()
         .Hook();
-
 
     Hook_GetAniEx.Hook(RVA_Script(0x15c10), &GetAniEx, mCBaseHook::mEHookType_ThisCall);
 
