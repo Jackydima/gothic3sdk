@@ -10,8 +10,10 @@
 
 #include "SharedConfig.h"
 
+
+#ifndef NDEBUG
 #define print(format, ...) std::fprintf(stdout, format, __VA_ARGS__)
-#ifndef DEBUG
+#else
 #define print(format, ...) ;
 #endif
 
