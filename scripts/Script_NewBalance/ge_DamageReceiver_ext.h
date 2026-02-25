@@ -7,7 +7,7 @@
 #include <g3sdk/util/Module.h>
 #include <g3sdk/util/Util.h>
 
-class gCDamageReceiver_PS_Ext : public gCDamageReceiver_PS
+class __declspec(dllexport) gCDamageReceiver_PS_Ext : public gCDamageReceiver_PS
 {
   public:
     GE_DEFINE_PROPERTY(gCDamageReceiver_PS, GEU32, m_PoisonDamage, PoisonDamage)
@@ -20,4 +20,7 @@ class gCDamageReceiver_PS_Ext : public gCDamageReceiver_PS
     void Invalidate(void);
 };
 
+
+GE_ASSERT_PROPERTY(gCDamageReceiver_PS_Ext, m_PoisonDamage, 0x54, 0x4)
+GE_ASSERT_PROPERTY(gCDamageReceiver_PS_Ext, m_VulnerableState, 0x58, 0x4)
 GE_ASSERT_SIZEOF(gCDamageReceiver_PS_Ext, 0x54 + 0x8)

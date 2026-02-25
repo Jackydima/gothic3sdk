@@ -1,12 +1,16 @@
 #include "ge_DamageReceiver_ext.h"
 
 #include "me_propertymacros.h"
+#include "utility.h"
 
 ME_DEFINE_PROPERTY_TYPE(gCDamageReceiver_PS_Ext, gCDamageReceiver_PS, PoisonDamage, m_PoisonDamage)
 ME_DEFINE_PROPERTY_TYPE(gCDamageReceiver_PS_Ext, gCDamageReceiver_PS, VulnerableState, m_VulnerableState)
 
 gCDamageReceiver_PS_Ext::gCDamageReceiver_PS_Ext(void) : m_PoisonDamage(0), m_VulnerableState(0)
-{}
+{
+    println("Initialized DamageReceiver!");
+    println("Entity: %s", this->GetEntity()->GetName().GetText());
+}
 
 void gCDamageReceiver_PS_Ext::Invalidate()
 {

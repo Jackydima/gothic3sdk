@@ -1199,12 +1199,10 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
         InitGUI();
     }
 
+    mCModuleRegistry::GetInstance().Apply(); // Apply Extections for Classes
+
     HookFunctions();
     HookCallHooks();
-
-    // Hook_Shoot
-    //     .Prepare ( RVA_ScriptGame ( 0x86450 ) , &Shoot )
-    //     .Hook ( );
 
     static mCFunctionHook Hook_Assesshit;
     Hook_Assesshit.Hook(GetScriptAdminExt().GetScript("AssessHit")->m_funcScript, &AssessHit,
