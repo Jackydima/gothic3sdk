@@ -18,10 +18,27 @@ class GE_DLLIMPORT gCSessionKeys : public bCObjectRefBase
     // clang-format on
 
   public:
-    GE_PROPERTY_SET(gCSessionKeys, bCObjectRefBase)
+      using THIS_CLASS = gCSessionKeys;
+      using BASE_CLASS = bCObjectRefBase;
+
+    public:
+      static bCPropertyObjectBase const *__stdcall GetRootObject();
+
+    public:
+      gCSessionKeys();
+      //gCSessionKeys(gCSessionKeys const &);
+
+    public:
+      gCSessionKeys const &operator=(gCSessionKeys const &);
+
+    private:
+      static bTPropertyObject<gCSessionKeys, bCObjectRefBase> ms_PropertyObjectInstance_gCSessionKeys;
 
   public:
     explicit gCSessionKeys(gCSession &);
+
+  protected:
+    gCSessionKeys(gCSessionKeys const &);
 
   public:
     bCOStream &operator>>(bCOStream &);

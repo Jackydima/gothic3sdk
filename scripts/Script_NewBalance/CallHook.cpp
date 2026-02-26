@@ -195,8 +195,67 @@ void GiveXPPowerlevel(gCNPC_PS *p_npc)
     Hook_GiveXPPowerlevel.SetImmEax(powerLevel);
 }
 
+static mCCallHook Hook_Evade;
+void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
+{
+    Entity Self = Entity(a_PSU->GetSelfEntity());
+    Entity Other = Entity(a_PSU->GetOtherEntity());
+    println("Call Hooked OnPlayerGamePressed function in jump session logic");
+    eCKeyboard &keyboard = eCApplication::GetInstance().GetKeyboard();
+    println("Address of Keyboard: %x", &keyboard);
+
+    // Maps SessionKeys to physical Keyboard Keys
+    // Protected constructor workaround
+    gCSessionKeys sessionKeys = gCSessionKeys();
+    sessionKeys = gCSession::GetInstance().GetSessionKeys();
+
+    // Index 0 is default cursor arrows, Index 1 is the alternative keybinds (WASD)
+    eCPhysicalKey *backKey = sessionKeys.GetAssignedKey(gESessionKey_Backward, 1);
+    eCPhysicalKey *leftKey = sessionKeys.GetAssignedKey(gESessionKey_StrafeLeft, 1);
+    eCPhysicalKey *rightKey = sessionKeys.GetAssignedKey(gESessionKey_StrafeRight, 1);
+
+    GEBool backPressed = keyboard.KeyPressed(backKey->m_enuKeyboardStateOffset);
+    GEBool leftPressed = keyboard.KeyPressed(leftKey->m_enuKeyboardStateOffset);
+    GEBool rightPressed = keyboard.KeyPressed(rightKey->m_enuKeyboardStateOffset);
+    // if (keyboard.KeyPressed(eCInpShared::eEKeyboardStateOffset_A))
+
+    if (leftPressed && !rightPressed)
+    {
+        println("Left Evade Initialized");
+        // Self.Routine.SetState("ZS_EvadeLeft");
+        Hook_Evade.SetImmEax(1);
+        return;
+    }
+
+    if (rightPressed && !leftPressed)
+    {
+        println("Right Evade Initialized");
+        // Self.Routine.SetState("ZS_EvadeRight");
+        Hook_Evade.SetImmEax(1);
+        return;
+    }
+
+    if (backPressed)
+    {
+        println("Back Evade Initialized");
+        Self.Routine.SetState("ZS_EvadeBackward");
+        Hook_Evade.SetImmEax(1);
+        return;
+    }
+
+    GEInt retVal = GetScriptAdmin().CallScriptFromScript("OnPlayerJump", &Self, &None);
+    Hook_Evade.SetImmEax(retVal);
+}
+
 void HookCallHooks()
 {
+    Hook_Evade.Prepare(RVA_ScriptGame(0x62119), &EvadeMechanic, mCBaseHook::mEHookType_Mixed, mERegisterType_Eax)
+        .InsertCall()
+        .AddPtrStackArgEbp(0x8)
+        .RestoreRegister()
+        .ReplaceSize(0x6212f - 0x62119)
+        .Hook();
+
     Hook_FixDualOneHanded.Prepare(RVA_ScriptGame(0x482e7), &FixDualOneHanded, mCBaseHook::mEHookType_OnlyStack)
         .InsertCall()
         .AddPtrStackArg(0x2B8)
