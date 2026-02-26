@@ -13,11 +13,11 @@
 
 #ifndef GE_DEBUG
 template <typename... Args>
-void print(const char *format, Args... args)
+void print(const char *, Args...)
 {}
 
 template <typename... Args>
-void println(const char *format, Args... args)
+void println(const char *, Args...)
 {}
 #else
 template <typename... Args>

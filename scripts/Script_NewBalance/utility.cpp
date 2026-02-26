@@ -963,8 +963,8 @@ GEBool IsInRecovery(Entity &p_entity)
         return GEFalse;
 
     bCString *ptrCurrentMotionDescription = (bCString *)(*(GEU32 *)((GEU32)va + 0xE8) + 0x4);
-    GEInt firstP = ptrCurrentMotionDescription->Find("_", 4);
-    GEInt secondP = ptrCurrentMotionDescription->Find("_", 12);
+    // GEInt firstP = ptrCurrentMotionDescription->Find("_", 4);
+    // GEInt secondP = ptrCurrentMotionDescription->Find("_", 12);
     bCString test = "";
     ptrCurrentMotionDescription->GetWord(4, "_", test, GETrue, GETrue);
     if (test.Contains("P0") && ptrCurrentMotionDescription->Contains("Recover"))
@@ -1054,13 +1054,16 @@ GEInt getLastTimeFromMap(bCString iD, std::map<bCString, GEInt> &map)
         else
             ++it;
     }
-    try
+
+    auto it = map.find(iD);
+    if (it != map.end())
     {
-        retVal = worldTime - map.at(iD);
+        retVal = worldTime - it->second;
     }
-    catch (std::exception e)
+    else
     {
         retVal = ULONG_MAX;
     }
+
     return retVal;
 }

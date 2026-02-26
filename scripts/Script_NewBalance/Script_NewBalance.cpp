@@ -110,14 +110,17 @@ static GEU32 getPerfectBlockLastTime(bCString iD)
         else
             ++it;
     }
-    try
+
+    auto it = PerfektBlockTimeStampMap.find(iD);
+    if (it != PerfektBlockTimeStampMap.end())
     {
-        retVal = worldTime - PerfektBlockTimeStampMap.at(iD);
+        retVal = worldTime - it->second;
     }
-    catch (std::exception e)
+    else
     {
         retVal = ULONG_MAX;
     }
+
     return retVal;
 }
 // wird aufgerufen von DoLogicalDamage
@@ -1165,7 +1168,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
 void AddNewEffect()
 {
     // EffectModulePtr
-    DWORD EffectModulePtr = ((DWORD(*)(void))(RVA_Game(0x601f0)))();
+    DWORD EffectModulePtr = ((DWORD (*)(void))(RVA_Game(0x601f0)))();
     std::cout << "EffectModule Pointer: " << EffectModulePtr << "\n";
     if (EffectModulePtr == 0)
         return;
