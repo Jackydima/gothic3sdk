@@ -1342,7 +1342,8 @@ void OnTouch(eCEntity *p_entity, eCContactIterator *p_contactIterator)
             spawn.Damage.AccessProperty<PSDamage::PropertyDamageAmount>() = damageAmount;
             GEInt manaUsed = damagePS.GetProperty<PSDamage::PropertyManaUsed>();
             spawn.Damage.AccessProperty<PSDamage::PropertyManaUsed>() = manaUsed;
-            DoAOEDamage(spawn, Entity(p_entity));
+            Entity entity = Entity(p_entity);
+            DoAOEDamage(spawn, entity);
             spawn.Decay();
             eCE->EnablePicking(GEFalse, GEFalse); // Also really good!
             return;
@@ -1534,12 +1535,16 @@ GEInt MagicSummonArmyOfDarkness(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfE
     MSR MonsterSpawnRemover = (MSR)RVA_ScriptGame(0x54770);
     MonsterSpawnRemover(Self);
 
+    Template spawn1 = Template("ArmyOfDarknessSpawn1");
+    Template spawn2 = Template("ArmyOfDarknessSpawn2");
+    Template spawnBoss = Template("ArmyOfDarknessBoss");
+
     for (GEInt i = 0; i < amount; i++)
     {
-        PartyMonsterSpawn(Self, Template("ArmyOfDarknessSpawn1"), position++, GEFalse);
-        PartyMonsterSpawn(Self, Template("ArmyOfDarknessSpawn2"), position++, GEFalse);
+        PartyMonsterSpawn(Self, spawn1, position++, GEFalse);
+        PartyMonsterSpawn(Self, spawn2, position++, GEFalse);
     }
-    PartyMonsterSpawn(Self, Template("ArmyOfDarknessBoss"), position++, GEFalse);
+    PartyMonsterSpawn(Self, spawnBoss, position++, GEFalse);
 
     return 1;
 }
