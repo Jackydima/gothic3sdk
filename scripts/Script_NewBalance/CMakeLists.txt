@@ -23,4 +23,9 @@ target_tree_sources(Script_NewBalance
     SharedConfig.h
     utility.cpp
     utility.h
+    StateFunctions.cpp
+    StateFunctions.h
+    AIFunctions.h
+    AIFunctions.cpp
+    ScriptArgs.h
 )

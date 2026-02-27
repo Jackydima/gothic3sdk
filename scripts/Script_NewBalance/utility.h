@@ -1,4 +1,5 @@
 #pragma once
+#include "ScriptArgs.h"
 #include "SharedConfig.h"
 
 #include <g3sdk/Script.h>

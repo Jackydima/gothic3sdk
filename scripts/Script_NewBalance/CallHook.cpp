@@ -210,19 +210,26 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     sessionKeys = gCSession::GetInstance().GetSessionKeys();
 
     // Index 0 is default cursor arrows, Index 1 is the alternative keybinds (WASD)
-    eCPhysicalKey *backKey = sessionKeys.GetAssignedKey(gESessionKey_Backward, 1);
-    eCPhysicalKey *leftKey = sessionKeys.GetAssignedKey(gESessionKey_StrafeLeft, 1);
-    eCPhysicalKey *rightKey = sessionKeys.GetAssignedKey(gESessionKey_StrafeRight, 1);
+    eCPhysicalKey *backKey = sessionKeys.GetAssignedKey(gESessionKey_Backward, 0);
+    eCPhysicalKey *leftKey = sessionKeys.GetAssignedKey(gESessionKey_StrafeLeft, 0);
+    eCPhysicalKey *rightKey = sessionKeys.GetAssignedKey(gESessionKey_StrafeRight, 0);
 
-    GEBool backPressed = keyboard.KeyPressed(backKey->m_enuKeyboardStateOffset);
-    GEBool leftPressed = keyboard.KeyPressed(leftKey->m_enuKeyboardStateOffset);
-    GEBool rightPressed = keyboard.KeyPressed(rightKey->m_enuKeyboardStateOffset);
+    eCPhysicalKey *backKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_Backward, 1);
+    eCPhysicalKey *leftKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_StrafeLeft, 1);
+    eCPhysicalKey *rightKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_StrafeRight, 1);
+
+    GEBool backPressed = keyboard.KeyPressed(backKey->m_enuKeyboardStateOffset)
+                      || keyboard.KeyPressed(backKeyAlt->m_enuKeyboardStateOffset);
+    GEBool leftPressed = keyboard.KeyPressed(leftKey->m_enuKeyboardStateOffset)
+                      || keyboard.KeyPressed(leftKeyAlt->m_enuKeyboardStateOffset);
+    GEBool rightPressed = keyboard.KeyPressed(rightKey->m_enuKeyboardStateOffset)
+                       || keyboard.KeyPressed(rightKeyAlt->m_enuKeyboardStateOffset);
     // if (keyboard.KeyPressed(eCInpShared::eEKeyboardStateOffset_A))
 
     if (leftPressed && !rightPressed)
     {
         println("Left Evade Initialized");
-        // Self.Routine.SetState("ZS_EvadeLeft");
+        // Self.Routine.SetState("NB_EvadeLeft");
         Hook_Evade.SetImmEax(1);
         return;
     }
@@ -230,7 +237,7 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     if (rightPressed && !leftPressed)
     {
         println("Right Evade Initialized");
-        // Self.Routine.SetState("ZS_EvadeRight");
+        // Self.Routine.SetState("NB_EvadeRight");
         Hook_Evade.SetImmEax(1);
         return;
     }
@@ -238,7 +245,7 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     if (backPressed)
     {
         println("Back Evade Initialized");
-        Self.Routine.SetState("ZS_EvadeBackward");
+        Self.Routine.SetState("NB_EvadeBackward");
         Hook_Evade.SetImmEax(1);
         return;
     }
