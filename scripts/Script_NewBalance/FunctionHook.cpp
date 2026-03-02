@@ -1656,8 +1656,342 @@ GEBool ZS_RagdollDeadAddition(bTObjStack<gScriptRunTimeSingleState> &a_rRunTimeS
     return retValue;
 }
 
+static mCFunctionHook Hook_sAICombatMoveStart;
+GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_args, gCScriptProcessingUnit *p_SPU)
+{
+    // TODO Reverse Engineer it!
+    /*p_SPU->SetSelfEntity(p_args->SelfEntity);
+    p_SPU->SetOtherEntity(p_args->TargetEntity);
+    //*reinterpret_cast<gEAction *>(p_SPU + 0x154) = p_args->Action;
+    p_SPU->m_fInstrAction = p_args->Action;
+
+
+    if (!p_args->SelfEntity)
+        return GEFalse;
+
+    p_SPU->m_fSelfMovementPS =
+        GetPropertySet<gCCharacterMovement_PS>(p_args->SelfEntity, eEPropertySetType_CharacterMovement);
+
+    if (!p_SPU->m_fSelfMovementPS)
+        return GEFalse;
+
+    bCVector directionVec;
+    directionVec.Clear();
+    if (!p_SPU->m_OtherEntity.GetEntity())
+    {
+        auto selfEntity = p_SPU->m_SelfEntity.GetEntity();
+        gCCharacterControl_PS* selfCCPtr = GetPropertySet<gCCharacterControl_PS>(selfEntity,
+    eEPropertySetType_CharacterControl); if (!selfCCPtr)
+        {
+            directionVec = selfEntity->GetWorldMatrix().GetZAxis();
+        }
+        else
+        {
+            //desired direction of character controll?
+            directionVec = *reinterpret_cast<bCVector *>(reinterpret_cast<uintptr_t>(selfCCPtr) + 0x60);
+            if (directionVec.HasZeroMagnitude2D(bCVector::bECoordinate_Y))
+            {
+                directionVec = selfEntity->GetWorldMatrix().GetZAxis();
+            }
+        }
+    }
+    else
+    {
+        directionVec = p_SPU->GetOtherEntity()->GetWorldPosition() - p_SPU->GetSelfEntity()->GetWorldPosition();
+    }
+
+    p_SPU->m_fDirectionVec = directionVec;
+
+    if (p_SPU->m_fSelfMovementPS->GetMovementIsControledByPlayer())
+    {
+        gCCameraAI_PS *cameraPtr = gCSession::GetInstance().GetCamera_PS();
+        if (cameraPtr)
+        {
+            p_SPU->m_fDirectionVec = cameraPtr->GetEntity()->GetAtVector();
+        }
+    }*/
+
+    if (p_args->Action != gEAction_Evade)
+    {
+        return Hook_sAICombatMoveStart.GetOriginalFunction(&sAICombatMoveStart)(p_args, p_SPU);
+    }
+
+    p_SPU->m_Speaker.SetEntity(p_args->SelfEntity);
+    p_SPU->m_CombatTarget.SetEntity(p_args->TargetEntity);
+    p_SPU->m_fInstrAction = p_args->Action;
+
+    if (!p_args->SelfEntity)
+    {
+        println("Missing Self Entity");
+        return GEFalse;
+    }
+
+    p_SPU->m_fSelfMovementPS =
+        GetPropertySet<gCCharacterMovement_PS>(p_args->SelfEntity, eEPropertySetType_CharacterMovement);
+
+    if (!p_SPU->m_fSelfMovementPS)
+    {
+        println("Missing CharacterMovementPS");
+        return GEFalse;
+    }
+
+    p_SPU->m_fDirectionVec.Normalize();
+
+    p_SPU->m_fSelfNavigationPS = GetPropertySet<gCNavigation_PS>(p_SPU->GetSelfEntity(), eEPropertySetType_Navigation);
+    if (p_SPU->m_fSelfNavigationPS)
+        p_SPU->m_fSelfNavigationPS->SetCurrentAniDirection(gEDirection_Back);
+
+    const GEFloat EvadeLength = 250;
+    bCString aniName;
+    auto Self = p_SPU->GetSelfEntity();
+
+    if (p_args->PhaseName.Contains("Right"))
+    {
+        if (p_args->PhaseName == "Right_Raise")
+        {
+            aniName = "Hero_EvadeRight_Raise";
+        }
+
+        else if (p_args->PhaseName == "Right_Recover")
+        {
+            aniName = "Hero_EvadeRight_Recover";
+        }
+
+        else
+        {
+            aniName = "Hero_EvadeRight_Hit";
+        }
+
+        p_SPU->m_fDirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
+    }
+    else if (p_args->PhaseName.Contains("Left"))
+    {
+        if (p_args->PhaseName == "Left_Raise")
+        {
+            aniName = "Hero_EvadeLeft_Raise";
+        }
+
+        else if (p_args->PhaseName == "Left_Recover")
+        {
+            aniName = "Hero_EvadeLeft_Recover";
+        }
+
+        else
+        {
+            aniName = "Hero_EvadeLeft_Hit";
+        }
+
+        p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
+    }
+    else
+    {
+        if (p_args->PhaseName == "Raise")
+        {
+            aniName = "Hero_EvadeBack_Raise";
+            // p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetXAxis() * EvadeLength;
+        }
+
+        else if (p_args->PhaseName == "Recover")
+        {
+            aniName = "Hero_EvadeBack_Recover";
+            // p_SPU->m_fDirectionVec = Self->GetWorldMatrix().GetXAxis() * EvadeLength;
+        }
+
+        else
+        {
+            aniName = "Hero_EvadeBack_Hit";
+            // p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetZAxis() * EvadeLength;
+        }
+
+        p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
+    }
+
+    p_SPU->m_fAniString = aniName;
+
+    gCNavigation_PS *selfNavigationPS = GetPropertySet<gCNavigation_PS>(Self, eEPropertySetType_Navigation);
+    if (selfNavigationPS)
+        selfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
+
+    p_SPU->m_fSelfAnimationPS =
+        GetPropertySet<eCVisualAnimation_PS>(p_SPU->GetSelfEntity(), eEPropertySetType_Animation);
+
+    if (!p_SPU->m_fSelfAnimationPS)
+    {
+        println("Missing Visual Animation");
+        return GEFalse;
+    }
+
+    // const char *nativAniFileExt = reinterpret_cast<const char *>(RVA_Engine(0x602ef8));
+    p_SPU->m_fAniString += eCResourceAnimationMotion_PS().GetNativeFileExt();
+
+    eCAnimationAdmin *animationAdmin = FindModule<eCAnimationAdmin>();
+    if (!animationAdmin)
+    {
+        println("Missing animationAdmin");
+        return GEFalse;
+    }
+
+    eCResourceDataEntity *resDataEntity = NULL;
+    GEBool isAniMissed = animationAdmin->IsAnimationMissed(aniName);
+    if (!isAniMissed)
+    {
+        resDataEntity = animationAdmin->QueryMotionDataEntity(aniName, eEResourceCacheBehavior_Immediate);
+    }
+
+    if (isAniMissed || !resDataEntity)
+    {
+        animationAdmin->AddMissingAnimation(aniName);
+        println(aniName);
+        println("Ani for Evading is missing");
+        return GEFalse;
+    }
+
+    gCNPC_PS *selfNPCPS = GetPropertySet<gCNPC_PS>(p_SPU->GetSelfEntity(), eEPropertySetType_NPC);
+    bCString resDataEntityFileName = resDataEntity->GetFileName();
+    if (selfNPCPS)
+    {
+        selfNPCPS->SetCurrentMovementAni(resDataEntityFileName);
+    }
+
+    eCWrapper_emfx2Actor *selfActor = p_SPU->m_fSelfAnimationPS->GetActor();
+    if (!selfActor)
+    {
+        println("Missing Actor");
+        return GEFalse;
+    }
+
+    GEFloat extroBlending = selfActor->GetExtroBlending(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst);
+    selfActor->SetIntroExtroBlending(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, resDataEntityFileName);
+
+    if (p_SPU->m_fSelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst))
+    {
+        if (selfActor->IsMotionRunning(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst))
+        {
+            if (p_SPU->m_fAniString.Contains("_Begin_"))
+            {
+                selfActor->SwitchFadeOut(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, GEFalse, 0.1f);
+            }
+            else
+            {
+                GEFloat introBlending = selfActor->GetIntroBlending(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst);
+                selfActor->SwitchFadeOut(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, GEFalse,
+                                         Min(introBlending, extroBlending));
+            }
+        }
+        else
+        {
+            selfActor->SwitchFadeOut(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, GEFalse, extroBlending);
+        }
+
+        p_SPU->m_fSelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, 0.0f);
+        selfActor->SetTargetWeight(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, 0.0f);
+        p_SPU->m_fSelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst,
+                                                  static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(2));
+    }
+
+    if (p_SPU->m_fSelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond))
+    {
+        p_SPU->m_fSelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond, 0.0f);
+        selfActor->SetTargetWeight(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond, 0.0f);
+        p_SPU->m_fSelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond,
+                                                  static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(2));
+    }
+
+    if (p_SPU->m_fSelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird))
+    {
+        p_SPU->m_fSelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird, 0.0f);
+        selfActor->SetTargetWeight(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird, 0.0f);
+        p_SPU->m_fSelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird,
+                                                  static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(2));
+    }
+
+    if (p_SPU->m_fSelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth))
+    {
+        p_SPU->m_fSelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth, 0.0f);
+        selfActor->SetTargetWeight(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth, 0.0f);
+        p_SPU->m_fSelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth,
+                                                  static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(2));
+    }
+
+    p_SPU->m_fSelfAnimationPS->SetMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, resDataEntity);
+
+    p_SPU->m_fAniSpeedScale = p_args->AniSpeedScale;
+    p_SPU->m_fMotionDesc = eCWrapper_emfx2Motion::eSMotionDesc();
+    p_SPU->m_fMotionDesc.m_fAniSpeedScale = p_SPU->m_fAniSpeedScale;
+    p_SPU->m_fMotionDesc.m_fFirst = 0.0f;
+    p_SPU->m_fMotionDesc.m_fSixth = 0.0f;
+    p_SPU->m_fMotionDesc.m_fSecond = 0;
+    p_SPU->m_fMotionDesc.m_fFourth = 1;
+    p_SPU->m_fMotionDesc.m_fUnknown1 = 1.0f;
+    p_SPU->m_fMotionDesc.m_fUnknown2 = 1;
+
+    if (p_SPU->m_fSelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst))
+    {
+        p_SPU->m_fSelfAnimationPS->PlayMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, &p_SPU->m_fMotionDesc);
+    }
+
+    GEFloat maxTime = selfActor->GetMaxTime(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst);
+    GEFloat aniLength = maxTime / p_args->AniSpeedScale;
+    eCEntityProxy target;
+    target.SetEntity(p_SPU->GetOtherEntity());
+
+    if (aniLength != 0.0f)
+    {
+        if (p_SPU->m_fAniString.Contains("Hit"))
+        {
+            p_SPU->m_fDirectionVec *= EvadeLength / aniLength;
+            p_SPU->m_fSelfMovementPS->EnableCombatMovementFromSPU(GETrue, target, p_SPU->m_fDirectionVec);
+        }
+    }
+
+    p_SPU->m_fSelfMovementPS->EnableMovementFromSPU(GEFalse);
+    if (p_SPU->m_fSelfNavigationPS)
+    {
+        p_SPU->m_fSelfNavigationPS->SetIsOnDestination(GEFalse);
+        p_SPU->m_fSelfNavigationPS->UpdateInteractObject();
+        p_SPU->m_fSelfNavigationPS->SetInteractObject(NULL);
+    }
+
+    if (resDataEntity)
+    {
+        resDataEntity->ReleaseReference();
+        resDataEntity = NULL;
+    }
+
+    p_SPU->m_fSelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst,
+                                              static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(5));
+
+    return GETrue;
+}
+
+static mCFunctionHook Hook_DoLogicalDamageEvade;
+DECLARE_SCRIPT(DoLogicalDamageEvade)
+{
+    INIT_SCRIPT_EXT(Damager, Victim);
+
+    if (Victim.Routine.Action == gEAction_Evade)
+    {
+        auto characterNPC = GetPropertySet<gCNPC_PS>(Victim.GetInstance(), eEPropertySetType_NPC);
+        if (characterNPC)
+        {
+            println(characterNPC->GetCurrentMovementAni());
+            if (characterNPC->GetCurrentMovementAni().Contains("Hit"))
+            {
+                return GEFalse;
+            }
+        }
+    }
+
+    return Hook_DoLogicalDamageEvade.GetOriginalFunction(&DoLogicalDamageEvade)(a_pSPU, a_pSelfEntity, a_pOtherEntity,
+                                                                                a_iArgs);
+}
+
 void HookFunctions()
 {
+    Hook_sAICombatMoveStart.Hook(RVA_Game(0x16abb0), &sAICombatMoveStart, mCBaseHook::mEHookType_ThisCall);
+    Hook_DoLogicalDamageEvade.Hook(GetScriptAdminExt().GetScript("DoLogicalDamage")->m_funcScript,
+                                   &DoLogicalDamageEvade);
+
     if (enableNewMagicAiming)
     {
         Hook_MagicProjectile.Prepare(RVA_ScriptGame(0x52db0), &MagicProjectile).Hook();

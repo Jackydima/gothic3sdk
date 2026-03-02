@@ -65,6 +65,13 @@ class GE_DLLIMPORT eCWrapper_emfx2Actor : public bCObjectRefBase
     enum eEMotionType
     {
         // TODO: Enumerator values
+        // TODO Adjusted SDK
+        eEMotionType_PrimaryFirst,
+        eEMotionType_PrimarySecond,
+        eEMotionType_PrimaryThird,
+        eEMotionType_PrimaryFourth,
+        eEMotionType_OverlayFirst,
+        eEMotionType_OverlaySecond,
     };
 
     // clang-format off

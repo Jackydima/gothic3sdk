@@ -229,7 +229,7 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     if (leftPressed && !rightPressed)
     {
         println("Left Evade Initialized");
-        // Self.Routine.SetState("NB_EvadeLeft");
+        Self.Routine.SetTask("NB_EvadeLeft");
         Hook_Evade.SetImmEax(1);
         return;
     }
@@ -237,7 +237,7 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     if (rightPressed && !leftPressed)
     {
         println("Right Evade Initialized");
-        // Self.Routine.SetState("NB_EvadeRight");
+        Self.Routine.SetTask("NB_EvadeRight");
         Hook_Evade.SetImmEax(1);
         return;
     }
@@ -245,7 +245,7 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     if (backPressed)
     {
         println("Back Evade Initialized");
-        Self.Routine.SetState("NB_EvadeBackward");
+        Self.Routine.SetTask("NB_EvadeBackward");
         Hook_Evade.SetImmEax(1);
         return;
     }
