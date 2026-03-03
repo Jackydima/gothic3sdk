@@ -22,15 +22,15 @@ class GE_DLLIMPORT eCWrapper_emfx2Motion : public bCObjectBase
 
     struct eSMotionDesc
     {
-        //GE_UNIMPL_STRUCT(eSMotionDesc)
+        // GE_UNIMPL_STRUCT(eSMotionDesc)
         // TODO SDK Update:
         GEFloat m_fFirst;
-        GEInt m_fSecond;
+        GEInt m_iSecond;
         GEFloat m_fAniSpeedScale;
-        GEInt m_fFourth;
+        GEInt m_iFourth;
         GEFloat m_fUnknown1;
         GEFloat m_fSixth;
-        GEInt m_fUnknown2;
+        GEInt m_iUnknown2;
     };
 
     // clang-format off
