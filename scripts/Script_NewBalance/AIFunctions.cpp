@@ -73,6 +73,7 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeBackward)
         }
     }
     BREAK_BLOCK
+    {}
 
     return GETrue;
 }
@@ -131,6 +132,7 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeRight)
         }
     }
     BREAK_BLOCK
+    {}
 
     return GETrue;
 }
@@ -189,6 +191,7 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeLeft)
         }
     }
     BREAK_BLOCK
+    {}
 
     return GETrue;
 }

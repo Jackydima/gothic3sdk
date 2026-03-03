@@ -251,17 +251,17 @@ class GE_DLLIMPORT gCScriptProcessingUnit
     GEFloat m_fInstrPlayTime;
     GEFloat m_fInstrDuration;
     // TODO: Modified SDK Header
-    //GE_UNIMPL_MEMBERS(0xEC)
+    // GE_UNIMPL_MEMBERS(0xEC)
     GE_UNIMPL_MEMBERS(0x5C)
-    bCVector m_fDirectionVec;
+    bCVector m_DirectionVec;
     eCEntityProxy m_CombatTarget;
     GE_UNIMPL_MEMBERS(0x4);
-    gCNavigation_PS *m_fSelfNavigationPS;
-    gCCharacterMovement_PS *m_fSelfMovementPS;
-    eCVisualAnimation_PS *m_fSelfAnimationPS;
-    eCWrapper_emfx2Motion::eSMotionDesc m_fMotionDesc;
-    bCString m_fAniString; 
-    gEAction m_fInstrAction;
+    gCNavigation_PS *m_SelfNavigationPS;
+    gCCharacterMovement_PS *m_SelfMovementPS;
+    eCVisualAnimation_PS *m_SelfAnimationPS;
+    eCWrapper_emfx2Motion::eSMotionDesc m_sMotionDesc;
+    bCString m_strAniString;
+    gEAction m_InstrAction;
     GE_UNIMPL_MEMBERS(0x8)
     GEFloat m_fAniSpeedScale;
     GE_UNIMPL_MEMBERS(0x28)

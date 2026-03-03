@@ -1670,10 +1670,10 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
     if (!p_args->SelfEntity)
         return GEFalse;
 
-    p_SPU->m_fSelfMovementPS =
+    p_SPU->m_SelfMovementPS =
         GetPropertySet<gCCharacterMovement_PS>(p_args->SelfEntity, eEPropertySetType_CharacterMovement);
 
-    if (!p_SPU->m_fSelfMovementPS)
+    if (!p_SPU->m_SelfMovementPS)
         return GEFalse;
 
     bCVector directionVec;
@@ -1701,14 +1701,14 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
         directionVec = p_SPU->GetOtherEntity()->GetWorldPosition() - p_SPU->GetSelfEntity()->GetWorldPosition();
     }
 
-    p_SPU->m_fDirectionVec = directionVec;
+    p_SPU->m_DirectionVec = directionVec;
 
-    if (p_SPU->m_fSelfMovementPS->GetMovementIsControledByPlayer())
+    if (p_SPU->m_SelfMovementPS->GetMovementIsControledByPlayer())
     {
         gCCameraAI_PS *cameraPtr = gCSession::GetInstance().GetCamera_PS();
         if (cameraPtr)
         {
-            p_SPU->m_fDirectionVec = cameraPtr->GetEntity()->GetAtVector();
+            p_SPU->m_DirectionVec = cameraPtr->GetEntity()->GetAtVector();
         }
     }*/
 
@@ -1732,20 +1732,20 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
         return GEFalse;
     }
 
-    p_SPU->m_fSelfMovementPS =
+    p_SPU->m_SelfMovementPS =
         GetPropertySet<gCCharacterMovement_PS>(p_args->SelfEntity, eEPropertySetType_CharacterMovement);
 
-    if (!p_SPU->m_fSelfMovementPS)
+    if (!p_SPU->m_SelfMovementPS)
     {
         println("Missing CharacterMovementPS");
         return GEFalse;
     }
 
-    p_SPU->m_fDirectionVec.Normalize();
+    p_SPU->m_DirectionVec.Normalize();
 
-    p_SPU->m_fSelfNavigationPS = GetPropertySet<gCNavigation_PS>(p_SPU->GetSelfEntity(), eEPropertySetType_Navigation);
-    if (p_SPU->m_fSelfNavigationPS)
-        p_SPU->m_fSelfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
+    p_SPU->m_SelfNavigationPS = GetPropertySet<gCNavigation_PS>(p_SPU->GetSelfEntity(), eEPropertySetType_Navigation);
+    if (p_SPU->m_SelfNavigationPS)
+        p_SPU->m_SelfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
 
     const GEFloat EvadeLength = 250;
     bCString aniName;
@@ -1768,7 +1768,7 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
             aniName = "Hero_EvadeRight_Hit";
         }
 
-        p_SPU->m_fDirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
+        p_SPU->m_DirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }
     else if (p_args->PhaseName.Contains("Left"))
     {
@@ -1787,36 +1787,36 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
             aniName = "Hero_EvadeLeft_Hit";
         }
 
-        p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
+        p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }
     else
     {
         if (p_args->PhaseName == "Raise")
         {
             aniName = "Hero_EvadeBack_Raise";
-            // p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetXAxis() * EvadeLength;
+            // p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetXAxis() * EvadeLength;
         }
 
         else if (p_args->PhaseName == "Recover")
         {
             aniName = "Hero_EvadeBack_Recover";
-            // p_SPU->m_fDirectionVec = Self->GetWorldMatrix().GetXAxis() * EvadeLength;
+            // p_SPU->m_DirectionVec = Self->GetWorldMatrix().GetXAxis() * EvadeLength;
         }
 
         else
         {
             aniName = "Hero_EvadeBack_Hit";
-            // p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetZAxis() * EvadeLength;
+            // p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetZAxis() * EvadeLength;
         }
 
-        p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
+        p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
     }
 
     p_SPU->m_fAniString = aniName;
-    p_SPU->m_fSelfAnimationPS =
+    p_SPU->m_SelfAnimationPS =
         GetPropertySet<eCVisualAnimation_PS>(p_SPU->GetSelfEntity(), eEPropertySetType_Animation);
 
-    if (!p_SPU->m_fSelfAnimationPS)
+    if (!p_SPU->m_SelfAnimationPS)
     {
         println("Missing Visual Animation");
         return GEFalse;
@@ -1854,7 +1854,7 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
         selfNPCPS->SetCurrentMovementAni(resDataEntityFileName);
     }
 
-    eCWrapper_emfx2Actor *selfActor = p_SPU->m_fSelfAnimationPS->GetActor();
+    eCWrapper_emfx2Actor *selfActor = p_SPU->m_SelfAnimationPS->GetActor();
     if (!selfActor)
     {
         println("Missing Actor");
@@ -1864,7 +1864,7 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
     GEFloat extroBlending = selfActor->GetExtroBlending(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst);
     selfActor->SetIntroExtroBlending(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, resDataEntityFileName);
 
-    if (p_SPU->m_fSelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst))
+    if (p_SPU->m_SelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst))
     {
         if (selfActor->IsMotionRunning(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst))
         {
@@ -1884,51 +1884,51 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
             selfActor->SwitchFadeOut(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, GEFalse, extroBlending);
         }
 
-        p_SPU->m_fSelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, 0.0f);
+        p_SPU->m_SelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, 0.0f);
         selfActor->SetTargetWeight(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, 0.0f);
-        p_SPU->m_fSelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst,
+        p_SPU->m_SelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst,
                                                   static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(2));
     }
 
-    if (p_SPU->m_fSelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond))
+    if (p_SPU->m_SelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond))
     {
-        p_SPU->m_fSelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond, 0.0f);
+        p_SPU->m_SelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond, 0.0f);
         selfActor->SetTargetWeight(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond, 0.0f);
-        p_SPU->m_fSelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond,
+        p_SPU->m_SelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimarySecond,
                                                   static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(2));
     }
 
-    if (p_SPU->m_fSelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird))
+    if (p_SPU->m_SelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird))
     {
-        p_SPU->m_fSelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird, 0.0f);
+        p_SPU->m_SelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird, 0.0f);
         selfActor->SetTargetWeight(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird, 0.0f);
-        p_SPU->m_fSelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird,
+        p_SPU->m_SelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryThird,
                                                   static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(2));
     }
 
-    if (p_SPU->m_fSelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth))
+    if (p_SPU->m_SelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth))
     {
-        p_SPU->m_fSelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth, 0.0f);
+        p_SPU->m_SelfAnimationPS->StopMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth, 0.0f);
         selfActor->SetTargetWeight(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth, 0.0f);
-        p_SPU->m_fSelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth,
+        p_SPU->m_SelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryFourth,
                                                   static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(2));
     }
 
-    p_SPU->m_fSelfAnimationPS->SetMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, resDataEntity);
+    p_SPU->m_SelfAnimationPS->SetMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, resDataEntity);
 
     p_SPU->m_fAniSpeedScale = p_args->AniSpeedScale;
-    p_SPU->m_fMotionDesc = eCWrapper_emfx2Motion::eSMotionDesc();
-    p_SPU->m_fMotionDesc.m_fAniSpeedScale = p_SPU->m_fAniSpeedScale;
-    p_SPU->m_fMotionDesc.m_fFirst = 0.0f;
-    p_SPU->m_fMotionDesc.m_fSixth = 0.0f;
-    p_SPU->m_fMotionDesc.m_fSecond = 0;
-    p_SPU->m_fMotionDesc.m_fFourth = 1;
-    p_SPU->m_fMotionDesc.m_fUnknown1 = 1.0f;
-    p_SPU->m_fMotionDesc.m_fUnknown2 = 1;
+    p_SPU->m_sMotionDesc = eCWrapper_emfx2Motion::eSMotionDesc();
+    p_SPU->m_sMotionDesc.m_fAniSpeedScale = p_SPU->m_fAniSpeedScale;
+    p_SPU->m_sMotionDesc.m_fFirst = 0.0f;
+    p_SPU->m_sMotionDesc.m_fSixth = 0.0f;
+    p_SPU->m_sMotionDesc.m_fSecond = 0;
+    p_SPU->m_sMotionDesc.m_fFourth = 1;
+    p_SPU->m_sMotionDesc.m_fUnknown1 = 1.0f;
+    p_SPU->m_sMotionDesc.m_fUnknown2 = 1;
 
-    if (p_SPU->m_fSelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst))
+    if (p_SPU->m_SelfAnimationPS->HasMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst))
     {
-        p_SPU->m_fSelfAnimationPS->PlayMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, &p_SPU->m_fMotionDesc);
+        p_SPU->m_SelfAnimationPS->PlayMotion(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst, &p_SPU->m_sMotionDesc);
     }
 
     GEFloat maxTime = selfActor->GetMaxTime(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst);
@@ -1940,16 +1940,16 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
     {
         if (p_SPU->m_fAniString.Contains("Hit"))
         {
-            p_SPU->m_fDirectionVec *= EvadeLength / aniLength;
-            p_SPU->m_fSelfMovementPS->EnableCombatMovementFromSPU(GETrue, target, p_SPU->m_fDirectionVec);
+            p_SPU->m_DirectionVec *= EvadeLength / aniLength;
+            p_SPU->m_SelfMovementPS->EnableCombatMovementFromSPU(GETrue, target, p_SPU->m_DirectionVec);
         }
     }
 
-    p_SPU->m_fSelfMovementPS->EnableMovementFromSPU(GEFalse);
-    if (p_SPU->m_fSelfNavigationPS)
+    p_SPU->m_SelfMovementPS->EnableMovementFromSPU(GEFalse);
+    if (p_SPU->m_SelfNavigationPS)
     {
-        p_SPU->m_fSelfNavigationPS->UpdateInteractObject();
-        p_SPU->m_fSelfNavigationPS->SetIsOnDestination(GEFalse);
+        p_SPU->m_SelfNavigationPS->UpdateInteractObject();
+        p_SPU->m_SelfNavigationPS->SetIsOnDestination(GEFalse);
     }
 
     if (resDataEntity)
@@ -1958,7 +1958,7 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
         resDataEntity = NULL;
     }
 
-    p_SPU->m_fSelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst,
+    p_SPU->m_SelfAnimationPS->SetMotionOwner(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst,
                                               static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(5));
 
     return GETrue;

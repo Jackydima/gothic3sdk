@@ -288,7 +288,7 @@ void CombatMoveStartEvadeAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Ar
             aniName = "Hero_EvadeRight_Hit";
         }
 
-        // p_SPU->m_fDirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
+        // p_SPU->m_DirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }
     else if (p_args->PhaseName.Contains("Left"))
     {
@@ -307,7 +307,7 @@ void CombatMoveStartEvadeAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Ar
             aniName = "Hero_EvadeLeft_Hit";
         }
 
-        // p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
+        // p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }
     else
     {
@@ -326,9 +326,9 @@ void CombatMoveStartEvadeAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Ar
             aniName = "Hero_EvadeBack_Hit";
         }
 
-        // p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
+        // p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
     }
-    p_SPU->m_fAniString.SetText(aniName);
+    p_SPU->m_strAniString.SetText(aniName);
 }
 
 static mCCallHook Hook_CombatMoveStartEvadeMovement;
@@ -342,38 +342,38 @@ void CombatMoveStartEvadeMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Arg
     if (!Self)
         return;
 
-    if (p_SPU->m_fSelfMovementPS)
+    if (p_SPU->m_SelfMovementPS)
     {
-        p_SPU->m_fSelfMovementPS->EnableCombatRotationFromSPU(GEFalse, 0.0f);
+        p_SPU->m_SelfMovementPS->EnableCombatRotationFromSPU(GEFalse, 0.0f);
     }
 
-    if (p_SPU->m_fSelfNavigationPS)
+    if (p_SPU->m_SelfNavigationPS)
     {
-        p_SPU->m_fSelfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
+        p_SPU->m_SelfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
     }
 
-    if (!p_SPU->m_fAniString.Contains("Hit"))
+    if (!p_SPU->m_strAniString.Contains("Hit"))
         return;
 
     const GEFloat evadeDistance = 250.0f;
 
     if (p_args->PhaseName.Contains("Right"))
     {
-        p_SPU->m_fDirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
+        p_SPU->m_DirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }
     else if (p_args->PhaseName.Contains("Left"))
     {
-        p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
+        p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }
     else
     {
-        p_SPU->m_fDirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
+        p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
     }
 
-    eCWrapper_emfx2Actor *selfActor = p_SPU->m_fSelfAnimationPS->GetActor();
-    GEFloat maxTime = selfActor->GetMaxTime(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst);
+    eCWrapper_emfx2Actor *selfActor = p_SPU->m_SelfAnimationPS->GetActor();
+    GEFloat maxTime = static_cast<GEFloat>(selfActor->GetMaxTime(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst));
     GEFloat aniLength = maxTime / p_args->AniSpeedScale;
-    p_SPU->m_fDirectionVec *= evadeDistance / aniLength;
+    p_SPU->m_DirectionVec *= evadeDistance / aniLength;
 }
 
 void HookCallHooks()
