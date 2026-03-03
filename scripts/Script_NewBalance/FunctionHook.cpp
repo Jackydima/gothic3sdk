@@ -1989,7 +1989,7 @@ DECLARE_SCRIPT(DoLogicalDamageEvade)
 void HookFunctions()
 {
     // Old variant
-    //Hook_sAICombatMoveStart.Hook(RVA_Game(0x16abb0), &sAICombatMoveStart, mCBaseHook::mEHookType_ThisCall);
+    // Hook_sAICombatMoveStart.Hook(RVA_Game(0x16abb0), &sAICombatMoveStart, mCBaseHook::mEHookType_ThisCall);
 
     Hook_DoLogicalDamageEvade.Hook(GetScriptAdminExt().GetScript("DoLogicalDamage")->m_funcScript,
                                    &DoLogicalDamageEvade);

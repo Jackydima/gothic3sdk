@@ -32,9 +32,10 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_STATE(NB_EvadeBackward)
             }
             SelfEntity.Routine.SetState("PS_Normal");
         }
-        else 
+        else
         {
-            if (SelfEntity.Routine.GetCurrentTask() == "ZS_Attack" || SelfEntity.Routine.GetProperty<PSRoutine::PropertyAIMode>() == gEAIMode_Combat)
+            if (SelfEntity.Routine.GetCurrentTask() == "ZS_Attack"
+                || SelfEntity.Routine.GetProperty<PSRoutine::PropertyAIMode>() == gEAIMode_Combat)
             {
                 SelfEntity.Routine.SetState("ZS_Attack");
                 return GETrue;
@@ -76,9 +77,10 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_STATE(NB_EvadeRight)
             }
             SelfEntity.Routine.SetState("PS_Normal");
         }
-        else 
+        else
         {
-            if (SelfEntity.Routine.GetCurrentTask() == "ZS_Attack" || SelfEntity.Routine.GetProperty<PSRoutine::PropertyAIMode>() == gEAIMode_Combat)
+            if (SelfEntity.Routine.GetCurrentTask() == "ZS_Attack"
+                || SelfEntity.Routine.GetProperty<PSRoutine::PropertyAIMode>() == gEAIMode_Combat)
             {
                 SelfEntity.Routine.SetState("ZS_Attack");
                 return GETrue;
@@ -120,9 +122,10 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_STATE(NB_EvadeLeft)
             }
             SelfEntity.Routine.SetState("PS_Normal");
         }
-        else 
+        else
         {
-            if (SelfEntity.Routine.GetCurrentTask() == "ZS_Attack" || SelfEntity.Routine.GetProperty<PSRoutine::PropertyAIMode>() == gEAIMode_Combat)
+            if (SelfEntity.Routine.GetCurrentTask() == "ZS_Attack"
+                || SelfEntity.Routine.GetProperty<PSRoutine::PropertyAIMode>() == gEAIMode_Combat)
             {
                 SelfEntity.Routine.SetState("ZS_Attack");
                 return GETrue;

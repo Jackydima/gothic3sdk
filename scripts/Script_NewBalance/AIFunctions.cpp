@@ -28,8 +28,6 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeBackward)
         param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAction>() = gEAction_Evade;
         param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAniState>() = gEAniState_Stand;
 
-        
-
         // Consume Staminapoints
         GetScriptAdmin().CallScriptFromScript("AddStaminaPoints", &param.m_Self, &None, -15);
 
