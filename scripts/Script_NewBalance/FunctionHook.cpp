@@ -1656,7 +1656,8 @@ GEBool ZS_RagdollDeadAddition(bTObjStack<gScriptRunTimeSingleState> &a_rRunTimeS
     return retValue;
 }
 
-static mCFunctionHook Hook_sAICombatMoveStart;
+// TODO
+/*
 GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_args, gCScriptProcessingUnit *p_SPU)
 {
     // TODO Reverse Engineer it!
@@ -1711,6 +1712,11 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
         }
     }*/
 
+// Old variant, by rewriting whole CombatMoveStart
+/*
+static mCFunctionHook Hook_sAICombatMoveStart;
+GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_args, gCScriptProcessingUnit *p_SPU)
+{
     if (p_args->Action != gEAction_Evade)
     {
         return Hook_sAICombatMoveStart.GetOriginalFunction(&sAICombatMoveStart)(p_args, p_SPU);
@@ -1739,7 +1745,7 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
 
     p_SPU->m_fSelfNavigationPS = GetPropertySet<gCNavigation_PS>(p_SPU->GetSelfEntity(), eEPropertySetType_Navigation);
     if (p_SPU->m_fSelfNavigationPS)
-        p_SPU->m_fSelfNavigationPS->SetCurrentAniDirection(gEDirection_Back);
+        p_SPU->m_fSelfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
 
     const GEFloat EvadeLength = 250;
     bCString aniName;
@@ -1807,11 +1813,6 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
     }
 
     p_SPU->m_fAniString = aniName;
-
-    gCNavigation_PS *selfNavigationPS = GetPropertySet<gCNavigation_PS>(Self, eEPropertySetType_Navigation);
-    if (selfNavigationPS)
-        selfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
-
     p_SPU->m_fSelfAnimationPS =
         GetPropertySet<eCVisualAnimation_PS>(p_SPU->GetSelfEntity(), eEPropertySetType_Animation);
 
@@ -1947,9 +1948,8 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
     p_SPU->m_fSelfMovementPS->EnableMovementFromSPU(GEFalse);
     if (p_SPU->m_fSelfNavigationPS)
     {
-        p_SPU->m_fSelfNavigationPS->SetIsOnDestination(GEFalse);
         p_SPU->m_fSelfNavigationPS->UpdateInteractObject();
-        p_SPU->m_fSelfNavigationPS->SetInteractObject(NULL);
+        p_SPU->m_fSelfNavigationPS->SetIsOnDestination(GEFalse);
     }
 
     if (resDataEntity)
@@ -1962,14 +1962,14 @@ GEBool sAICombatMoveStart(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_arg
                                               static_cast<eCVisualAnimation_PS::eSMotionDesc::eEMotionOwner>(5));
 
     return GETrue;
-}
+}*/
 
 static mCFunctionHook Hook_DoLogicalDamageEvade;
 DECLARE_SCRIPT(DoLogicalDamageEvade)
 {
     INIT_SCRIPT_EXT(Damager, Victim);
 
-    if (Victim.Routine.Action == gEAction_Evade)
+    if (Victim.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_Evade)
     {
         auto characterNPC = GetPropertySet<gCNPC_PS>(Victim.GetInstance(), eEPropertySetType_NPC);
         if (characterNPC)
@@ -1988,7 +1988,9 @@ DECLARE_SCRIPT(DoLogicalDamageEvade)
 
 void HookFunctions()
 {
-    Hook_sAICombatMoveStart.Hook(RVA_Game(0x16abb0), &sAICombatMoveStart, mCBaseHook::mEHookType_ThisCall);
+    // Old variant
+    //Hook_sAICombatMoveStart.Hook(RVA_Game(0x16abb0), &sAICombatMoveStart, mCBaseHook::mEHookType_ThisCall);
+
     Hook_DoLogicalDamageEvade.Hook(GetScriptAdminExt().GetScript("DoLogicalDamage")->m_funcScript,
                                    &DoLogicalDamageEvade);
 
