@@ -1202,6 +1202,8 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
         InitGUI();
     }
 
+    mCModuleRegistry::GetInstance().Apply();
+
     HookFunctions();
     HookCallHooks();
 
