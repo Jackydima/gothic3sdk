@@ -5,9 +5,14 @@
  */
 static mCCallHook Hook_FixDualOneHanded;
 // gCProcessinUnit at esp+0x2b8
-void FixDualOneHanded(gCScriptProcessingUnit *p_PSU)
+void FixDualOneHanded(gCScriptProcessingUnit *p_SPU)
 {
-    Entity self = (Entity)p_PSU->GetSelfEntity();
+    if (p_SPU == NULL)
+        return;
+
+    Entity self = (Entity)p_SPU->GetSelfEntity();
+    if (self == None)
+        return;
 
     if (!CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, self))
     {
@@ -28,17 +33,26 @@ void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_tar
 {
     UNREFERENCED_PARAMETER(p_PSU);
 
+    // Check for nullptr
+    if (p_self == NULL || p_target == NULL)
+        return;
+
+    // Check if Self/Target Entity got removed during aiming
+    if (*p_target == None || *p_self == None)
+        return;
+
+    // Only NPCs have "AutoAim"
     if (*p_self == Entity::GetPlayer())
         return;
 
     Entity projectileItem = p_self->Inventory.GetItemFromSlot(gESlot_RightHand);
     p_projectile->AccessProperty<PSProjectile::PropertyShootVelocity>() = static_cast<GEFloat>(shootVelocity);
 
-    if (false) // Config later
+    eCVisualAnimation_PS *targetAnimation = (eCVisualAnimation_PS *)(p_target->Animation.m_pEngineEntityPropertySet);
+    if (targetAnimation == NULL)
         return;
 
-    GEDouble time = projectileItem.GetDistanceTo(*p_target) / (shootVelocity * PROJECTILEMULTIPLICATOR);
-    eCVisualAnimation_PS *targetAnimation = (eCVisualAnimation_PS *)(p_target->Animation.m_pEngineEntityPropertySet);
+    GEFloat time = projectileItem.GetDistanceTo(*p_target) / (shootVelocity * PROJECTILEMULTIPLICATOR);
     bCString actor = targetAnimation->GetActor()->GetActorName();
     actor.GetWord(1, "_", actor, GETrue, GETrue);
     if (actor.CompareFast("Boar"))
@@ -68,8 +82,7 @@ void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_tar
         (Entity::GetRandomNumber(static_cast<GEInt>(200 * NPC_AIM_INACCURACY)) - 100 * NPC_AIM_INACCURACY);
 
     bCVector newTargetDirectionVec =
-        (targetVecPos + (p_target->GetGameEntity()->GetLinearVelocity() * static_cast<GEFloat>(time)))
-        - projectileItem.GetPosition();
+        (targetVecPos + (p_target->GetGameEntity()->GetLinearVelocity() * time)) - projectileItem.GetPosition();
 
     // Speed relative Randomness of shots
     GEFloat xDiff = newTargetDirectionVec.GetX() - targetVec.GetX();
