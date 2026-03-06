@@ -72,14 +72,12 @@ void PatchCode()
     /**
      * NPC Can now just brute Attack you through your KnockdownState! No Chill
      */
-    if (NBConfig::useHardCoreAttacks)
-    {
-        PatchNOPs((LPVOID)RVA_ScriptGame(0x4ef24), 3);    // remove compare instruction
-        PatchByte((LPVOID)RVA_ScriptGame(0x4ef27), 0xE9); // JMP instruction
-        BYTE kDSB[4] = {0x9E, 0x00, 0x00, 0x00};          // Relative Jmp address
-        PatchBytes((LPVOID)RVA_ScriptGame(0x4ef28), kDSB, 4);
-        PatchNOPs((LPVOID)RVA_ScriptGame(0x4ef2C), 1); // cleanup
-    }
+    // Logic in FunctionHook.cpp for this feature now!
+    PatchNOPs((LPVOID)RVA_ScriptGame(0x4ef24), 3);    // remove compare instruction
+    PatchByte((LPVOID)RVA_ScriptGame(0x4ef27), 0xE9); // JMP instruction
+    BYTE kDSB[4] = {0x9E, 0x00, 0x00, 0x00};          // Relative Jmp address
+    PatchBytes((LPVOID)RVA_ScriptGame(0x4ef28), kDSB, 4);
+    PatchNOPs((LPVOID)RVA_ScriptGame(0x4ef2C), 1); // cleanup
 
     /**
      * New Velocity for bows!

@@ -1658,8 +1658,69 @@ GEBool ZS_RagdollDeadAddition(bTObjStack<gScriptRunTimeSingleState> &a_rRunTimeS
     return retValue;
 }
 
+static mCFunctionHook Hook_FAI_Active_HardCodeAttacks;
+DECLARE_SCRIPT(FAI_Active_HardCodeAttacks)
+{
+    INIT_SCRIPT_EXT(Self, Victim);
+
+    // No protection for the player!
+    if (NBConfig::useHardCoreAttacks)
+    {
+        return Hook_FAI_Active_HardCodeAttacks.GetOriginalFunction(&FAI_Active_HardCodeAttacks)(
+            a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
+    }
+
+    // NPCs can attack each others fully
+    if (Victim != Entity::GetPlayer() || Victim == None)
+    {
+        return Hook_FAI_Active_HardCodeAttacks.GetOriginalFunction(&FAI_Active_HardCodeAttacks)(
+            a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
+    }
+
+    GEFloat distanceToTarget = Self.GetDistanceTo(Victim);
+
+    // Do default behaviour on hard difficulty with adjusted hit registrations
+    if (Entity::GetCurrentDifficulty() == EDifficulty_Hard)
+    {
+        if (Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAniState_SitKnockDown)
+        {
+            if (distanceToTarget < 350)
+            {
+                return gEAction_Back;
+            }
+            else if (distanceToTarget > 400)
+            {
+                return gEAction_Fwd;
+            }
+            return gEAction_Wait;
+        }
+    }
+
+    // Else be less aggressive against Player!
+    else if (Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAniState_SitKnockDown
+             || Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAction_LieKnockDown)
+    {
+        if (distanceToTarget < 400)
+        {
+            return gEAction_Back;
+        }
+        else if (distanceToTarget > 500)
+        {
+            return gEAction_Fwd;
+        }
+        return gEAction_Wait;
+    }
+
+    // Default function (with patched checks)
+    return Hook_FAI_Active_HardCodeAttacks.GetOriginalFunction(&FAI_Active_HardCodeAttacks)(a_pSPU, a_pSelfEntity,
+                                                                                            a_pOtherEntity, a_iArgs);
+}
+
 void HookFunctions()
 {
+    Hook_FAI_Active_HardCodeAttacks.Hook(GetScriptAdminExt().GetScript("FAI_Active")->m_funcScript,
+                                         &FAI_Active_HardCodeAttacks);
+
     if (NBConfig::enableNewMagicAiming)
     {
         Hook_MagicProjectile.Prepare(RVA_ScriptGame(0x52db0), &MagicProjectile).Hook();
