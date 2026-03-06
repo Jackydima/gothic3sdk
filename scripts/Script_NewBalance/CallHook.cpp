@@ -46,13 +46,14 @@ void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_tar
         return;
 
     Entity projectileItem = p_self->Inventory.GetItemFromSlot(gESlot_RightHand);
-    p_projectile->AccessProperty<PSProjectile::PropertyShootVelocity>() = static_cast<GEFloat>(shootVelocity);
+    p_projectile->AccessProperty<PSProjectile::PropertyShootVelocity>() = static_cast<GEFloat>(NBConfig::shootVelocity);
 
     eCVisualAnimation_PS *targetAnimation = (eCVisualAnimation_PS *)(p_target->Animation.m_pEngineEntityPropertySet);
     if (targetAnimation == NULL)
         return;
 
-    GEFloat time = projectileItem.GetDistanceTo(*p_target) / (shootVelocity * PROJECTILEMULTIPLICATOR);
+    GEFloat time = projectileItem.GetDistanceTo(*p_target)
+                 / static_cast<GEFloat>(NBConfig::shootVelocity * NBConfig::PROJECTILEMULTIPLICATOR);
     bCString actor = targetAnimation->GetActor()->GetActorName();
     actor.GetWord(1, "_", actor, GETrue, GETrue);
     if (actor.CompareFast("Boar"))
@@ -75,11 +76,11 @@ void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_tar
     bCVector targetVec = targetVecPos - projectileItem.GetPosition();
 
     // Absolute Randomness of shots
-    targetVecPos.AccessX() +=
-        (Entity::GetRandomNumber(static_cast<GEInt>(200 * NPC_AIM_INACCURACY)) - 100 * NPC_AIM_INACCURACY);
+    targetVecPos.AccessX() += (Entity::GetRandomNumber(static_cast<GEInt>(200 * NBConfig::NPC_AIM_INACCURACY))
+                               - 100 * NBConfig::NPC_AIM_INACCURACY);
     // targetVec.AccessY ( ) += ( Entity::GetRandomNumber ( 50 ) - 25 );
-    targetVecPos.AccessZ() +=
-        (Entity::GetRandomNumber(static_cast<GEInt>(200 * NPC_AIM_INACCURACY)) - 100 * NPC_AIM_INACCURACY);
+    targetVecPos.AccessZ() += (Entity::GetRandomNumber(static_cast<GEInt>(200 * NBConfig::NPC_AIM_INACCURACY))
+                               - 100 * NBConfig::NPC_AIM_INACCURACY);
 
     bCVector newTargetDirectionVec =
         (targetVecPos + (p_target->GetGameEntity()->GetLinearVelocity() * time)) - projectileItem.GetPosition();
@@ -88,9 +89,11 @@ void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_tar
     GEFloat xDiff = newTargetDirectionVec.GetX() - targetVec.GetX();
     GEFloat zDiff = newTargetDirectionVec.GetZ() - targetVec.GetZ();
     newTargetDirectionVec.AccessX() +=
-        (Entity::GetRandomNumber(static_cast<GEInt>(xDiff * NPC_AIM_INACCURACY * 2)) - xDiff * NPC_AIM_INACCURACY);
+        (Entity::GetRandomNumber(static_cast<GEInt>(xDiff * NBConfig::NPC_AIM_INACCURACY * 2))
+         - xDiff * NBConfig::NPC_AIM_INACCURACY);
     newTargetDirectionVec.AccessZ() +=
-        (Entity::GetRandomNumber(static_cast<GEInt>(zDiff * NPC_AIM_INACCURACY * 2)) - zDiff * NPC_AIM_INACCURACY);
+        (Entity::GetRandomNumber(static_cast<GEInt>(zDiff * NBConfig::NPC_AIM_INACCURACY * 2))
+         - zDiff * NBConfig::NPC_AIM_INACCURACY);
 
     p_projectile->AccessProperty<PSProjectile::PropertyPathStyle>() = gEProjectilePath::gEProjectilePath_Line;
     p_projectile->SetTarget(None);
@@ -122,15 +125,15 @@ void CombatMoveScale(void *p_Ptr, gCScriptProcessingUnit *p_PSU, bCVector *vec)
         case gEAction_FinishingAttack:    break;
         case gEAction_HackAttack:
             if (Self.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Orc)
-                vec->Scale(2.17f * ATTACK_REACH_MULTIPLIER);
+                vec->Scale(2.17f * NBConfig::ATTACK_REACH_MULTIPLIER);
             else
-                vec->Scale(1.2f * ATTACK_REACH_MULTIPLIER);
+                vec->Scale(1.2f * NBConfig::ATTACK_REACH_MULTIPLIER);
             break;
         case gEAction_QuickAttack:
         case gEAction_QuickAttackR:
-        case gEAction_QuickAttackL: vec->Scale(0.85f * ATTACK_REACH_MULTIPLIER); break;
-        case gEAction_PowerAttack:  vec->Scale(1.2f * ATTACK_REACH_MULTIPLIER); break;
-        default:                    vec->Scale(ATTACK_REACH_MULTIPLIER);
+        case gEAction_QuickAttackL: vec->Scale(0.85f * NBConfig::ATTACK_REACH_MULTIPLIER); break;
+        case gEAction_PowerAttack:  vec->Scale(1.2f * NBConfig::ATTACK_REACH_MULTIPLIER); break;
+        default:                    vec->Scale(NBConfig::ATTACK_REACH_MULTIPLIER);
     }
 }
 
@@ -142,14 +145,14 @@ void PS_Ranged_PowerAim(void *p_Ptr, gCScriptProcessingUnit *p_PSU, void *esp)
 {
     UNREFERENCED_PARAMETER(p_Ptr);
     Entity player = (Entity)p_PSU->GetSelfEntity();
-    void *address = &powerAimEffectName;
+    void *address = &NBConfig::powerAimEffectName;
     if (player.Inventory.IsSkillActive("Perk_Bow_3"))
     {
-        address = &powerAimEliteEffectName;
+        address = &NBConfig::powerAimEliteEffectName;
     }
     else if (player.Inventory.IsSkillActive("Perk_Bow_2"))
     {
-        address = &powerAimWarriorEffectName;
+        address = &NBConfig::powerAimWarriorEffectName;
     }
     DWORD currProt, newProt;
     VirtualProtect((LPVOID)esp, sizeof(void *), PAGE_EXECUTE_READWRITE, &currProt);
@@ -163,15 +166,15 @@ void ZS_Ranged_PowerAim(void *p_Ptr, gCScriptProcessingUnit *p_PSU, void *esp)
 {
     UNREFERENCED_PARAMETER(p_Ptr);
     Entity Self = (Entity)p_PSU->GetSelfEntity();
-    void *address = &powerAimEffectName;
+    void *address = &NBConfig::powerAimEffectName;
 
     if (getPowerLevel(Self) >= 40)
     {
-        address = &powerAimEliteEffectName;
+        address = &NBConfig::powerAimEliteEffectName;
     }
     else if (getPowerLevel(Self) >= 30)
     {
-        address = &powerAimWarriorEffectName;
+        address = &NBConfig::powerAimWarriorEffectName;
     }
     DWORD currProt, newProt;
     VirtualProtect((LPVOID)esp, sizeof(void *), PAGE_EXECUTE_READWRITE, &currProt);
@@ -293,7 +296,7 @@ void HookCallHooks()
         .RestoreRegister()
         .Hook();
 
-    if (adjustXPReceive)
+    if (NBConfig::adjustXPReceive)
     {
         Hook_GiveXPPowerlevel
             .Prepare(RVA_ScriptGame(0x4e451), &GiveXPPowerlevel, mCBaseHook::mEHookType_Mixed,
@@ -305,7 +308,7 @@ void HookCallHooks()
             .Hook();
     }
 
-    if (useNewBowMechanics)
+    if (NBConfig::useNewBowMechanics)
     {
         Hook_Shoot_Velocity.Prepare(RVA_ScriptGame(0x86882), &Shoot_Velocity)
             .InsertCall()

@@ -57,8 +57,7 @@ void PatchCode()
     /**
      * New AI Range for Ranged and Magic Attacks
      */
-    VirtualProtect((LPVOID)RVA_ScriptGame(0x50414), sizeof(&NBConfig::attackRangeAIPtr), PAGE_EXECUTE_READWRITE,
-                   &currProt);
+    VirtualProtect((LPVOID)RVA_ScriptGame(0x50414), sizeof(&NBConfig::attackRangeAIPtr), PAGE_EXECUTE_READWRITE, &currProt);
     memset((LPVOID)RVA_ScriptGame(0x50414), 0x90, sizeof(&NBConfig::attackRangeAIPtr));
     memcpy((LPVOID)RVA_ScriptGame(0x50414), &NBConfig::attackRangeAIPtr, sizeof(&NBConfig::attackRangeAIPtr));
     VirtualProtect((LPVOID)RVA_ScriptGame(0x50414), sizeof(&NBConfig::attackRangeAIPtr), currProt, &newProt);
@@ -66,8 +65,7 @@ void PatchCode()
     /**
      * New variable Telekinesis Range Patch
      */
-    PatchNewAddr((LPVOID)RVA_ScriptGame(0x7a6ce), &NBConfig::telekinesisRangePtr,
-                 sizeof(&NBConfig::telekinesisRangePtr));
+    PatchNewAddr((LPVOID)RVA_ScriptGame(0x7a6ce), &NBConfig::telekinesisRangePtr, sizeof(&NBConfig::telekinesisRangePtr));
 
     /**
      * NPC Can now just brute Attack you through your KnockdownState! No Chill
@@ -84,8 +82,7 @@ void PatchCode()
     /**
      * New Velocity for bows!
      */
-    VirtualProtect((LPVOID)RVA_ScriptGame(0x86705), sizeof(&NBConfig::shootVelocityPtr), PAGE_EXECUTE_READWRITE,
-                   &currProt);
+    VirtualProtect((LPVOID)RVA_ScriptGame(0x86705), sizeof(&NBConfig::shootVelocityPtr), PAGE_EXECUTE_READWRITE, &currProt);
     memset((LPVOID)RVA_ScriptGame(0x86705), 0x90, sizeof(&NBConfig::shootVelocityPtr));
     memcpy((LPVOID)RVA_ScriptGame(0x86705), &NBConfig::shootVelocityPtr, sizeof(&NBConfig::shootVelocityPtr));
     VirtualProtect((LPVOID)RVA_ScriptGame(0x386705), sizeof(&NBConfig::shootVelocityPtr), currProt, &newProt);
