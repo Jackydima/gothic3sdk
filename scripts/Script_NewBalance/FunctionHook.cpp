@@ -80,7 +80,7 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
         case gEAction_LiePiercedDead:  return 1.0f;
         case gEAction_Aim:
         case gEAction_Reload:
-            if (entity == Player)
+            if (entity == Player && useNewBowMechanics)
             {
                 if (entity.Inventory.IsSkillActive("Perk_Bow_3"))
                 {
@@ -91,7 +91,7 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
                     return animationSpeedBonusMid;
                 }
             }
-            else
+            else if (useNewBowMechanics)
             {
                 Entity weapon = entity.GetWeapon(GETrue);
                 if (weapon.Interaction.GetUseType() == gEUseType_CrossBow)
@@ -1295,7 +1295,7 @@ void OnTouch(eCEntity *p_entity, eCContactIterator *p_contactIterator)
     {
         if (entry != "" && eCE->GetName().Contains(entry.GetText()))
         {
-            This->SetTouchBehavior(bTPropertyContainer<gEProjectileTouchBehavior>(gEProjectileTouchBehavior_KillSelf));
+            This->SetTouchBehavior(gEProjectileTouchBehavior_KillSelf);
             /*bCVector loc = p_contactIterator->GetAvgCollisionPosition ( );
             //std::cout << "Location: x= " << loc.AccessX ( ) << "\ty= " << loc.AccessY ( )
             //    << "\tz= " << loc.AccessZ ( ) << "\n";
