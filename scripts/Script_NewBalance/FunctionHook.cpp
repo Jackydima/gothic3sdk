@@ -1719,8 +1719,36 @@ DECLARE_SCRIPT(FAI_Active_HardCodeAttacks)
                                                                                             a_pOtherEntity, a_iArgs);
 }
 
+static mCFunctionHook Hook_Entity_AttachTo;
+GEBool GE_STDCALL Entity_AttachTo(eCEntity *a_peCEntity)
+{
+    Entity *_this = Hook_Entity_AttachTo.GetSelf<Entity *>();
+    if (_this == NULL)
+    {
+        return Hook_Entity_AttachTo.GetOriginalFunction(&Entity_AttachTo)(a_peCEntity);
+    }
+
+    if (a_peCEntity == NULL)
+    {
+        return Hook_Entity_AttachTo.GetOriginalFunction(&Entity_AttachTo)(a_peCEntity);
+    }
+
+    // Sometimes when killing asynchronously the Entity, the IsKilled function gets nulled!
+    uintptr_t m_fFunctionPtr = *(uintptr_t *)a_peCEntity + 0xA0;
+    if (m_fFunctionPtr == NULL || *(uintptr_t *)m_fFunctionPtr == NULL)
+    {
+        println("eCEntity::IsKilled() method broken, trying to repair...");
+        memset(_this, 0, sizeof(Entity));
+        return GETrue;
+    }
+
+    return Hook_Entity_AttachTo.GetOriginalFunction(&Entity_AttachTo)(a_peCEntity);
+}
+
 void HookFunctions()
 {
+    Hook_Entity_AttachTo.Prepare(RVA_Script(0x13e80), &Entity_AttachTo, mCBaseHook::mEHookType_ThisCall).Hook();
+
     Hook_FAI_Active_HardCodeAttacks.Hook(GetScriptAdminExt().GetScript("FAI_Active")->m_funcScript,
                                          &FAI_Active_HardCodeAttacks);
 

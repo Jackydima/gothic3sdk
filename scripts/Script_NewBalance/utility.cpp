@@ -96,7 +96,9 @@ void VanishEntity(Entity &p_entity)
 
     EffectSystem::StartEffect("eff_remove_summons", p_entity);
     // Completely Remove Entity!
-    p_entity.Kill();
+    auto entityInstance = p_entity.GetInstance();
+    entityInstance->Kill();
+    entityInstance = NULL;
 }
 
 GEBool CanRage(Entity &p_entity)
