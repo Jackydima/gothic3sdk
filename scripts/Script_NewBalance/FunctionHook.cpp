@@ -1678,11 +1678,13 @@ DECLARE_SCRIPT(FAI_Active_HardCodeAttacks)
     }
 
     GEFloat distanceToTarget = Self.GetDistanceTo(Victim);
+    gEAniState victimAniState = Victim.Routine.GetProperty<PSRoutine::PropertyAniState>();
+    gEAction victimAction = Victim.Routine.GetProperty<PSRoutine::PropertyAction>();
 
     // Do default behaviour on hard difficulty with adjusted hit registrations
     if (Entity::GetCurrentDifficulty() == EDifficulty_Hard)
     {
-        if (Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAniState_SitKnockDown)
+        if (victimAniState == gEAniState_SitKnockDown)
         {
             if (distanceToTarget < 350)
             {
@@ -1697,8 +1699,9 @@ DECLARE_SCRIPT(FAI_Active_HardCodeAttacks)
     }
 
     // Else be less aggressive against Player!
-    else if (Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAniState_SitKnockDown
-             || Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAction_LieKnockDown)
+    // gEAction_SitKnockDown should be enought, since it is applied when in ZS_SitKnockDown state
+    else if (victimAction == gEAction_SitKnockDown || victimAniState == gEAniState_SitKnockDown
+             || victimAniState == gEAniState_LieKnockDown)
     {
         if (distanceToTarget < 400)
         {

@@ -91,6 +91,9 @@ void DoAOEDamage(Entity &p_damager, Entity &p_victim)
 
 void VanishEntity(Entity &p_entity)
 {
+    if (p_entity == None)
+        return;
+
     EffectSystem::StartEffect("eff_remove_summons", p_entity);
     // Completely Remove Entity!
     p_entity.Kill();
