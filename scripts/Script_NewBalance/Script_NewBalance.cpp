@@ -892,7 +892,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
                                                                       DamagerOwnerAction, bCString("Recover"),
                                                                       1.5f); // g_pstrPhaseString[gEPhase_Recover]
             if (!gCScriptProcessingUnit::sAICombatMoveInstr(&InstrArgs, a_pSPU, GEFalse))
-                return gEAction_None;
+                return gEAction_ParadeStumble;
 
             if (HitForce > gEHitForce_Normal)
             {
