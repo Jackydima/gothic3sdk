@@ -512,10 +512,11 @@ GEInt GE_STDCALL OnTick(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, E
     // p_entity.NPC.GetProperty<PSNpc::PropertyCombatState> ( ) << "\n";
 
     // Innos lights now actually tries to banish the darkness of beliar :)
-    if (NBConfig::useDamagingInnosLight && Self.Routine.AIMode != gEAIMode_Down && Self.Routine.AIMode != gEAIMode_Dead
-        && Self.NPC.Species != gESpecies_Golem && Self.NPC.Species != gESpecies_IceGolem
-        && Self.NPC.Species != gESpecies_FireGolem && !Self.NPC.IsBurning()
-        && GetScriptAdmin().CallScriptFromScript("IsEvil", &Self, &None))
+    gEAIMode selfAIMode = Self.Routine.GetProperty<PSRoutine::PropertyAIMode>();
+    gESpecies selfSpecies = Self.NPC.GetProperty<PSNpc::PropertySpecies>();
+    if (NBConfig::useDamagingInnosLight && selfAIMode != gEAIMode_Down && selfAIMode != gEAIMode_Dead
+        && selfSpecies != gESpecies_Golem && selfSpecies != gESpecies_IceGolem && selfSpecies != gESpecies_FireGolem
+        && !Self.NPC.IsBurning() && GetScriptAdmin().CallScriptFromScript("IsEvil", &Self, &None))
     {
         auto entityList = Self.GetEntitiesByDistance();
         Entity currentEntity;
@@ -1286,7 +1287,7 @@ void OnTouch(eCEntity *p_entity, eCContactIterator *p_contactIterator)
     {
         if (entry != "" && eCE->GetName().Contains(entry.GetText()))
         {
-            This->SetTouchBehavior(gEProjectileTouchBehavior_KillSelf);
+            This->AccessTouchBehavior() = gEProjectileTouchBehavior_KillSelf;
             /*bCVector loc = p_contactIterator->GetAvgCollisionPosition ( );
             //std::cout << "Location: x= " << loc.AccessX ( ) << "\ty= " << loc.AccessY ( )
             //    << "\tz= " << loc.AccessZ ( ) << "\n";
@@ -1547,7 +1548,9 @@ GEInt GE_STDCALL CleanUpPlunderInv(gCScriptProcessingUnit *a_pSPU, Entity *a_pSe
     UNREFERENCED_PARAMETER(a_iArgs);
 
     // Remove Weapons of Demons and Remove Weapons of Summoned Creatures!
-    if (Self.NPC.Species == gESpecies_Demon || Self.Party.PartyMemberType == gEPartyMemberType_Summoned)
+    gEPartyMemberType selfPartyMemberType = Self.Party.GetProperty<PSParty::PropertyPartyMemberType>();
+    if (Self.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Demon
+        || selfPartyMemberType == gEPartyMemberType_Summoned)
     {
         for (GEInt i = Self.Inventory.GetStackCount() - 1; i >= 0; i--)
         {
@@ -1559,7 +1562,7 @@ GEInt GE_STDCALL CleanUpPlunderInv(gCScriptProcessingUnit *a_pSPU, Entity *a_pSe
     }
 
     // Do not generate Items from Summoned Monsters!
-    if (Self.Party.PartyMemberType == gEPartyMemberType_Summoned)
+    if (selfPartyMemberType == gEPartyMemberType_Summoned)
     {
         return GETrue;
     }
@@ -1574,7 +1577,8 @@ DECLARE_SCRIPT(DropHandItems)
     UNREFERENCED_PARAMETER(a_iArgs);
 
     GEBool decay = GEFalse;
-    if (Self.Party.PartyMemberType == gEPartyMemberType_Summoned || Self.NPC.Species == gESpecies_Demon)
+    if (Self.Party.GetProperty<PSParty::PropertyPartyMemberType>() == gEPartyMemberType_Summoned
+        || Self.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Demon)
     {
         decay = GETrue;
     }

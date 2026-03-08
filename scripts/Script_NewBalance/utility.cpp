@@ -98,7 +98,7 @@ void VanishEntity(Entity &p_entity)
     // Completely Remove Entity!
     auto entityInstance = p_entity.GetInstance();
     auto selfNPCPtr = GetPropertySet<gCNPC_PS>(entityInstance, eEPropertySetType_NPC);
-    selfNPCPtr->SetSpecies(gESpecies_EMPTY_B); // Lets the OnEnterProcessRange remove the dead entity!
+    selfNPCPtr->AccessSpecies() = gESpecies_EMPTY_B; // Lets the OnEnterProcessRange remove the dead entity!
     entityInstance->Enable(GEFalse);
 }
 
