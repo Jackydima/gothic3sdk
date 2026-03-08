@@ -499,17 +499,6 @@ GEInt GE_STDCALL OnTick(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, E
 {
     INIT_SCRIPT_EXT(Self, Other);
 
-    if (!Self.IsPlayer() && NBConfig::enableNPCSprint
-        && (Self.NPC.GetProperty<PSNpc::PropertySpecies>() != gESpecies::gESpecies_Zombie || NBConfig::zombiesCanSprint)
-        && Self.Routine.GetProperty<PSRoutine::PropertyAIMode>() == gEAIMode_Combat)
-    {
-        GEDouble staminaPercantage =
-            (GEDouble)Self.DamageReceiver.GetProperty<PSDamageReceiver::PropertyStaminaPoints>()
-            / (GEDouble)Self.DamageReceiver.GetProperty<PSDamageReceiver::PropertyStaminaPointsMax>();
-        if (Self.GetDistanceTo(Self.NPC.GetCurrentTarget()) > 450.0 && staminaPercantage >= 0.2)
-            Self.SetMovementMode(gECharMovementMode_Sprint);
-    }
-
     if (Self.IsPlayer() && IsPlayerInCombat())
     {
         Self.NPC.AccessProperty<PSNpc::PropertyCombatState>() = 1;
@@ -1659,25 +1648,46 @@ GEBool ZS_RagdollDeadAddition(bTObjStack<gScriptRunTimeSingleState> &a_rRunTimeS
 }
 
 static mCFunctionHook Hook_FAI_Active_HardCodeAttacks;
-DECLARE_SCRIPT(FAI_Active_HardCodeAttacks)
+DECLARE_SCRIPT(FAI_Active_NB)
 {
     INIT_SCRIPT_EXT(Self, Victim);
 
-    // No protection for the player!
+    gEAction returnedAction = static_cast<gEAction>(Hook_FAI_Active_HardCodeAttacks.GetOriginalFunction(&FAI_Active_NB)(
+        a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs));
+
+    GEFloat distanceToTarget = Self.GetDistanceTo(Victim);
+
+    // Overwrite Fwd for long distances!
+    if (returnedAction == gEAction_Fwd && distanceToTarget >= 450.0f)
+    {
+        // Let NPCs sprint forward!
+        if (NBConfig::enableNPCSprint
+            && (Self.NPC.GetProperty<PSNpc::PropertySpecies>() != gESpecies_Zombie || NBConfig::zombiesCanSprint))
+        {
+            GEDouble staminaPercentage =
+                (GEDouble)Self.DamageReceiver.GetProperty<PSDamageReceiver::PropertyStaminaPoints>()
+                / (GEDouble)Self.DamageReceiver.GetProperty<PSDamageReceiver::PropertyStaminaPointsMax>();
+            if (staminaPercentage >= 0.2)
+                Self.SetMovementMode(gECharMovementMode_Sprint);
+        }
+
+        return returnedAction;
+    }
+
+    // Handle the hardcore attack next!
+
+    // Always attack then with patched instructions!
     if (NBConfig::useHardCoreAttacks)
     {
-        return Hook_FAI_Active_HardCodeAttacks.GetOriginalFunction(&FAI_Active_HardCodeAttacks)(
-            a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
+        return returnedAction;
     }
 
     // NPCs can attack each others fully
     if (Victim != Entity::GetPlayer() || Victim == None)
     {
-        return Hook_FAI_Active_HardCodeAttacks.GetOriginalFunction(&FAI_Active_HardCodeAttacks)(
-            a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
+        return returnedAction;
     }
 
-    GEFloat distanceToTarget = Self.GetDistanceTo(Victim);
     gEAniState victimAniState = Victim.Routine.GetProperty<PSRoutine::PropertyAniState>();
     gEAction victimAction = Victim.Routine.GetProperty<PSRoutine::PropertyAction>();
 
@@ -1715,8 +1725,7 @@ DECLARE_SCRIPT(FAI_Active_HardCodeAttacks)
     }
 
     // Default function (with patched checks)
-    return Hook_FAI_Active_HardCodeAttacks.GetOriginalFunction(&FAI_Active_HardCodeAttacks)(a_pSPU, a_pSelfEntity,
-                                                                                            a_pOtherEntity, a_iArgs);
+    return returnedAction;
 }
 
 // Has issues when hooking sadly!
@@ -1750,10 +1759,9 @@ GEBool GE_STDCALL Entity_AttachTo(LPVOID *a_peCEntity)
 void HookFunctions()
 {
     // Bugs regarding Debug built and using items, which changed stats of Player
-    //Hook_Entity_AttachTo.Prepare(RVA_Script(0x13e80), &Entity_AttachTo, mCBaseHook::mEHookType_ThisCall).Hook();
+    // Hook_Entity_AttachTo.Prepare(RVA_Script(0x13e80), &Entity_AttachTo, mCBaseHook::mEHookType_ThisCall).Hook();
 
-    Hook_FAI_Active_HardCodeAttacks.Hook(GetScriptAdminExt().GetScript("FAI_Active")->m_funcScript,
-                                         &FAI_Active_HardCodeAttacks);
+    Hook_FAI_Active_HardCodeAttacks.Hook(GetScriptAdminExt().GetScript("FAI_Active")->m_funcScript, &FAI_Active_NB);
 
     if (NBConfig::enableNewMagicAiming)
     {
