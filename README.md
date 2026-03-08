@@ -35,7 +35,7 @@ cmake --build build --config Release -j
 
 Update: For newer cmake versions use the adjusted suported minumum policy version
 ```
-cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 -DCMAKE_POLICY_VERSION_MINIMUM="3.5"
 cmake --build build --config Release -j
 ```
 
