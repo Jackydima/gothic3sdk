@@ -1719,8 +1719,9 @@ DECLARE_SCRIPT(FAI_Active_HardCodeAttacks)
                                                                                             a_pOtherEntity, a_iArgs);
 }
 
-static mCFunctionHook Hook_Entity_AttachTo;
-GEBool GE_STDCALL Entity_AttachTo(eCEntity *a_peCEntity)
+// Has issues when hooking sadly!
+/*static mCFunctionHook Hook_Entity_AttachTo;
+GEBool GE_STDCALL Entity_AttachTo(LPVOID *a_peCEntity)
 {
     Entity *_this = Hook_Entity_AttachTo.GetSelf<Entity *>();
     if (_this == NULL)
@@ -1733,7 +1734,8 @@ GEBool GE_STDCALL Entity_AttachTo(eCEntity *a_peCEntity)
         return Hook_Entity_AttachTo.GetOriginalFunction(&Entity_AttachTo)(a_peCEntity);
     }
 
-    // Sometimes when killing asynchronously the Entity, the IsKilled function gets nulled!
+    // Sometimes when killing asynchronously the Entity, the Objects vtable is getting replaced with bCObjectBase
+    // vtable!
     uintptr_t m_fFunctionPtr = *(uintptr_t *)a_peCEntity + 0xA0;
     if (m_fFunctionPtr == NULL || *(uintptr_t *)m_fFunctionPtr == NULL)
     {
@@ -1743,11 +1745,12 @@ GEBool GE_STDCALL Entity_AttachTo(eCEntity *a_peCEntity)
     }
 
     return Hook_Entity_AttachTo.GetOriginalFunction(&Entity_AttachTo)(a_peCEntity);
-}
+}*/
 
 void HookFunctions()
 {
-    Hook_Entity_AttachTo.Prepare(RVA_Script(0x13e80), &Entity_AttachTo, mCBaseHook::mEHookType_ThisCall).Hook();
+    // Bugs regarding Debug built and using items, which changed stats of Player
+    //Hook_Entity_AttachTo.Prepare(RVA_Script(0x13e80), &Entity_AttachTo, mCBaseHook::mEHookType_ThisCall).Hook();
 
     Hook_FAI_Active_HardCodeAttacks.Hook(GetScriptAdminExt().GetScript("FAI_Active")->m_funcScript,
                                          &FAI_Active_HardCodeAttacks);
