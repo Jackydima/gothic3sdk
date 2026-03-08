@@ -54,10 +54,10 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
         multiPlier *= 0.9f;
 
     if (isArenaNPC)
-        multiPlier *= npcArenaSpeedMultiplier; // default 1.25
+        multiPlier *= NBConfig::npcArenaSpeedMultiplier; // default 1.25
 
     // Alternative MonsterRage Mode, Monsters are just faster now!
-    if (MonsterRageModus != 0 && MonsterRageModus != 1)
+    if (NBConfig::MonsterRageModus != 0 && NBConfig::MonsterRageModus != 1)
     {
         if (entity.NPC.GetCurrentTarget() == Player && CanRage(entity)
             && Player.NPC.GetProperty<PSNpc::PropertyLastHitTimestamp>() >= 120)
@@ -80,31 +80,31 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
         case gEAction_LiePiercedDead:  return 1.0f;
         case gEAction_Aim:
         case gEAction_Reload:
-            if (entity == Player)
+            if (entity == Player && NBConfig::useNewBowMechanics)
             {
                 if (entity.Inventory.IsSkillActive("Perk_Bow_3"))
                 {
-                    return animationSpeedBonusHigh;
+                    return NBConfig::animationSpeedBonusHigh;
                 }
                 if (entity.Inventory.IsSkillActive("Perk_Bow_2"))
                 {
-                    return animationSpeedBonusMid;
+                    return NBConfig::animationSpeedBonusMid;
                 }
             }
-            else
+            else if (NBConfig::useNewBowMechanics)
             {
                 Entity weapon = entity.GetWeapon(GETrue);
                 if (weapon.Interaction.GetUseType() == gEUseType_CrossBow)
                 {
-                    if (getPowerLevel(entity) >= uniqueLevel)
+                    if (getPowerLevel(entity) >= NBConfig::uniqueLevel)
                         return 2.5f;
-                    if (getPowerLevel(entity) >= warriorLevel)
+                    if (getPowerLevel(entity) >= NBConfig::warriorLevel)
                         return 1.75f;
                 }
-                if (getPowerLevel(entity) >= uniqueLevel)
-                    return animationSpeedBonusHigh;
-                if (getPowerLevel(entity) >= warriorLevel)
-                    return animationSpeedBonusMid;
+                if (getPowerLevel(entity) >= NBConfig::uniqueLevel)
+                    return NBConfig::animationSpeedBonusHigh;
+                if (getPowerLevel(entity) >= NBConfig::warriorLevel)
+                    return NBConfig::animationSpeedBonusMid;
             }
             return 1.0f;
         case gEAction_Cast:
@@ -177,11 +177,11 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
                 return 1.0;
             }
 
-            if (getPowerLevel(entity) >= uniqueLevel)
+            if (getPowerLevel(entity) >= NBConfig::uniqueLevel)
             {
                 return 2.5;
             }
-            if (getPowerLevel(entity) >= warriorLevel)
+            if (getPowerLevel(entity) >= NBConfig::warriorLevel)
             {
                 return 1.75;
             }
@@ -210,16 +210,16 @@ GEInt OnPowerAim_Loop(gCScriptProcessingUnit *p_PSU)
     if (Self == Entity::GetPlayer())
     {
         if (Self.Inventory.IsSkillActive("Perk_Bow_3"))
-            hitMultiplier *= animationSpeedBonusHigh;
+            hitMultiplier *= NBConfig::animationSpeedBonusHigh;
         else if (Self.Inventory.IsSkillActive("Perk_Bow_2"))
-            hitMultiplier *= animationSpeedBonusMid;
+            hitMultiplier *= NBConfig::animationSpeedBonusMid;
     }
     else
     {
         if (getPowerLevel(Self) >= 40)
-            hitMultiplier *= animationSpeedBonusHigh;
+            hitMultiplier *= NBConfig::animationSpeedBonusHigh;
         else if (getPowerLevel(Self) >= 30)
-            hitMultiplier *= animationSpeedBonusMid;
+            hitMultiplier *= NBConfig::animationSpeedBonusMid;
     }
     if (hitMultiplier < 0.75)
         hitMultiplier /= 2;
@@ -349,7 +349,7 @@ GEInt UpdateHitPointsOnTick(Entity p_entity)
     }
     else if (!p_entity.IsPlayer()
              && p_entity.Party.AccessProperty<PSParty::PropertyPartyMemberType>() != gEPartyMemberType_Summoned
-             && getPowerLevel(p_entity) >= bossLevel)
+             && getPowerLevel(p_entity) >= NBConfig::bossLevel)
     {
         GEInt maxHealth = p_entity.DamageReceiver.GetProperty<PSDamageReceiver::PropertyHitPointsMax>();
         retVal += static_cast<GEInt>(maxHealth * 0.01);
@@ -396,7 +396,7 @@ GEInt GE_STDCALL CanParade(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity
         Special Request Change
     */
 
-    if (useExtendedBlocking)
+    if (NBConfig::useExtendedBlocking)
     {
         // gEUseType rightWeaponUseType = Victim.Inventory.GetItemFromSlot ( gESlot_RightHand ).Interaction.GetUseType (
         // );
@@ -499,17 +499,6 @@ GEInt GE_STDCALL OnTick(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, E
 {
     INIT_SCRIPT_EXT(Self, Other);
 
-    if (!Self.IsPlayer() && enableNPCSprint
-        && (Self.NPC.GetProperty<PSNpc::PropertySpecies>() != gESpecies::gESpecies_Zombie || zombiesCanSprint)
-        && Self.Routine.GetProperty<PSRoutine::PropertyAIMode>() == gEAIMode_Combat)
-    {
-        GEDouble staminaPercantage =
-            (GEDouble)Self.DamageReceiver.GetProperty<PSDamageReceiver::PropertyStaminaPoints>()
-            / (GEDouble)Self.DamageReceiver.GetProperty<PSDamageReceiver::PropertyStaminaPointsMax>();
-        if (Self.GetDistanceTo(Self.NPC.GetCurrentTarget()) > 450.0 && staminaPercantage >= 0.2)
-            Self.SetMovementMode(gECharMovementMode_Sprint);
-    }
-
     if (Self.IsPlayer() && IsPlayerInCombat())
     {
         Self.NPC.AccessProperty<PSNpc::PropertyCombatState>() = 1;
@@ -523,10 +512,11 @@ GEInt GE_STDCALL OnTick(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, E
     // p_entity.NPC.GetProperty<PSNpc::PropertyCombatState> ( ) << "\n";
 
     // Innos lights now actually tries to banish the darkness of beliar :)
-    if (useDamagingInnosLight && Self.Routine.AIMode != gEAIMode_Down && Self.Routine.AIMode != gEAIMode_Dead
-        && Self.NPC.Species != gESpecies_Golem && Self.NPC.Species != gESpecies_IceGolem
-        && Self.NPC.Species != gESpecies_FireGolem && !Self.NPC.IsBurning()
-        && GetScriptAdmin().CallScriptFromScript("IsEvil", &Self, &None))
+    gEAIMode selfAIMode = Self.Routine.GetProperty<PSRoutine::PropertyAIMode>();
+    gESpecies selfSpecies = Self.NPC.GetProperty<PSNpc::PropertySpecies>();
+    if (NBConfig::useDamagingInnosLight && selfAIMode != gEAIMode_Down && selfAIMode != gEAIMode_Dead
+        && selfSpecies != gESpecies_Golem && selfSpecies != gESpecies_IceGolem && selfSpecies != gESpecies_FireGolem
+        && !Self.NPC.IsBurning() && GetScriptAdmin().CallScriptFromScript("IsEvil", &Self, &None))
     {
         auto entityList = Self.GetEntitiesByDistance();
         Entity currentEntity;
@@ -711,7 +701,7 @@ GEInt GE_STDCALL GetProtection(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEn
 {
     INIT_SCRIPT_EXT(Self, Other);
     GEInt protection = GetProtectionHUD(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
-    return static_cast<GEInt>(protection * playerArmorMultiplier);
+    return static_cast<GEInt>(protection * NBConfig::playerArmorMultiplier);
 }
 
 GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity,
@@ -740,7 +730,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
     if (!Self.IsPlayer() || Self.NPC.IsTransformed())
     {
         protection = GetScriptAdmin().CallScriptFromScript("GetLevelMax", a_pSelfEntity, &None);
-        protection = static_cast<GEInt>(protection * npcArmorMultiplier);
+        protection = static_cast<GEInt>(protection * NBConfig::npcArmorMultiplier);
         GEInt stackIndexLeftHand = Self.Inventory.FindStackIndex(gESlot::gESlot_LeftHand);
         GEInt stackIndexLeftHandBack = Self.Inventory.FindStackIndex(gESlot::gESlot_BackLeft);
         if (Self.Inventory.GetUseType(stackIndexLeftHand) == gEUseType_Shield
@@ -748,7 +738,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
         {
             protection = static_cast<GEInt>(protection * 1.25f);
         }
-        protection = static_cast<GEInt>(protection / playerArmorMultiplier);
+        protection = static_cast<GEInt>(protection / NBConfig::playerArmorMultiplier);
         return protection;
     }
     else
@@ -773,7 +763,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
                 protection = Self.PlayerMemory.GetProtectionFire();
                 if (Self.Inventory.IsSkillActive("Perk_ResistHeat"))
                 {
-                    protection += elementalPerkBonusResistance;
+                    protection += NBConfig::elementalPerkBonusResistance;
                 }
                 protectionCheckString = "PROT_FIRE";
                 break;
@@ -781,7 +771,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
                 protection = Self.PlayerMemory.GetProtectionIce();
                 if (Self.Inventory.IsSkillActive("Perk_ResistCold"))
                 {
-                    protection += elementalPerkBonusResistance;
+                    protection += NBConfig::elementalPerkBonusResistance;
                 }
                 protectionCheckString = "PROT_ICE";
                 break;
@@ -1004,7 +994,8 @@ GEInt GE_STDCALL GetMaxLevel(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnti
 GEInt StaminaUpdateOnTickHelper(Entity &p_entity, GEInt p_staminaValue)
 {
     if (p_staminaValue > 0
-        && getLastTimeFromMap(p_entity.GetGameEntity()->GetID().GetText(), LastStaminaUsageMap) < staminaRecoveryDelay)
+        && getLastTimeFromMap(p_entity.GetGameEntity()->GetID().GetText(), LastStaminaUsageMap)
+               < NBConfig::staminaRecoveryDelay)
         return 0;
     return p_staminaValue;
 }
@@ -1013,7 +1004,7 @@ static mCFunctionHook Hook_StaminaUpdateOnTick;
 GEInt StaminaUpdateOnTick(Entity p_entity)
 {
     const GEInt standardStaminaRecovery =
-        staminaRecoveryPerTick
+        NBConfig::staminaRecoveryPerTick
         + GetScriptAdmin().CallScriptFromScript("GetStaminaPointsMax", &p_entity, &None, 0) / 100;
     // TODO Change that again;
     // GEInt retStaminaDelta = 0;
@@ -1041,12 +1032,12 @@ GEInt StaminaUpdateOnTick(Entity p_entity)
         if (eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing)
         {
             if (p_entity.Inventory.IsSkillActive(Template("Perk_Sprinter"))
-                || (p_entity != Entity::GetPlayer() && getPowerLevel(p_entity) >= warriorLevel))
+                || (p_entity != Entity::GetPlayer() && getPowerLevel(p_entity) >= NBConfig::warriorLevel))
                 return StaminaUpdateOnTickHelper(p_entity, -4);
             return StaminaUpdateOnTickHelper(p_entity, -8);
         }
         if (p_entity.Inventory.IsSkillActive(Template("Perk_Sprinter"))
-            || (p_entity != Entity::GetPlayer() && getPowerLevel(p_entity) >= warriorLevel))
+            || (p_entity != Entity::GetPlayer() && getPowerLevel(p_entity) >= NBConfig::warriorLevel))
             return StaminaUpdateOnTickHelper(p_entity, -5);
         return StaminaUpdateOnTickHelper(p_entity, -10);
     }
@@ -1162,30 +1153,30 @@ GEInt GetQualityBonus(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Ent
 
     if ((itemQuality & gEItemQuality_Worn) == gEItemQuality_Worn)
     {
-        retValue = static_cast<GEInt>(retValue - (a_iArgs * ((GEFloat)(100 - wornPercentageMalus) / 100.0f)));
+        retValue = static_cast<GEInt>(retValue - (a_iArgs * ((GEFloat)(100 - NBConfig::wornPercentageMalus) / 100.0f)));
     }
 
     if ((itemQuality & gEItemQuality_Sharp) == gEItemQuality_Sharp)
     {
-        if (useSharpPercentage)
+        if (NBConfig::useSharpPercentage)
         {
-            GEU32 l_sharpBonus = static_cast<GEU32>(a_iArgs * ((GEFloat)sharpBonus / 100.0f));
+            GEU32 l_sharpBonus = static_cast<GEU32>(a_iArgs * ((GEFloat)NBConfig::sharpBonus / 100.0f));
             if (l_sharpBonus < 10)
                 l_sharpBonus = 10;
             retValue += l_sharpBonus;
         }
         else
-            retValue += sharpBonus;
+            retValue += NBConfig::sharpBonus;
     }
 
     if ((itemQuality & gEItemQuality_Blessed) == gEItemQuality_Blessed)
     {
-        retValue += blessedBonus;
+        retValue += NBConfig::blessedBonus;
     }
 
     if ((itemQuality & gEItemQuality_Forged) == gEItemQuality_Forged)
     {
-        retValue += forgedBonus;
+        retValue += NBConfig::forgedBonus;
     }
 
     return retValue;
@@ -1199,30 +1190,31 @@ GEInt OnPlayerGetDamage(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, E
 
     if ((itemQuality & gEItemQuality_Worn) == gEItemQuality_Worn)
     {
-        retValue = static_cast<GEInt>(retValue - (*(GEU32 *)a_iArgs * ((GEFloat)(100 - wornPercentageMalus) / 100.0f)));
+        retValue = static_cast<GEInt>(
+            retValue - (*(GEU32 *)a_iArgs * ((GEFloat)(100 - NBConfig::wornPercentageMalus) / 100.0f)));
     }
 
     if ((itemQuality & gEItemQuality_Sharp) == gEItemQuality_Sharp)
     {
-        if (useSharpPercentage)
+        if (NBConfig::useSharpPercentage)
         {
-            GEU32 l_sharpBonus = static_cast<GEU32>(*(GEU32 *)a_iArgs * ((GEFloat)sharpBonus / 100.0f));
+            GEU32 l_sharpBonus = static_cast<GEU32>(*(GEU32 *)a_iArgs * ((GEFloat)NBConfig::sharpBonus / 100.0f));
             if (l_sharpBonus < 10)
                 l_sharpBonus = 10;
             retValue += l_sharpBonus;
         }
         else
-            retValue += sharpBonus;
+            retValue += NBConfig::sharpBonus;
     }
 
     if ((itemQuality & gEItemQuality_Blessed) == gEItemQuality_Blessed)
     {
-        retValue += blessedBonus;
+        retValue += NBConfig::blessedBonus;
     }
 
     if ((itemQuality & gEItemQuality_Forged) == gEItemQuality_Forged)
     {
-        retValue += forgedBonus;
+        retValue += NBConfig::forgedBonus;
     }
 
     return retValue;
@@ -1291,11 +1283,11 @@ void OnTouch(eCEntity *p_entity, eCContactIterator *p_contactIterator)
     gCDamage_PS *damage = (gCDamage_PS *)eCE->GetPropertySet(eEPropertySetType_Damage);
     PSDamage damagePS = (PSDamage)damage;
     Entity owner = (Entity)interaction->GetOwner().GetEntity();
-    for each (bCString entry in AOENames)
+    for each (bCString entry in NBConfig::AOENames)
     {
         if (entry != "" && eCE->GetName().Contains(entry.GetText()))
         {
-            This->SetTouchBehavior(bTPropertyContainer<gEProjectileTouchBehavior>(gEProjectileTouchBehavior_KillSelf));
+            This->AccessTouchBehavior() = gEProjectileTouchBehavior_KillSelf;
             /*bCVector loc = p_contactIterator->GetAvgCollisionPosition ( );
             //std::cout << "Location: x= " << loc.AccessX ( ) << "\ty= " << loc.AccessY ( )
             //    << "\tz= " << loc.AccessZ ( ) << "\n";
@@ -1362,7 +1354,7 @@ void MagicPartyMemberRemoverNew(Entity &p_summoner, Template &p_monsterSummon, G
     Entity PartyMember = None;
     GEInt combinedLevel =
         static_cast<GEInt>(static_cast<Entity>(p_monsterSummon).NPC.GetProperty<PSNpc::PropertyLevelMax>()
-                           * summoningLevelMultiplier * multiplicator);
+                           * NBConfig::summoningLevelMultiplier * multiplicator);
     GEInt playerMaxMana = GetScriptAdminExt().CallScriptFromScript("GetManaPointsMax", &p_summoner, &None);
 
     for (GEInt iPartyMember = partyMembers.GetCount() - 1; iPartyMember >= 0; iPartyMember--)
@@ -1404,7 +1396,7 @@ void MagicPartyMemberRemoverNew(Entity &p_summoner, Template &p_monsterSummon, G
             {
                 // Check if the Mana Potential is enough to hold on to this Monster-Summon
                 GEInt currentLevelAdd = static_cast<GEInt>(PartyMember.NPC.GetProperty<PSNpc::PropertyLevelMax>()
-                                                           * summoningLevelMultiplier);
+                                                           * NBConfig::summoningLevelMultiplier);
                 if ((combinedLevel + currentLevelAdd) <= playerMaxMana)
                 {
                     combinedLevel += currentLevelAdd;
@@ -1556,7 +1548,9 @@ GEInt GE_STDCALL CleanUpPlunderInv(gCScriptProcessingUnit *a_pSPU, Entity *a_pSe
     UNREFERENCED_PARAMETER(a_iArgs);
 
     // Remove Weapons of Demons and Remove Weapons of Summoned Creatures!
-    if (Self.NPC.Species == gESpecies_Demon || Self.Party.PartyMemberType == gEPartyMemberType_Summoned)
+    gEPartyMemberType selfPartyMemberType = Self.Party.GetProperty<PSParty::PropertyPartyMemberType>();
+    if (Self.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Demon
+        || selfPartyMemberType == gEPartyMemberType_Summoned)
     {
         for (GEInt i = Self.Inventory.GetStackCount() - 1; i >= 0; i--)
         {
@@ -1568,7 +1562,7 @@ GEInt GE_STDCALL CleanUpPlunderInv(gCScriptProcessingUnit *a_pSPU, Entity *a_pSe
     }
 
     // Do not generate Items from Summoned Monsters!
-    if (Self.Party.PartyMemberType == gEPartyMemberType_Summoned)
+    if (selfPartyMemberType == gEPartyMemberType_Summoned)
     {
         return GETrue;
     }
@@ -1583,7 +1577,8 @@ DECLARE_SCRIPT(DropHandItems)
     UNREFERENCED_PARAMETER(a_iArgs);
 
     GEBool decay = GEFalse;
-    if (Self.Party.PartyMemberType == gEPartyMemberType_Summoned || Self.NPC.Species == gESpecies_Demon)
+    if (Self.Party.GetProperty<PSParty::PropertyPartyMemberType>() == gEPartyMemberType_Summoned
+        || Self.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Demon)
     {
         decay = GETrue;
     }
@@ -1986,6 +1981,115 @@ DECLARE_SCRIPT(DoLogicalDamageEvade)
                                                                                 a_iArgs);
 }
 
+static mCFunctionHook Hook_FAI_Active_HardCodeAttacks;
+DECLARE_SCRIPT(FAI_Active_NB)
+{
+    INIT_SCRIPT_EXT(Self, Victim);
+
+    gEAction returnedAction = static_cast<gEAction>(Hook_FAI_Active_HardCodeAttacks.GetOriginalFunction(&FAI_Active_NB)(
+        a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs));
+
+    GEFloat distanceToTarget = Self.GetDistanceTo(Victim);
+
+    // Overwrite Fwd for long distances!
+    if (returnedAction == gEAction_Fwd && distanceToTarget >= 450.0f)
+    {
+        // Let NPCs sprint forward!
+        if (NBConfig::enableNPCSprint
+            && (Self.NPC.GetProperty<PSNpc::PropertySpecies>() != gESpecies_Zombie || NBConfig::zombiesCanSprint))
+        {
+            GEDouble staminaPercentage =
+                (GEDouble)Self.DamageReceiver.GetProperty<PSDamageReceiver::PropertyStaminaPoints>()
+                / (GEDouble)Self.DamageReceiver.GetProperty<PSDamageReceiver::PropertyStaminaPointsMax>();
+            if (staminaPercentage >= 0.2)
+                Self.SetMovementMode(gECharMovementMode_Sprint);
+        }
+
+        return returnedAction;
+    }
+
+    // Handle the hardcore attack next!
+
+    // Always attack then with patched instructions!
+    if (NBConfig::useHardCoreAttacks)
+    {
+        return returnedAction;
+    }
+
+    // NPCs can attack each others fully
+    if (Victim != Entity::GetPlayer() || Victim == None)
+    {
+        return returnedAction;
+    }
+
+    gEAniState victimAniState = Victim.Routine.GetProperty<PSRoutine::PropertyAniState>();
+    gEAction victimAction = Victim.Routine.GetProperty<PSRoutine::PropertyAction>();
+
+    // Do default behaviour on hard difficulty with adjusted hit registrations
+    if (Entity::GetCurrentDifficulty() == EDifficulty_Hard)
+    {
+        if (victimAniState == gEAniState_SitKnockDown)
+        {
+            if (distanceToTarget < 350)
+            {
+                return gEAction_Back;
+            }
+            else if (distanceToTarget > 400)
+            {
+                return gEAction_Fwd;
+            }
+            return gEAction_Wait;
+        }
+    }
+
+    // Else be less aggressive against Player!
+    // gEAction_SitKnockDown should be enought, since it is applied when in ZS_SitKnockDown state
+    else if (victimAction == gEAction_SitKnockDown || victimAniState == gEAniState_SitKnockDown
+             || victimAniState == gEAniState_LieKnockDown)
+    {
+        if (distanceToTarget < 400)
+        {
+            return gEAction_Back;
+        }
+        else if (distanceToTarget > 500)
+        {
+            return gEAction_Fwd;
+        }
+        return gEAction_Wait;
+    }
+
+    // Default function (with patched checks)
+    return returnedAction;
+}
+
+// Has issues when hooking sadly!
+/*static mCFunctionHook Hook_Entity_AttachTo;
+GEBool GE_STDCALL Entity_AttachTo(LPVOID *a_peCEntity)
+{
+    Entity *_this = Hook_Entity_AttachTo.GetSelf<Entity *>();
+    if (_this == NULL)
+    {
+        return Hook_Entity_AttachTo.GetOriginalFunction(&Entity_AttachTo)(a_peCEntity);
+    }
+
+    if (a_peCEntity == NULL)
+    {
+        return Hook_Entity_AttachTo.GetOriginalFunction(&Entity_AttachTo)(a_peCEntity);
+    }
+
+    // Sometimes when killing asynchronously the Entity, the Objects vtable is getting replaced with bCObjectBase
+    // vtable!
+    uintptr_t m_fFunctionPtr = *(uintptr_t *)a_peCEntity + 0xA0;
+    if (m_fFunctionPtr == NULL || *(uintptr_t *)m_fFunctionPtr == NULL)
+    {
+        println("eCEntity::IsKilled() method broken, trying to repair...");
+        memset(_this, 0, sizeof(Entity));
+        return GETrue;
+    }
+
+    return Hook_Entity_AttachTo.GetOriginalFunction(&Entity_AttachTo)(a_peCEntity);
+}*/
+
 void HookFunctions()
 {
     // Old variant
@@ -1994,22 +2098,27 @@ void HookFunctions()
     Hook_DoLogicalDamageEvade.Hook(GetScriptAdminExt().GetScript("DoLogicalDamage")->m_funcScript,
                                    &DoLogicalDamageEvade);
 
-    if (enableNewMagicAiming)
+    // Bugs regarding Debug built and using items, which changed stats of Player
+    // Hook_Entity_AttachTo.Prepare(RVA_Script(0x13e80), &Entity_AttachTo, mCBaseHook::mEHookType_ThisCall).Hook();
+
+    Hook_FAI_Active_HardCodeAttacks.Hook(GetScriptAdminExt().GetScript("FAI_Active")->m_funcScript, &FAI_Active_NB);
+
+    if (NBConfig::enableNewMagicAiming)
     {
         Hook_MagicProjectile.Prepare(RVA_ScriptGame(0x52db0), &MagicProjectile).Hook();
     }
 
-    if (enableAOEDamage)
+    if (NBConfig::enableAOEDamage)
     {
         Hook_OnTouch.Prepare(RVA_Game(0x152650), &OnTouch, mCBaseHook::mEHookType_ThisCall).Hook();
     }
 
-    if (vanishSummons)
+    if (NBConfig::vanishSummons)
     {
         Hook_ZS_RagdollDeadAddition.Prepare(RVA_ScriptGame(0x1c4a0), &ZS_RagdollDeadAddition).Hook();
     }
 
-    if (newSummoning)
+    if (NBConfig::newSummoning)
     {
         static mCFunctionHook Hook_MagicSummonDemon;
         Hook_MagicSummonDemon.Hook(GetScriptAdminExt().GetScript("MagicSummonDemon")->m_funcScript, &MagicSummonDemon);
@@ -2037,7 +2146,7 @@ void HookFunctions()
 
     static mCFunctionHook Hook_CanBurn;
     GetScriptAdmin().LoadScriptDLL("Script_G3Fixes.dll");
-    if (!GetScriptAdmin().IsScriptDLLLoaded("Script_G3Fixes.dll") || useNewBalanceMagicWeapon)
+    if (!GetScriptAdmin().IsScriptDLLLoaded("Script_G3Fixes.dll") || NBConfig::useNewBalanceMagicWeapon)
     {
         Hook_CanBurn.Hook(GetScriptAdminExt().GetScript("CanBurn")->m_funcScript, &CanBurn,
                           mCBaseHook::mEHookType_OnlyStack);
@@ -2075,7 +2184,7 @@ void HookFunctions()
     static mCFunctionHook Hook_SpeciesRightHand;
     Hook_SpeciesRightHand.Prepare(RVA_ScriptGame(0xb200), &speciesRightHand).Hook();
 
-    if (enableNewTransformation)
+    if (NBConfig::enableNewTransformation)
     {
         Hook_MagicTransform.Hook(GetScriptAdminExt().GetScript("MagicTransform")->m_funcScript, &MagicTransform,
                                  mCBaseHook::mEHookType_OnlyStack);
@@ -2097,10 +2206,10 @@ void HookFunctions()
     static mCFunctionHook Hook_GetProtectionForHUD;
     Hook_GetProtection.Hook(GetScriptAdminExt().GetScript("GetProtectionForHUD")->m_funcScript, &GetProtectionHUD);
 
-    if (useAlwaysMaxLevel)
+    if (NBConfig::useAlwaysMaxLevel)
         Hook_GetCurrentLevel.Hook(GetScriptAdminExt().GetScript("GetCurrentLevel")->m_funcScript, &GetCurrentLevel);
 
-    if (useNewStaminaRecovery)
+    if (NBConfig::useNewStaminaRecovery)
     {
         Hook_AddStaminaPoints.Hook(GetScriptAdminExt().GetScript("AddStaminaPoints")->m_funcScript, &AddStaminaPoints);
 

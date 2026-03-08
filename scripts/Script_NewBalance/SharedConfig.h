@@ -6,6 +6,8 @@
 #include <g3sdk/util/Logging.h>
 #include <g3sdk/util/Memory.h>
 
+namespace NBConfig
+{
 // TODO
 extern GEFloat npcSTRMultiplier;
 extern GEInt npcSTRAddition;
@@ -105,3 +107,4 @@ static bCString sharpBonusString;
 static bCString forgedBonusString;
 static bCString wornMalusString;
 //
+} // namespace NBConfig

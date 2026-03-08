@@ -49,7 +49,7 @@ void PatchCode()
      * Disable SprintAttack, when Monsters are Enraged
      */
     // MonsterRageModus is alternative or disabled!
-    if (MonsterRageModus != 1)
+    if (NBConfig::MonsterRageModus != 1)
     {
         PatchNOPs((LPVOID)RVA_ScriptGame(0x4f10a), 0x4f10f - 0x4f10a);
     }
@@ -57,35 +57,36 @@ void PatchCode()
     /**
      * New AI Range for Ranged and Magic Attacks
      */
-    VirtualProtect((LPVOID)RVA_ScriptGame(0x50414), sizeof(&attackRangeAIPtr), PAGE_EXECUTE_READWRITE, &currProt);
-    memset((LPVOID)RVA_ScriptGame(0x50414), 0x90, sizeof(&attackRangeAIPtr));
-    memcpy((LPVOID)RVA_ScriptGame(0x50414), &attackRangeAIPtr, sizeof(&attackRangeAIPtr));
-    VirtualProtect((LPVOID)RVA_ScriptGame(0x50414), sizeof(&attackRangeAIPtr), currProt, &newProt);
+    VirtualProtect((LPVOID)RVA_ScriptGame(0x50414), sizeof(&NBConfig::attackRangeAIPtr), PAGE_EXECUTE_READWRITE,
+                   &currProt);
+    memset((LPVOID)RVA_ScriptGame(0x50414), 0x90, sizeof(&NBConfig::attackRangeAIPtr));
+    memcpy((LPVOID)RVA_ScriptGame(0x50414), &NBConfig::attackRangeAIPtr, sizeof(&NBConfig::attackRangeAIPtr));
+    VirtualProtect((LPVOID)RVA_ScriptGame(0x50414), sizeof(&NBConfig::attackRangeAIPtr), currProt, &newProt);
 
     /**
      * New variable Telekinesis Range Patch
      */
-    PatchNewAddr((LPVOID)RVA_ScriptGame(0x7a6ce), &telekinesisRangePtr, sizeof(&telekinesisRangePtr));
+    PatchNewAddr((LPVOID)RVA_ScriptGame(0x7a6ce), &NBConfig::telekinesisRangePtr,
+                 sizeof(&NBConfig::telekinesisRangePtr));
 
     /**
      * NPC Can now just brute Attack you through your KnockdownState! No Chill
      */
-    if (useHardCoreAttacks)
-    {
-        PatchNOPs((LPVOID)RVA_ScriptGame(0x4ef24), 3);    // remove compare instruction
-        PatchByte((LPVOID)RVA_ScriptGame(0x4ef27), 0xE9); // JMP instruction
-        BYTE kDSB[4] = {0x9E, 0x00, 0x00, 0x00};          // Relative Jmp address
-        PatchBytes((LPVOID)RVA_ScriptGame(0x4ef28), kDSB, 4);
-        PatchNOPs((LPVOID)RVA_ScriptGame(0x4ef2C), 1); // cleanup
-    }
+    // Logic in FunctionHook.cpp for this feature now!
+    PatchNOPs((LPVOID)RVA_ScriptGame(0x4ef24), 3);    // remove compare instruction
+    PatchByte((LPVOID)RVA_ScriptGame(0x4ef27), 0xE9); // JMP instruction
+    BYTE kDSB[4] = {0x9E, 0x00, 0x00, 0x00};          // Relative Jmp address
+    PatchBytes((LPVOID)RVA_ScriptGame(0x4ef28), kDSB, 4);
+    PatchNOPs((LPVOID)RVA_ScriptGame(0x4ef2C), 1); // cleanup
 
     /**
      * New Velocity for bows!
      */
-    VirtualProtect((LPVOID)RVA_ScriptGame(0x86705), sizeof(&shootVelocityPtr), PAGE_EXECUTE_READWRITE, &currProt);
-    memset((LPVOID)RVA_ScriptGame(0x86705), 0x90, sizeof(&shootVelocityPtr));
-    memcpy((LPVOID)RVA_ScriptGame(0x86705), &shootVelocityPtr, sizeof(&shootVelocityPtr));
-    VirtualProtect((LPVOID)RVA_ScriptGame(0x386705), sizeof(&shootVelocityPtr), currProt, &newProt);
+    VirtualProtect((LPVOID)RVA_ScriptGame(0x86705), sizeof(&NBConfig::shootVelocityPtr), PAGE_EXECUTE_READWRITE,
+                   &currProt);
+    memset((LPVOID)RVA_ScriptGame(0x86705), 0x90, sizeof(&NBConfig::shootVelocityPtr));
+    memcpy((LPVOID)RVA_ScriptGame(0x86705), &NBConfig::shootVelocityPtr, sizeof(&NBConfig::shootVelocityPtr));
+    VirtualProtect((LPVOID)RVA_ScriptGame(0x386705), sizeof(&NBConfig::shootVelocityPtr), currProt, &newProt);
 
     /**
      * Reset All Fix for PipiStumble (for HyperArmor working correctly)
@@ -97,10 +98,10 @@ void PatchCode()
     /**
      * Changed the Automatic TagetBone
      */
-    VirtualProtect((LPVOID)RVA_Game(0x151f12), sizeof(&BONETARGET), PAGE_EXECUTE_READWRITE, &currProt);
-    memset((LPVOID)RVA_Game(0x151f12), 0x90, sizeof(&BONETARGET));
-    memcpy((LPVOID)RVA_Game(0x151f12), &BONETARGET, sizeof(&BONETARGET));
-    VirtualProtect((LPVOID)RVA_Game(0x151f12), sizeof(&BONETARGET), currProt, &newProt);
+    VirtualProtect((LPVOID)RVA_Game(0x151f12), sizeof(&NBConfig::BONETARGET), PAGE_EXECUTE_READWRITE, &currProt);
+    memset((LPVOID)RVA_Game(0x151f12), 0x90, sizeof(&NBConfig::BONETARGET));
+    memcpy((LPVOID)RVA_Game(0x151f12), &NBConfig::BONETARGET, sizeof(&NBConfig::BONETARGET));
+    VirtualProtect((LPVOID)RVA_Game(0x151f12), sizeof(&NBConfig::BONETARGET), currProt, &newProt);
 
     /**
      * 0xb5045 - 0xb503d
@@ -113,7 +114,7 @@ void PatchCode()
     /**
      * Remove the Limiter on Block for the Player via simple Bytejmp patch
      */
-    if (!useStaticBlocks)
+    if (!NBConfig::useStaticBlocks)
     {
         BYTE patchcode[] = {0xE9, 0x2B, 0x02, 0x00, 0x00};
         VirtualProtect((LPVOID)RVA_ScriptGame(0x63359), 0x63365 - 0x63359, PAGE_EXECUTE_READWRITE, &currProt);
@@ -129,7 +130,7 @@ void PatchCode()
     // std::cout << "Adr adress: " << npcArmorMultiplierPtr << "\tFloat: " << npcArmorMultiplier << "\n";
     VirtualProtect((LPVOID)RVA_ScriptGame(0x34656), 0x3465a - 0x34656, PAGE_EXECUTE_READWRITE, &currProt);
     memset((LPVOID)RVA_ScriptGame(0x34656), 0x90, 0x3465a - 0x34656);
-    memcpy((LPVOID)RVA_ScriptGame(0x34656), &npcArmorMultiplierPtr, sizeof(&npcArmorMultiplierPtr));
+    memcpy((LPVOID)RVA_ScriptGame(0x34656), &NBConfig::npcArmorMultiplierPtr, sizeof(&NBConfig::npcArmorMultiplierPtr));
     VirtualProtect((LPVOID)RVA_ScriptGame(0x34656), 0x3465a - 0x34656, currProt, &newProt);
 
     /** Remove HitProt when Entity is SitDowned
@@ -168,32 +169,32 @@ void PatchCode()
     /**
      * Adjust the QualityBonuses
      */
-    if (useSharpPercentage)
-        sharpBonusString = bCString::GetFormattedString("+(%d%%)", sharpBonus);
+    if (NBConfig::useSharpPercentage)
+        NBConfig::sharpBonusString = bCString::GetFormattedString("+(%d%%)", NBConfig::sharpBonus);
     else
-        sharpBonusString = bCString::GetFormattedString("+(%d)", sharpBonus);
+        NBConfig::sharpBonusString = bCString::GetFormattedString("+(%d)", NBConfig::sharpBonus);
 
-    blessedBonusString = bCString::GetFormattedString("+(%d)", blessedBonus);
-    forgedBonusString = bCString::GetFormattedString("+(%d)", forgedBonus);
-    wornMalusString = bCString::GetFormattedString("-(%d%%)", 100 - wornPercentageMalus);
+    NBConfig::blessedBonusString = bCString::GetFormattedString("+(%d)", NBConfig::blessedBonus);
+    NBConfig::forgedBonusString = bCString::GetFormattedString("+(%d)", NBConfig::forgedBonus);
+    NBConfig::wornMalusString = bCString::GetFormattedString("-(%d%%)", 100 - NBConfig::wornPercentageMalus);
 
-    VirtualProtect((LPVOID)RVA_Game(0xa3e91), sizeof(&sharpBonusString), PAGE_EXECUTE_READWRITE, &currProt);
-    memset((LPVOID)RVA_Game(0xa3e91), 0x00, sizeof(&sharpBonusString));
-    memcpy((LPVOID)RVA_Game(0xa3e91), &sharpBonusString, sizeof(&sharpBonusString));
-    VirtualProtect((LPVOID)RVA_Game(0xa3e91), sizeof(&sharpBonusString), currProt, &newProt);
+    VirtualProtect((LPVOID)RVA_Game(0xa3e91), sizeof(&NBConfig::sharpBonusString), PAGE_EXECUTE_READWRITE, &currProt);
+    memset((LPVOID)RVA_Game(0xa3e91), 0x00, sizeof(&NBConfig::sharpBonusString));
+    memcpy((LPVOID)RVA_Game(0xa3e91), &NBConfig::sharpBonusString, sizeof(&NBConfig::sharpBonusString));
+    VirtualProtect((LPVOID)RVA_Game(0xa3e91), sizeof(&NBConfig::sharpBonusString), currProt, &newProt);
 
-    VirtualProtect((LPVOID)RVA_Game(0xa3ef5), sizeof(&blessedBonusString), PAGE_EXECUTE_READWRITE, &currProt);
-    memset((LPVOID)RVA_Game(0xa3ef5), 0x00, sizeof(&blessedBonusString));
-    memcpy((LPVOID)RVA_Game(0xa3ef5), &blessedBonusString, sizeof(&blessedBonusString));
-    VirtualProtect((LPVOID)RVA_Game(0xa3ef5), sizeof(&blessedBonusString), currProt, &newProt);
+    VirtualProtect((LPVOID)RVA_Game(0xa3ef5), sizeof(&NBConfig::blessedBonusString), PAGE_EXECUTE_READWRITE, &currProt);
+    memset((LPVOID)RVA_Game(0xa3ef5), 0x00, sizeof(&NBConfig::blessedBonusString));
+    memcpy((LPVOID)RVA_Game(0xa3ef5), &NBConfig::blessedBonusString, sizeof(&NBConfig::blessedBonusString));
+    VirtualProtect((LPVOID)RVA_Game(0xa3ef5), sizeof(&NBConfig::blessedBonusString), currProt, &newProt);
 
-    VirtualProtect((LPVOID)RVA_Game(0xa3e2b), sizeof(&forgedBonusString), PAGE_EXECUTE_READWRITE, &currProt);
-    memset((LPVOID)RVA_Game(0xa3e2b), 0x00, sizeof(&forgedBonusString));
-    memcpy((LPVOID)RVA_Game(0xa3e2b), &forgedBonusString, sizeof(&forgedBonusString));
-    VirtualProtect((LPVOID)RVA_Game(0xa3e2b), sizeof(&forgedBonusString), currProt, &newProt);
+    VirtualProtect((LPVOID)RVA_Game(0xa3e2b), sizeof(&NBConfig::forgedBonusString), PAGE_EXECUTE_READWRITE, &currProt);
+    memset((LPVOID)RVA_Game(0xa3e2b), 0x00, sizeof(&NBConfig::forgedBonusString));
+    memcpy((LPVOID)RVA_Game(0xa3e2b), &NBConfig::forgedBonusString, sizeof(&NBConfig::forgedBonusString));
+    VirtualProtect((LPVOID)RVA_Game(0xa3e2b), sizeof(&NBConfig::forgedBonusString), currProt, &newProt);
 
-    VirtualProtect((LPVOID)RVA_Game(0xa3fba), sizeof(&wornMalusString), PAGE_EXECUTE_READWRITE, &currProt);
-    memset((LPVOID)RVA_Game(0xa3fba), 0x00, sizeof(&wornMalusString));
-    memcpy((LPVOID)RVA_Game(0xa3fba), &wornMalusString, sizeof(&wornMalusString));
-    VirtualProtect((LPVOID)RVA_Game(0xa3fba), sizeof(&wornMalusString), currProt, &newProt);
+    VirtualProtect((LPVOID)RVA_Game(0xa3fba), sizeof(&NBConfig::wornMalusString), PAGE_EXECUTE_READWRITE, &currProt);
+    memset((LPVOID)RVA_Game(0xa3fba), 0x00, sizeof(&NBConfig::wornMalusString));
+    memcpy((LPVOID)RVA_Game(0xa3fba), &NBConfig::wornMalusString, sizeof(&NBConfig::wornMalusString));
+    VirtualProtect((LPVOID)RVA_Game(0xa3fba), sizeof(&NBConfig::wornMalusString), currProt, &newProt);
 }

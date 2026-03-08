@@ -91,9 +91,15 @@ void DoAOEDamage(Entity &p_damager, Entity &p_victim)
 
 void VanishEntity(Entity &p_entity)
 {
+    if (p_entity == None)
+        return;
+
     EffectSystem::StartEffect("eff_remove_summons", p_entity);
     // Completely Remove Entity!
-    p_entity.Kill();
+    auto entityInstance = p_entity.GetInstance();
+    auto selfNPCPtr = GetPropertySet<gCNPC_PS>(entityInstance, eEPropertySetType_NPC);
+    selfNPCPtr->AccessSpecies() = gESpecies_EMPTY_B; // Lets the OnEnterProcessRange remove the dead entity!
+    entityInstance->Enable(GEFalse);
 }
 
 GEBool CanRage(Entity &p_entity)
@@ -214,7 +220,7 @@ GEInt getPowerLevel(Entity &p_entity)
                                      + player.NPC.GetProperty<PSNpc::PropertyLevel>());
     if (level > static_cast<GEInt>(p_entity.NPC.GetProperty<PSNpc::PropertyLevelMax>()))
         level = static_cast<GEInt>(p_entity.NPC.GetProperty<PSNpc::PropertyLevelMax>());
-    if (useAlwaysMaxLevel)
+    if (NBConfig::useAlwaysMaxLevel)
         level = static_cast<GEInt>(p_entity.NPC.GetProperty<PSNpc::PropertyLevelMax>());
     return level;
 }
@@ -229,7 +235,7 @@ Template getProjectile(Entity &p_entity, gEUseType p_rangedWeaponType)
 
     if (p_rangedWeaponType == gEUseType_CrossBow)
     {
-        if (powerLevel >= warriorLevel)
+        if (powerLevel >= NBConfig::warriorLevel)
         {
             projectile = Template("Bolt_Sharp");
             if (projectile.IsValid())
@@ -258,7 +264,7 @@ Template getProjectile(Entity &p_entity, gEUseType p_rangedWeaponType)
         {
             projectile = Template("SharpArrow");
         }
-        else if (powerLevel >= warriorLevel)
+        else if (powerLevel >= NBConfig::warriorLevel)
         {
             if (alignment == gEPoliticalAlignment_Orc)
             {
@@ -385,7 +391,7 @@ GEInt CanBurn(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_p
         DamagerOwner = p_damager;
     }
     if ((p_victim == Entity::GetPlayer() && p_victim.Inventory.IsSkillActive(Template("Perk_ResistHeat")))
-        || (p_victim != Entity::GetPlayer() && getPowerLevel(p_victim) >= eliteLevel))
+        || (p_victim != Entity::GetPlayer() && getPowerLevel(p_victim) >= NBConfig::eliteLevel))
         random = static_cast<GEInt>(random * 2);
     // Special Resistance :O
     if (random >= 100)
@@ -453,7 +459,7 @@ GEInt CanFreeze(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a
         DamagerOwner = p_damager;
     }
     if ((p_victim == Entity::GetPlayer() && p_victim.Inventory.IsSkillActive(Template("Perk_ResistCold")))
-        || (p_victim != Entity::GetPlayer() && getPowerLevel(p_victim) >= eliteLevel))
+        || (p_victim != Entity::GetPlayer() && getPowerLevel(p_victim) >= NBConfig::eliteLevel))
         random = static_cast<GEInt>(random * 2.0);
     // Special Resistance :O
     if (random >= 100)
@@ -557,15 +563,15 @@ GEInt GetSkillLevelsNB(Entity &p_entity)
     if (p_entity != Entity::GetPlayer())
     {
         GEInt npcLevel = getPowerLevel(p_entity);
-        if (npcLevel <= noviceLevel) // 20
+        if (npcLevel <= NBConfig::noviceLevel) // 20
             return 0;
-        if (npcLevel <= warriorLevel) // 30
+        if (npcLevel <= NBConfig::warriorLevel) // 30
             return 1;
-        if (npcLevel <= eliteLevel) // 35
+        if (npcLevel <= NBConfig::eliteLevel) // 35
             return 2;
-        if (npcLevel <= uniqueLevel) // 45
+        if (npcLevel <= NBConfig::uniqueLevel) // 45
             return 3;
-        if (npcLevel <= bossLevel) // >65
+        if (npcLevel <= NBConfig::bossLevel) // >65
             return 4;
         // Legendary NPCs > 65
         return 5;
@@ -671,7 +677,7 @@ GEInt GetShieldLevelBonusNB(Entity &p_entity)
             if (p_entity.Inventory.IsSkillActive(Template("Perk_Shield_2")))
                 level += 1;
         }
-        else if (getPowerLevel(p_entity) >= eliteLevel)
+        else if (getPowerLevel(p_entity) >= NBConfig::eliteLevel)
             level += 1;
     }
     if (p_entity.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction::gEAction_GetUpParade)
@@ -860,11 +866,11 @@ GEInt getWeaponLevelNB(Entity &p_entity)
     }
     // NPC here
     GEInt powerLevel = getPowerLevel(p_entity);
-    if (powerLevel > eliteLevel)
+    if (powerLevel > NBConfig::eliteLevel)
         return 3;
-    if (powerLevel > warriorLevel)
+    if (powerLevel > NBConfig::warriorLevel)
         return 2;
-    if (powerLevel > noviceLevel)
+    if (powerLevel > NBConfig::noviceLevel)
         return 1;
     return 0;
 }
@@ -1036,9 +1042,9 @@ WarriorType GetWarriorType(Entity &p_entity)
         return WarriorType_None;
     }
     GEInt powerLevel = getPowerLevel(p_entity);
-    if (powerLevel >= uniqueLevel)
+    if (powerLevel >= NBConfig::uniqueLevel)
         return WarriorType_Elite;
-    if (powerLevel >= warriorLevel)
+    if (powerLevel >= NBConfig::warriorLevel)
         return WarriorType_Warrior;
     return WarriorType_Novice;
 }

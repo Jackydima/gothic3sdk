@@ -8,6 +8,8 @@ GEInt npcSTRAddition = 15;
 //
 // Configureable
 
+namespace NBConfig
+{
 GEInt bossLevel = 65;
 GEInt uniqueLevel = 45;
 GEInt eliteLevel = 35;
@@ -75,3 +77,4 @@ GEInt sharpBonus = 10;
 GEBool useSharpPercentage = GETrue;
 GEInt forgedBonus = 20;
 GEInt wornPercentageMalus = 70;
+} // namespace NBConfig

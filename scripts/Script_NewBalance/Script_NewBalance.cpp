@@ -21,81 +21,103 @@ void LoadSettings()
     eCConfigFile config = eCConfigFile();
     if (config.ReadFile(bCString("monsterdamage.ini")))
     {
-        fMonsterDamageMultiplicator =
-            config.GetFloat(bCString("Game"), bCString("Game.MonsterDamageMultiplicator"), fMonsterDamageMultiplicator);
+        NBConfig::fMonsterDamageMultiplicator = config.GetFloat(
+            bCString("Game"), bCString("Game.MonsterDamageMultiplicator"), NBConfig::fMonsterDamageMultiplicator);
     }
     if (config.ReadFile("newbalance.ini"))
     {
-        newSummoning = config.GetBool("Script", "NewSummoning", newSummoning);
-        vanishSummons = config.GetBool("Script", "VanishSummons", vanishSummons);
-        onlyHeaveAttackKnockDown = config.GetBool("Script", "OnlyHeaveAttackKnockDown", onlyHeaveAttackKnockDown);
-        useNewBalanceMagicWeapon = config.GetBool("Script", "UseNewBalanceMagicWeapon", useNewBalanceMagicWeapon);
-        useExtendedBlocking = config.GetBool("Script", "UseExtendedBlocking", useExtendedBlocking);
-        useHardCoreAttacks = config.GetBool("Script", "UseHardCoreAttacks", useHardCoreAttacks);
-        useDamagingInnosLight = config.GetBool("Script", "UseDamagingInnosLight", useDamagingInnosLight);
-        useNewStaminaRecovery = config.GetBool("Script", "UseNewStaminaRecovery", useNewStaminaRecovery);
-        useAlwaysMaxLevel = config.GetBool("Script", "DisableNPCLeveling", useAlwaysMaxLevel);
-        enablePerfectBlock = config.GetBool("Script", "EnablePerfectBlock", enablePerfectBlock);
-        playerOnlyPerfectBlock = config.GetBool("Script", "PlayerOnlyPerfectBlock", playerOnlyPerfectBlock);
-        useNewBalanceMeleeScaling = config.GetBool("Script", "NewMeleeScaling", useNewBalanceMeleeScaling);
-        adjustXPReceive = config.GetBool("Script", "AdjustXPReceive", adjustXPReceive);
-        useStaticBlocks = config.GetBool("Script", "UseStaticBlocks", useStaticBlocks);
-        useStrengthForCrossbows = config.GetBool("Script", "UseStrengthForCrossbows", useStrengthForCrossbows);
+        NBConfig::newSummoning = config.GetBool("Script", "NewSummoning", NBConfig::newSummoning);
+        NBConfig::vanishSummons = config.GetBool("Script", "VanishSummons", NBConfig::vanishSummons);
+        NBConfig::onlyHeaveAttackKnockDown =
+            config.GetBool("Script", "OnlyHeaveAttackKnockDown", NBConfig::onlyHeaveAttackKnockDown);
+        NBConfig::useNewBalanceMagicWeapon =
+            config.GetBool("Script", "UseNewBalanceMagicWeapon", NBConfig::useNewBalanceMagicWeapon);
+        NBConfig::useExtendedBlocking = config.GetBool("Script", "UseExtendedBlocking", NBConfig::useExtendedBlocking);
+        NBConfig::useHardCoreAttacks = config.GetBool("Script", "UseHardCoreAttacks", NBConfig::useHardCoreAttacks);
+        NBConfig::useDamagingInnosLight =
+            config.GetBool("Script", "UseDamagingInnosLight", NBConfig::useDamagingInnosLight);
+        NBConfig::useNewStaminaRecovery =
+            config.GetBool("Script", "UseNewStaminaRecovery", NBConfig::useNewStaminaRecovery);
+        NBConfig::useAlwaysMaxLevel = config.GetBool("Script", "DisableNPCLeveling", NBConfig::useAlwaysMaxLevel);
+        NBConfig::enablePerfectBlock = config.GetBool("Script", "EnablePerfectBlock", NBConfig::enablePerfectBlock);
+        NBConfig::playerOnlyPerfectBlock =
+            config.GetBool("Script", "PlayerOnlyPerfectBlock", NBConfig::playerOnlyPerfectBlock);
+        NBConfig::useNewBalanceMeleeScaling =
+            config.GetBool("Script", "NewMeleeScaling", NBConfig::useNewBalanceMeleeScaling);
+        NBConfig::adjustXPReceive = config.GetBool("Script", "AdjustXPReceive", NBConfig::adjustXPReceive);
+        NBConfig::useStaticBlocks = config.GetBool("Script", "UseStaticBlocks", NBConfig::useStaticBlocks);
+        NBConfig::useStrengthForCrossbows =
+            config.GetBool("Script", "UseStrengthForCrossbows", NBConfig::useStrengthForCrossbows);
 
-        summoningLevelMultiplier = config.GetFloat("Script", "SummoningLevelMultiplier", summoningLevelMultiplier);
+        NBConfig::summoningLevelMultiplier =
+            config.GetFloat("Script", "SummoningLevelMultiplier", NBConfig::summoningLevelMultiplier);
 
-        PerfectBlockDamageMult = config.GetFloat("Script", "PerfectBlockDamageMult", PerfectBlockDamageMult);
-        PowerAttackArmorPen = config.GetFloat("Script", "PowerAttackArmorPen", PowerAttackArmorPen);
-        QuickAttackArmorRes = config.GetFloat("Script", "QuickAttackArmorRes", QuickAttackArmorRes);
-        SpecialAttackArmorPen = config.GetFloat("Script", "SpecialAttackArmorPen", SpecialAttackArmorPen);
-        NPCStrengthMultiplicator = config.GetFloat("Script", "NPCStrengthMultiplicator", NPCStrengthMultiplicator);
-        NPCStrengthCorrection = config.GetFloat("Script", "NPCStrengthCorrection", NPCStrengthCorrection);
-        elementalPerkBonusResistance =
-            config.GetInt("Script", "ElementalPerkBonusResistance", elementalPerkBonusResistance);
-        animationSpeedBonusMid = config.GetFloat("Script", "BowAnimationSpeedBonusMid", animationSpeedBonusMid);
-        animationSpeedBonusHigh = config.GetFloat("Script", "BowAnimationSpeedBonusHigh", animationSpeedBonusHigh);
+        NBConfig::PerfectBlockDamageMult =
+            config.GetFloat("Script", "PerfectBlockDamageMult", NBConfig::PerfectBlockDamageMult);
+        NBConfig::PowerAttackArmorPen = config.GetFloat("Script", "PowerAttackArmorPen", NBConfig::PowerAttackArmorPen);
+        NBConfig::QuickAttackArmorRes = config.GetFloat("Script", "QuickAttackArmorRes", NBConfig::QuickAttackArmorRes);
+        NBConfig::SpecialAttackArmorPen =
+            config.GetFloat("Script", "SpecialAttackArmorPen", NBConfig::SpecialAttackArmorPen);
+        NBConfig::NPCStrengthMultiplicator =
+            config.GetFloat("Script", "NPCStrengthMultiplicator", NBConfig::NPCStrengthMultiplicator);
+        NBConfig::NPCStrengthCorrection =
+            config.GetFloat("Script", "NPCStrengthCorrection", NBConfig::NPCStrengthCorrection);
+        NBConfig::elementalPerkBonusResistance =
+            config.GetInt("Script", "ElementalPerkBonusResistance", NBConfig::elementalPerkBonusResistance);
+        NBConfig::animationSpeedBonusMid =
+            config.GetFloat("Script", "BowAnimationSpeedBonusMid", NBConfig::animationSpeedBonusMid);
+        NBConfig::animationSpeedBonusHigh =
+            config.GetFloat("Script", "BowAnimationSpeedBonusHigh", NBConfig::animationSpeedBonusHigh);
 
-        NPCDamageReductionMultiplicator =
-            config.GetFloat("Script", "NPCDamageReductionMultiplicator", NPCDamageReductionMultiplicator);
-        poiseThreshold = config.GetInt("Script", "PoiseThreshold", poiseThreshold);
-        MonsterRageModus = config.GetInt("Script", "MonsterRageModus", MonsterRageModus);
-        staminaRecoveryDelay = config.GetInt("Script", "StaminaRecoveryDelay", staminaRecoveryDelay);
-        staminaRecoveryPerTick = config.GetInt("Script", "StaminaRecoveryPerTick", staminaRecoveryPerTick);
-        npcArmorMultiplier = static_cast<GEDouble>(
-            config.GetFloat("Script", "NPCProtectionMultiplier", static_cast<GEFloat>(npcArmorMultiplier)));
-        playerArmorMultiplier = config.GetFloat("Script", "PlayerProtectionMultiplier", playerArmorMultiplier);
-        npcWeaponDamageMultiplier = config.GetFloat("Script", "NPCWeaponDamageMultiplier", npcWeaponDamageMultiplier);
-        useNewBowMechanics = config.GetBool("Script", "NewBowMechanics", useNewBowMechanics);
-        attackRangeAI =
-            static_cast<GEDouble>(config.GetFloat("Script", "AttackRangeAI", static_cast<GEFloat>(attackRangeAI)));
-        telekinesisRange = static_cast<GEDouble>(
-            config.GetFloat("Script", "TelekinesisRange", static_cast<GEFloat>(telekinesisRange)));
-        shootVelocity =
-            static_cast<GEDouble>(config.GetFloat("Script", "ProjectileVelocity", static_cast<GEFloat>(shootVelocity)));
-        NPC_AIM_INACCURACY = config.GetFloat("Script", "NPCAimInaccuracy", NPC_AIM_INACCURACY);
-        ATTACK_REACH_MULTIPLIER = config.GetFloat("Script", "AttackReachMultiplier", ATTACK_REACH_MULTIPLIER);
-        startSTR = config.GetInt("Script", "StartSTR", startSTR);
-        startDEX = config.GetInt("Script", "StartDEX", startDEX);
-        blessedBonus = config.GetInt("Script", "BlessedBonus", blessedBonus);
-        sharpBonus = config.GetInt("Script", "SharpBonus", sharpBonus);
-        useSharpPercentage = config.GetBool("Script", "UseSharpPercentage", useSharpPercentage);
-        forgedBonus = config.GetInt("Script", "ForgedBonus", forgedBonus);
-        wornPercentageMalus = config.GetInt("Script", "WornMalus", wornPercentageMalus);
-        npcArenaSpeedMultiplier = config.GetFloat("Script", "NPCArenaSpeedMultiplier", npcArenaSpeedMultiplier);
-        enableNPCSprint = config.GetBool("Script", "EnableNPCSprint", enableNPCSprint);
-        zombiesCanSprint = config.GetBool("Script", "ZombiesCanSprint", zombiesCanSprint);
-        enableNewTransformation = config.GetBool("Script", "EnableNewTransformation", enableNewTransformation);
-        disableMonsterRage = config.GetBool("Script", "DisableMonsterRage", disableMonsterRage);
-        enableNewMagicAiming = config.GetBool("Script", "EnableNewMagicAiming", enableNewMagicAiming);
-        enableAOEDamage = config.GetBool("Script", "EnableAOEDamage", enableAOEDamage);
+        NBConfig::NPCDamageReductionMultiplicator =
+            config.GetFloat("Script", "NPCDamageReductionMultiplicator", NBConfig::NPCDamageReductionMultiplicator);
+        NBConfig::poiseThreshold = config.GetInt("Script", "PoiseThreshold", NBConfig::poiseThreshold);
+        NBConfig::MonsterRageModus = config.GetInt("Script", "MonsterRageModus", NBConfig::MonsterRageModus);
+        NBConfig::staminaRecoveryDelay =
+            config.GetInt("Script", "StaminaRecoveryDelay", NBConfig::staminaRecoveryDelay);
+        NBConfig::staminaRecoveryPerTick =
+            config.GetInt("Script", "StaminaRecoveryPerTick", NBConfig::staminaRecoveryPerTick);
+        NBConfig::npcArmorMultiplier = static_cast<GEDouble>(
+            config.GetFloat("Script", "NPCProtectionMultiplier", static_cast<GEFloat>(NBConfig::npcArmorMultiplier)));
+        NBConfig::playerArmorMultiplier =
+            config.GetFloat("Script", "PlayerProtectionMultiplier", NBConfig::playerArmorMultiplier);
+        NBConfig::npcWeaponDamageMultiplier =
+            config.GetFloat("Script", "NPCWeaponDamageMultiplier", NBConfig::npcWeaponDamageMultiplier);
+        NBConfig::useNewBowMechanics = config.GetBool("Script", "NewBowMechanics", NBConfig::useNewBowMechanics);
+        NBConfig::attackRangeAI = static_cast<GEDouble>(
+            config.GetFloat("Script", "AttackRangeAI", static_cast<GEFloat>(NBConfig::attackRangeAI)));
+        NBConfig::telekinesisRange = static_cast<GEDouble>(
+            config.GetFloat("Script", "TelekinesisRange", static_cast<GEFloat>(NBConfig::telekinesisRange)));
+        NBConfig::shootVelocity = static_cast<GEDouble>(
+            config.GetFloat("Script", "ProjectileVelocity", static_cast<GEFloat>(NBConfig::shootVelocity)));
+        NBConfig::NPC_AIM_INACCURACY = config.GetFloat("Script", "NPCAimInaccuracy", NBConfig::NPC_AIM_INACCURACY);
+        NBConfig::ATTACK_REACH_MULTIPLIER =
+            config.GetFloat("Script", "AttackReachMultiplier", NBConfig::ATTACK_REACH_MULTIPLIER);
+        NBConfig::startSTR = config.GetInt("Script", "StartSTR", NBConfig::startSTR);
+        NBConfig::startDEX = config.GetInt("Script", "StartDEX", NBConfig::startDEX);
+        NBConfig::blessedBonus = config.GetInt("Script", "BlessedBonus", NBConfig::blessedBonus);
+        NBConfig::sharpBonus = config.GetInt("Script", "SharpBonus", NBConfig::sharpBonus);
+        NBConfig::useSharpPercentage = config.GetBool("Script", "UseSharpPercentage", NBConfig::useSharpPercentage);
+        NBConfig::forgedBonus = config.GetInt("Script", "ForgedBonus", NBConfig::forgedBonus);
+        NBConfig::wornPercentageMalus = config.GetInt("Script", "WornMalus", NBConfig::wornPercentageMalus);
+        NBConfig::npcArenaSpeedMultiplier =
+            config.GetFloat("Script", "NPCArenaSpeedMultiplier", NBConfig::npcArenaSpeedMultiplier);
+        NBConfig::enableNPCSprint = config.GetBool("Script", "EnableNPCSprint", NBConfig::enableNPCSprint);
+        NBConfig::zombiesCanSprint = config.GetBool("Script", "ZombiesCanSprint", NBConfig::zombiesCanSprint);
+        NBConfig::enableNewTransformation =
+            config.GetBool("Script", "EnableNewTransformation", NBConfig::enableNewTransformation);
+        NBConfig::disableMonsterRage = config.GetBool("Script", "DisableMonsterRage", NBConfig::disableMonsterRage);
+        NBConfig::enableNewMagicAiming =
+            config.GetBool("Script", "EnableNewMagicAiming", NBConfig::enableNewMagicAiming);
+        NBConfig::enableAOEDamage = config.GetBool("Script", "EnableAOEDamage", NBConfig::enableAOEDamage);
         bCString AOENamesString = config.GetString("Script", "AOENames", "");
-        AOENames = splitTobCStrings(AOENamesString.GetText(), ',');
-        bossLevel = config.GetInt("Script", "BossLevelCap", bossLevel);
-        uniqueLevel = config.GetInt("Script", "UniqueLevelCap", uniqueLevel);
-        eliteLevel = config.GetInt("Script", "EliteLevelCap", eliteLevel);
-        warriorLevel = config.GetInt("Script", "WarriorLevelCap", warriorLevel);
-        noviceLevel = config.GetInt("Script", "NoviceLevelCap", noviceLevel);
-        KnockDownThreshold = config.GetInt("Script", "KnockDownThreshold", KnockDownThreshold);
+        NBConfig::AOENames = splitTobCStrings(AOENamesString.GetText(), ',');
+        NBConfig::bossLevel = config.GetInt("Script", "BossLevelCap", NBConfig::bossLevel);
+        NBConfig::uniqueLevel = config.GetInt("Script", "UniqueLevelCap", NBConfig::uniqueLevel);
+        NBConfig::eliteLevel = config.GetInt("Script", "EliteLevelCap", NBConfig::eliteLevel);
+        NBConfig::warriorLevel = config.GetInt("Script", "WarriorLevelCap", NBConfig::warriorLevel);
+        NBConfig::noviceLevel = config.GetInt("Script", "NoviceLevelCap", NBConfig::noviceLevel);
+        NBConfig::KnockDownThreshold = config.GetInt("Script", "KnockDownThreshold", NBConfig::KnockDownThreshold);
     }
 }
 
@@ -261,7 +283,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         print("ActionWeaponLevel: %d\tShieldLevelBonus: %d\tgetHyperArmorPoints: %d\n", ActionWeaponLevel,
               GetShieldLevelBonusNB(Victim), getHyperArmorPoints(Victim, VictimAction));
 
-        if (HitForce <= poiseThreshold)
+        if (HitForce <= NBConfig::poiseThreshold)
         {
             HitForce = gEHitForce_Minimal;
         }
@@ -324,15 +346,17 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         else
         {
             // setze STR und DEX 100 als default wert an und rechne ohne Bonusschaden am Anfang
-            GEInt dexterity = ScriptAdmin.CallScriptFromScript("GetDexterity", &DamagerOwner, &None, 0) - startDEX;
-            GEInt strength = ScriptAdmin.CallScriptFromScript("GetStrength", &DamagerOwner, &None, 0) - startSTR;
+            GEInt dexterity =
+                ScriptAdmin.CallScriptFromScript("GetDexterity", &DamagerOwner, &None, 0) - NBConfig::startDEX;
+            GEInt strength =
+                ScriptAdmin.CallScriptFromScript("GetStrength", &DamagerOwner, &None, 0) - NBConfig::startSTR;
             GEInt intelligence = ScriptAdmin.CallScriptFromScript("GetIntelligence", &DamagerOwner, &None, 0);
             // Ranged damage
             if (IsNormalProjectileNB(Damager) == GETrue)
             {
                 // print ( "UseType Left : %d" ,
                 // DamagerOwner.Inventory.GetItemFromSlot(gESlot_LeftHand).Interaction.UseType );
-                if (useStrengthForCrossbows
+                if (NBConfig::useStrengthForCrossbows
                     && DamagerOwner.Inventory.GetItemFromSlot(gESlot_LeftHand)
                                .Interaction.GetProperty<PSInteraction::PropertyUseType>()
                            == gEUseType_CrossBow)
@@ -352,7 +376,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
                 gEUseType playerRightWeaponType = Player.Inventory.GetUseType(rightWeaponStackIndex);
 
                 // New Scaling
-                if (useNewBalanceMeleeScaling)
+                if (NBConfig::useNewBalanceMeleeScaling)
                 {
                     // TODO Use another Function for this bloaded if else statements (returns better)
                     // GEChar* arr = nullptr;
@@ -443,8 +467,8 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     else if (DamagerOwner.Navigation.IsValid())
     {
         GEInt iStrength = static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetStrength", &DamagerOwner, &None, 0)
-                                                 * NPCStrengthMultiplicator
-                                             + NPCStrengthCorrection); // STR Bonus Real
+                                                 * NBConfig::NPCStrengthMultiplicator
+                                             + NBConfig::NPCStrengthCorrection); // STR Bonus Real
         if (iStrength < 10)
             iStrength = 10;
 
@@ -469,27 +493,27 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
             {
                 if (IsNormalProjectileNB(Damager) || IsMagicProjectileNB(Damager) || IsSpellContainerNB(Damager))
                 {
-                    FinalDamage = static_cast<GEInt>(iStrength + FinalDamage * npcWeaponDamageMultiplier);
+                    FinalDamage = static_cast<GEInt>(iStrength + FinalDamage * NBConfig::npcWeaponDamageMultiplier);
                 }
                 // Greift ein Ork mit einer Nahkampfwaffe an?
                 else if (DamagerOwner.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Orc)
                 {
                     FinalDamage =
                         static_cast<GEInt>(iStrength
-                                           + FinalDamage * npcWeaponDamageMultiplier
+                                           + FinalDamage * NBConfig::npcWeaponDamageMultiplier
                                                  / 2.0f); // TODO: Should 2H Weapon in 1H only do half weapon damage?
                 }
                 // Greift ein Mensch mit einer Nahkampfwaffe an?
                 else if (DamagerOwner.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Human)
                 {
-                    FinalDamage = static_cast<GEInt>(iStrength + FinalDamage * npcWeaponDamageMultiplier);
+                    FinalDamage = static_cast<GEInt>(iStrength + FinalDamage * NBConfig::npcWeaponDamageMultiplier);
                 }
                 else if (DamagerOwner.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Demon
                          || DamagerOwner.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Ogre)
                 {
                     FinalDamage =
                         static_cast<GEInt>(iStrength
-                                           + FinalDamage * npcWeaponDamageMultiplier
+                                           + FinalDamage * NBConfig::npcWeaponDamageMultiplier
                                                  / 2.0f); // TODO: Should 2H Weapon in 1H only do half weapon damage?
                 }
                 // MonsterAttack
@@ -505,7 +529,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
                 }
                 else
                 {
-                    FinalDamage = static_cast<GEInt>(iStrength + FinalDamage * npcWeaponDamageMultiplier);
+                    FinalDamage = static_cast<GEInt>(iStrength + FinalDamage * NBConfig::npcWeaponDamageMultiplier);
                 }
             }
         }
@@ -547,7 +571,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
 
     // Vulnerabilities
 
-    if (alternativeProtection)
+    if (NBConfig::alternativeProtection)
     {
         GEFloat fProtection = static_cast<GEFloat>(iProtection);
         switch (DamageTypeEntityTestNB(Victim, Damager))
@@ -617,7 +641,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         }
         else
         {
-            FinalDamage = static_cast<GEInt>(FinalDamage * fMonsterDamageMultiplicator);
+            FinalDamage = static_cast<GEInt>(FinalDamage * NBConfig::fMonsterDamageMultiplicator);
         }
     }
 
@@ -629,8 +653,9 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         case gEAction_QuickAttackR:
         case gEAction_QuickAttackL:
             // Quickattacken sind weniger effektiv gegen Starke NPC oder hohe R�stung (5%)
-            FinalDamage2 =
-                static_cast<GEInt>(FinalDamage2 * (1.0f + QuickAttackArmorRes) - FinalDamage * QuickAttackArmorRes) / 2;
+            FinalDamage2 = static_cast<GEInt>(FinalDamage2 * (1.0f + NBConfig::QuickAttackArmorRes)
+                                              - FinalDamage * NBConfig::QuickAttackArmorRes)
+                         / 2;
             break;
 
             // Angreifer benutzt Powerattacke
@@ -641,9 +666,9 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
                 || DamagerOwner.Routine.GetProperty<PSRoutine::PropertyStatePosition>() == 2)
             {
                 // Starke Attacken ignorieren 10 % R�stung
-                FinalDamage2 =
-                    static_cast<GEInt>(FinalDamage2 * (1.0f - PowerAttackArmorPen) + FinalDamage * PowerAttackArmorPen)
-                    * 2;
+                FinalDamage2 = static_cast<GEInt>(FinalDamage2 * (1.0f - NBConfig::PowerAttackArmorPen)
+                                                  + FinalDamage * NBConfig::PowerAttackArmorPen)
+                             * 2;
             }
             break;
 
@@ -651,18 +676,18 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
             //   => Schaden = Schaden * 2
         case gEAction_HackAttack:
             // Hackattacken ignorieren 12.5 % R�stung
-            FinalDamage2 =
-                static_cast<GEInt>(FinalDamage2 * (1.0f - SpecialAttackArmorPen) + FinalDamage * SpecialAttackArmorPen)
-                * 2;
+            FinalDamage2 = static_cast<GEInt>(FinalDamage2 * (1.0f - NBConfig::SpecialAttackArmorPen)
+                                              + FinalDamage * NBConfig::SpecialAttackArmorPen)
+                         * 2;
             break;
     }
 
     if (victimDamageReceiver->GetVulnerableState() == 2)
     {
-        FinalDamage2 = static_cast<GEInt>(FinalDamage2 * PerfectBlockDamageMult);
+        FinalDamage2 = static_cast<GEInt>(FinalDamage2 * NBConfig::PerfectBlockDamageMult);
         if (static_cast<GEInt>(HitForce) >= 3)
         {
-            HitForce = static_cast<gEHitForce>(KnockDownThreshold);
+            HitForce = static_cast<gEHitForce>(NBConfig::KnockDownThreshold);
         }
         else
         {
@@ -674,7 +699,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     // New Multiplier for NPC vs NPC Damage
     if (!DamagerOwner.IsPlayer() && !Victim.IsPlayer())
     {
-        FinalDamage2 = static_cast<GEInt>(FinalDamage2 * NPCDamageReductionMultiplicator);
+        FinalDamage2 = static_cast<GEInt>(FinalDamage2 * NBConfig::NPCDamageReductionMultiplicator);
     }
 
     if (FinalDamage2 < 5)
@@ -803,8 +828,8 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         GEInt FinalDamage3 = static_cast<GEInt>(FinalDamage * staminaDamageMultiplier);
         print("FinalDamage3: %d\n", FinalDamage3);
 
-        if (enablePerfectBlock && GetHeldWeaponCategoryNB(DamagerOwner) == gEWeaponCategory_Melee
-            && (!playerOnlyPerfectBlock || Victim.IsPlayer()))
+        if (NBConfig::enablePerfectBlock && GetHeldWeaponCategoryNB(DamagerOwner) == gEWeaponCategory_Melee
+            && (!NBConfig::playerOnlyPerfectBlock || Victim.IsPlayer()))
         {
             if (lastHit > 12 && Victim.IsInFOV(DamagerOwner)
                 && (Victim.Routine.GetStateTime() < 0.05
@@ -844,7 +869,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         }
 
         // AlternativeAI parade (es werden keine Lebenspunkte angezogen)
-        if (useStaticBlocks && eCApplication::GetInstance().GetEngineSetup().AlternativeAI)
+        if (NBConfig::useStaticBlocks && eCApplication::GetInstance().GetEngineSetup().AlternativeAI)
         {
             // Ausdauer abziehen
             ScriptAdmin.CallScriptFromScript("AddStaminaPoints", &Victim, &None, FinalDamage3);
@@ -867,7 +892,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
                                                                       DamagerOwnerAction, bCString("Recover"),
                                                                       1.5f); // g_pstrPhaseString[gEPhase_Recover]
             if (!gCScriptProcessingUnit::sAICombatMoveInstr(&InstrArgs, a_pSPU, GEFalse))
-                return gEAction_None;
+                return gEAction_ParadeStumble;
 
             if (HitForce > gEHitForce_Normal)
             {
@@ -1081,7 +1106,8 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     }
 
     // Nostun Of animals when they are Mad
-    if (!disableMonsterRage && Victim.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_SprintAttack)
+    if (!NBConfig::disableMonsterRage
+        && Victim.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_SprintAttack)
     {
         return gEAction_None;
     }
@@ -1140,10 +1166,10 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     if (GetHeldWeaponCategoryNB(Victim) != gEWeaponCategory_None
         && ScriptAdmin.CallScriptFromScript("IsHumanoid", &Victim, &None, 0))
     {
-        if ((GEInt)HitForce
-            >= KnockDownThreshold /* && GetHeldWeaponCategoryNB ( Victim ) == gEWeaponCategory_Melee */) // Remove
+        if ((GEInt)HitForce >= NBConfig::
+                KnockDownThreshold /* && GetHeldWeaponCategoryNB ( Victim ) == gEWeaponCategory_Melee */) // Remove
         {
-            if (!onlyHeaveAttackKnockDown || DamagerOwnerAction == gEAction_HackAttack
+            if (!NBConfig::onlyHeaveAttackKnockDown || DamagerOwnerAction == gEAction_HackAttack
                 || DamagerOwnerAction == gEAction_PowerAttack || DamagerOwnerAction == gEAction_WhirlAttack)
             {
                 Victim.Routine.FullStop();
@@ -1197,10 +1223,12 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
     LoadSettings();
     PatchCode();
     AddNewEffect();
-    if (enableNewMagicAiming)
+    if (NBConfig::enableNewMagicAiming)
     {
         InitGUI();
     }
+
+    mCModuleRegistry::GetInstance().Apply();
 
     HookFunctions();
     HookCallHooks();
