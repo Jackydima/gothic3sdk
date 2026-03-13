@@ -6,7 +6,7 @@
 #include "SharedConfig.h"
 #include "ge_DamageReceiver_ext.h"
 
-GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32);
+GEFloat GE_STDCALL GetAnimationSpeedModifier(Entity a_Entity, gEPhase a_Phase);
 
 GEInt OnPowerAim_Loop(gCScriptProcessingUnit *p_PSU);
 

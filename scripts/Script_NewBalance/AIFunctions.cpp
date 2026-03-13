@@ -195,3 +195,47 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeLeft)
 
     return GETrue;
 }
+
+ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_ParryStumble)
+{
+    // Setup
+    INIT_SCRIPT_STATE();
+    gSArgsFor__AI_ParryStumble param = *reinterpret_cast<gSArgsFor__AI_ParryStumble *>(
+        a_rRunTimeStack.GetAt(a_rRunTimeStack.GetCount() - 1).m_pArguments);
+
+    // Execution in seperated Blocks!
+    BREAK_BLOCK
+    {
+        gCScriptAdmin &ScriptAdmin = GetScriptAdmin();
+        if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &param.m_Self, &None))
+        {
+            ScriptAdmin.CallScriptFromScript("StartSayAargh", &param.m_Self, &None);
+        }
+
+        bCString sCurrentMomventAni = param.m_Self.NPC.GetCurrentMovementAni();
+
+        param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAction>() = gEAction_Stumble;
+        param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAniState>() = gEAniState_Stand;
+
+        ClearInputEntry(param.m_Self);
+
+        Entity attackerWeapon = param.m_Other.GetWeapon(GETrue);
+
+        GEFloat fAnimationSpeed = 0.2f;
+        gEAction aniAction = gEAction_Stumble;
+
+        if (sCurrentMomventAni.Contains("_L."))
+            aniAction = gEAction_StumbleL;
+        else
+            aniAction = gEAction_StumbleR;
+
+        gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), aniAction, "Hit", fAnimationSpeed);
+
+        if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
+        {
+            return GEFalse;
+        }
+    }
+    return GETrue;
+}

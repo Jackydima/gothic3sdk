@@ -31,3 +31,13 @@ class gSArgsFor__AI_EvadeLeft : public gScrArgument
     Entity m_Self;
     Entity m_Other;
 };
+
+class gSArgsFor__AI_ParryStumble : public gScrArgument
+{
+  public:
+    ~gSArgsFor__AI_ParryStumble() override = default;
+
+  public:
+    Entity m_Self;
+    Entity m_Other;
+};

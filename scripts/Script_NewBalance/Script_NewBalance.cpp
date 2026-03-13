@@ -682,7 +682,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
             break;
     }
 
-    if (victimDamageReceiver->GetVulnerableState() == 2)
+    if (Victim.Routine.GetCurrentState() == "NB_ParryStumble")
     {
         FinalDamage2 = static_cast<GEInt>(FinalDamage2 * NBConfig::PerfectBlockDamageMult);
         if (static_cast<GEInt>(HitForce) >= 3)
@@ -693,7 +693,6 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         {
             HitForce = gEHitForce_Normal;
         }
-        victimDamageReceiver->AccessVulnerableState() = 0;
     }
 
     // New Multiplier for NPC vs NPC Damage
@@ -852,18 +851,13 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
                         EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
                     }
                 }
-                EffectSystem::StartEffect("parry_sound_01", DamagerOwner);
+
                 if (!Damager.GetName().Contains("Fist"))
                 {
-                    DamagerOwner.NPC.SetCurrentAttacker(Victim);
                     DamagerOwner.Routine.FullStop();
-                    DamagerOwner.Routine.SetTask("ZS_HeavyParadeStumble");
                 }
-                else
-                {
-                    DamagerOwner.Routine.SetTask("ZS_Stumble");
-                }
-                damagerOwnerDamageReceiver->AccessVulnerableState() = 1;
+
+                DamagerOwner.Routine.SetTask("NB_ParryStumble");
                 return gEAction_Parade;
             }
         }
@@ -1194,7 +1188,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
 void AddNewEffect()
 {
     // EffectModulePtr
-    DWORD EffectModulePtr = ((DWORD(*)(void))(RVA_Game(0x601f0)))();
+    DWORD EffectModulePtr = ((DWORD (*)(void))(RVA_Game(0x601f0)))();
     std::cout << "EffectModule Pointer: " << EffectModulePtr << "\n";
     if (EffectModulePtr == 0)
         return;

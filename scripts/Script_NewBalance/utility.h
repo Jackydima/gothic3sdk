@@ -1,6 +1,7 @@
 #pragma once
 #include "ScriptArgs.h"
 #include "SharedConfig.h"
+#include "ge_DamageReceiver_ext.h"
 
 #include <g3sdk/Script.h>
 #include <g3sdk/util/Hook.h>
@@ -51,6 +52,9 @@ enum WarriorType
     WarriorType_Warrior = 2,
     WarriorType_Elite = 3,
 };
+
+// param 1: gEAction, param 2 Entity, param 3(EAX register): gEPhase
+extern mCFunctionHook Hook_GetAnimationSpeedModifier;
 
 std::vector<bCString> splitTobCStrings(const std::string str, char delim);
 void MagicPartyMemberRemover(Entity p_summoner);

@@ -1,30 +1,20 @@
 #include "FunctionHook.h"
 
-GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
+mCFunctionHook Hook_GetAnimationSpeedModifier;
+GEFloat GE_STDCALL GetAnimationSpeedModifier(Entity a_Entity, gEPhase a_Phase)
 {
-    gESpecies species = entity.NPC.GetProperty<PSNpc::PropertySpecies>();
-    gEAction action = entity.Routine.GetProperty<PSRoutine::PropertyAction>();
-    GEInt staminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &entity, &None, 0);
-    GEBool isArenaNPC =
-        entity != Entity::GetPlayer() && entity.NPC.GetProperty<PSNpc::PropertyAttackReason>() == gEAttackReason_Arena;
-    GEFloat multiPlier = 1.0;
-    GEBool isHumanInFistMode = GetScriptAdmin().CallScriptFromScript("IsHumanoid", &entity, &None)
-                            && GetScriptAdmin().CallScriptFromScript("IsInFistMode", &entity, &None);
+    gEAction a_Action = Hook_GetAnimationSpeedModifier.GetImmEax<gEAction>(); // param 1
+
+    gESpecies species = a_Entity.NPC.GetProperty<PSNpc::PropertySpecies>();
+    // gEAction a_Action = a_Entity.Routine.GetProperty<PSRoutine::PropertyAction>();
+    GEInt staminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &a_Entity, &None, 0);
+    GEBool isArenaNPC = a_Entity != Entity::GetPlayer()
+                     && a_Entity.NPC.GetProperty<PSNpc::PropertyAttackReason>() == gEAttackReason_Arena;
+    GEFloat multiPlier = 1.0f;
+    GEBool isHumanInFistMode = GetScriptAdmin().CallScriptFromScript("IsHumanoid", &a_Entity, &None)
+                            && GetScriptAdmin().CallScriptFromScript("IsInFistMode", &a_Entity, &None);
 
     Entity Player = Entity::GetPlayer();
-
-    // New Perfect Block Vulnerability
-    auto damageReceiver = static_cast<gCDamageReceiver_PS_Ext *>(
-        entity.GetGameEntity()->GetPropertySet(eEPropertySetType_DamageReceiver));
-    if (damageReceiver->GetVulnerableState() == 1 && entity.Routine.GetCurrentTask().Contains("Stumble"))
-    {
-        damageReceiver->AccessVulnerableState() = 2;
-        return 0.2f;
-    }
-    else if (damageReceiver->GetVulnerableState() == 2)
-    {
-        damageReceiver->AccessVulnerableState() = 0;
-    }
 
     if (staminaPoints <= 20)
     {
@@ -41,16 +31,16 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
             multiPlier = 0.9f;
     }
 
-    if (action == gEAction_SprintAttack)
+    if (a_Action == gEAction_SprintAttack)
         return 1.5f;
     if (species == gESpecies_Troll)
     {
-        if (action == gEAction_PowerAttack)
-            return 1.3f;
-        return 1.0f;
+        if (a_Action == gEAction_PowerAttack)
+            return 1.5f;
+        return 1.3f;
     }
 
-    if (entity.NPC.IsDiseased())
+    if (a_Entity.NPC.IsDiseased())
         multiPlier *= 0.9f;
 
     if (isArenaNPC)
@@ -59,7 +49,7 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
     // Alternative MonsterRage Mode, Monsters are just faster now!
     if (NBConfig::MonsterRageModus != 0 && NBConfig::MonsterRageModus != 1)
     {
-        if (entity.NPC.GetCurrentTarget() == Player && CanRage(entity)
+        if (a_Entity.NPC.GetCurrentTarget() == Player && CanRage(a_Entity)
             && Player.NPC.GetProperty<PSNpc::PropertyLastHitTimestamp>() >= 120)
         {
             multiPlier *= 1.5;
@@ -69,7 +59,7 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
         }
     }
 
-    switch (action)
+    switch (a_Action)
     {
         case gEAction_FinishingAttack:
         case gEAction_SitKnockDown:
@@ -80,68 +70,66 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
         case gEAction_LiePiercedDead:  return 1.0f;
         case gEAction_Aim:
         case gEAction_Reload:
-            if (entity == Player && NBConfig::useNewBowMechanics)
+            if (a_Entity == Player && NBConfig::useNewBowMechanics)
             {
-                if (entity.Inventory.IsSkillActive("Perk_Bow_3"))
+                if (a_Entity.Inventory.IsSkillActive("Perk_Bow_3"))
                 {
                     return NBConfig::animationSpeedBonusHigh;
                 }
-                if (entity.Inventory.IsSkillActive("Perk_Bow_2"))
+                if (a_Entity.Inventory.IsSkillActive("Perk_Bow_2"))
                 {
                     return NBConfig::animationSpeedBonusMid;
                 }
             }
             else if (NBConfig::useNewBowMechanics)
             {
-                Entity weapon = entity.GetWeapon(GETrue);
+                Entity weapon = a_Entity.GetWeapon(GETrue);
                 if (weapon.Interaction.GetUseType() == gEUseType_CrossBow)
                 {
-                    if (getPowerLevel(entity) >= NBConfig::uniqueLevel)
+                    if (getPowerLevel(a_Entity) >= NBConfig::uniqueLevel)
                         return 2.5f;
-                    if (getPowerLevel(entity) >= NBConfig::warriorLevel)
+                    if (getPowerLevel(a_Entity) >= NBConfig::warriorLevel)
                         return 1.75f;
                 }
-                if (getPowerLevel(entity) >= NBConfig::uniqueLevel)
+                if (getPowerLevel(a_Entity) >= NBConfig::uniqueLevel)
                     return NBConfig::animationSpeedBonusHigh;
-                if (getPowerLevel(entity) >= NBConfig::warriorLevel)
+                if (getPowerLevel(a_Entity) >= NBConfig::warriorLevel)
                     return NBConfig::animationSpeedBonusMid;
             }
             return 1.0f;
         case gEAction_Cast:
         case gEAction_PowerCast:
-            if (entity.GetName().Contains("Xardas"))
+            if (a_Entity.GetName().Contains("Xardas"))
                 return 1.3f;
             return 1.0f;
         case gEAction_Attack:
             if (isHumanInFistMode)
                 return 0.54f;
-            if (CheckHandUseTypesNB(gEUseType_None, gEUseType_1H, entity))
+            if (CheckHandUseTypesNB(gEUseType_None, gEUseType_1H, a_Entity))
                 return 0.6f * multiPlier;
-            if (CheckHandUseTypesNB(gEUseType_Shield, gEUseType_1H, entity))
+            if (CheckHandUseTypesNB(gEUseType_Shield, gEUseType_1H, a_Entity))
                 return 0.6f * multiPlier;
-            if (CheckHandUseTypesNB(gEUseType_Torch, gEUseType_1H, entity))
+            if (CheckHandUseTypesNB(gEUseType_Torch, gEUseType_1H, a_Entity))
                 return 0.6f * multiPlier;
-            if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, entity))
+            if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, a_Entity))
                 return 0.6f * multiPlier;
-            if (CheckHandUseTypesNB(gEUseType_None, gEUseType_2H, entity))
+            if (CheckHandUseTypesNB(gEUseType_None, gEUseType_2H, a_Entity))
                 return 0.7f * multiPlier;
-            if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Axe, entity))
+            if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Axe, a_Entity))
                 return 0.7f * multiPlier;
-            if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Staff, entity))
+            if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Staff, a_Entity))
                 return 0.7f * multiPlier;
-            if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Halberd, entity))
+            if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Halberd, a_Entity))
                 return 0.7f * multiPlier;
             return 1 * multiPlier;
         case gEAction_PowerAttack:
             if (isHumanInFistMode)
                 return 0.6f;
-            if (species == gESpecies_Orc && u32 == 0)
+            if (species == gESpecies_Orc && a_Phase == gEPhase_Raise)
                 return 1.3f * multiPlier; // orcs
-            if (u32 == 0)
-            {
+            if (a_Phase == gEPhase_Raise)
                 return 1.5f * multiPlier;
-            }
-            if ((CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, entity)))
+            if ((CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, a_Entity)))
                 return 0.9f * multiPlier;
         case gEAction_QuickAttackR:
         case gEAction_QuickAttackL:
@@ -157,7 +145,7 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
         case gEAction_ParadeStumbleR:
         case gEAction_ParadeStumbleL: return 2.0f * multiPlier;
         case gEAction_HeavyParadeStumble:
-            if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, entity))
+            if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, a_Entity))
                 return 0.7f * multiPlier;
             return 1 * multiPlier;
         case gEAction_QuickStumble: return 2 * multiPlier;
@@ -168,22 +156,22 @@ GEFloat GetAnimationSpeedModifier(Entity entity, GEU32 u32)
         case gEAction_FlameSword:   return 0.7f * multiPlier;
 
         case gEAction_Cock:
-            if (entity == Entity::GetPlayer())
+            if (a_Entity == Entity::GetPlayer())
             {
-                if (entity.Inventory.IsSkillActive("Perk_Crossbow_3"))
-                    return 2.5;
-                if (entity.Inventory.IsSkillActive("Perk_Crossbow_2"))
-                    return 1.75;
-                return 1.0;
+                if (a_Entity.Inventory.IsSkillActive("Perk_Crossbow_3"))
+                    return 2.5f;
+                if (a_Entity.Inventory.IsSkillActive("Perk_Crossbow_2"))
+                    return 1.75f;
+                return 1.0f;
             }
 
-            if (getPowerLevel(entity) >= NBConfig::uniqueLevel)
+            if (getPowerLevel(a_Entity) >= NBConfig::uniqueLevel)
             {
-                return 2.5;
+                return 2.5f;
             }
-            if (getPowerLevel(entity) >= NBConfig::warriorLevel)
+            if (getPowerLevel(a_Entity) >= NBConfig::warriorLevel)
             {
-                return 1.75;
+                return 1.75f;
             }
             return 1;
 
@@ -2178,8 +2166,9 @@ void HookFunctions()
     static mCFunctionHook Hook_IsEvil;
     Hook_IsEvil.Hook(GetScriptAdminExt().GetScript("IsEvil")->m_funcScript, &IsEvil);
 
-    static mCFunctionHook Hook_GetAnimationSpeedModifier;
-    Hook_GetAnimationSpeedModifier.Prepare(RVA_ScriptGame(0x42a0), &GetAnimationSpeedModifier).Hook();
+    Hook_GetAnimationSpeedModifier
+        .Prepare(RVA_ScriptGame(0x42a0), &GetAnimationSpeedModifier, mCBaseHook::mEHookType_Mixed, mERegisterType_Eax)
+        .Hook();
 
     static mCFunctionHook Hook_SpeciesRightHand;
     Hook_SpeciesRightHand.Prepare(RVA_ScriptGame(0xb200), &speciesRightHand).Hook();
