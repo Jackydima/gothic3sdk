@@ -182,3 +182,37 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_STATE(NB_ParryStumble)
     }
     return GETrue;
 }
+
+ME_DEFINE_AND_REGISTER_SCRIPT_AI_STATE(NB_Melee_Parry)
+{
+    INIT_SCRIPT_STATE();
+    BREAK_BLOCK
+    {
+        Entity target = SelfEntity.NPC.GetCurrentTarget();
+
+        if (!Entity::GetCamera().IsInFirstPerson())
+        {
+            SelfEntity.SetAlignmentTarget(target);
+            SelfEntity.CharacterControl.SetMovementConstraints(360.0f);
+        }
+
+        PUSH_STATE_AND_ARGS(_AI_Parry);
+        args->m_Self = SelfEntity;
+        args->m_Other = target;
+        RUN_SCRIPT_FUNCTION();
+    }
+    BREAK_BLOCK
+    {
+        if (SelfEntity.IsPlayer())
+        {
+            SelfEntity.Routine.SetState("PS_Melee");
+            return GETrue;
+        }
+        else
+        {
+            SelfEntity.Routine.SetState("ZS_Attack");
+            return GETrue;
+        }
+    }
+    return GETrue;
+}

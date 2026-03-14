@@ -275,26 +275,24 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     Hook_Evade.SetImmEax(retVal);
 }
 
-static mCCallHook Hook_CombatMoveStartEvadeAniString;
-void CombatMoveStartEvadeAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_args,
-                                   gCScriptProcessingUnit *p_SPU)
+void EvadeAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
 {
-    if (p_args->Action != gEAction_Evade)
+    if (a_pArgs->Action != gEAction_Evade)
         return;
 
-    eCEntity *Self = p_SPU->m_Speaker.GetEntity();
+    eCEntity *Self = a_pSPU->m_Speaker.GetEntity();
     if (!Self)
         return;
 
     bCString aniName;
-    if (p_args->PhaseName.Contains("Right"))
+    if (a_pArgs->PhaseName.Contains("Right"))
     {
-        if (p_args->PhaseName == "Right_Raise")
+        if (a_pArgs->PhaseName == "Right_Raise")
         {
             aniName = "Hero_EvadeRight_Raise";
         }
 
-        else if (p_args->PhaseName == "Right_Recover")
+        else if (a_pArgs->PhaseName == "Right_Recover")
         {
             aniName = "Hero_EvadeRight_Recover";
         }
@@ -306,14 +304,14 @@ void CombatMoveStartEvadeAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Ar
 
         // p_SPU->m_DirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }
-    else if (p_args->PhaseName.Contains("Left"))
+    else if (a_pArgs->PhaseName.Contains("Left"))
     {
-        if (p_args->PhaseName == "Left_Raise")
+        if (a_pArgs->PhaseName == "Left_Raise")
         {
             aniName = "Hero_EvadeLeft_Raise";
         }
 
-        else if (p_args->PhaseName == "Left_Recover")
+        else if (a_pArgs->PhaseName == "Left_Recover")
         {
             aniName = "Hero_EvadeLeft_Recover";
         }
@@ -327,12 +325,12 @@ void CombatMoveStartEvadeAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Ar
     }
     else
     {
-        if (p_args->PhaseName == "Raise")
+        if (a_pArgs->PhaseName == "Raise")
         {
             aniName = "Hero_EvadeBack_Raise";
         }
 
-        else if (p_args->PhaseName == "Recover")
+        else if (a_pArgs->PhaseName == "Recover")
         {
             aniName = "Hero_EvadeBack_Recover";
         }
@@ -344,64 +342,152 @@ void CombatMoveStartEvadeAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Ar
 
         // p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
     }
-    p_SPU->m_strAniString.SetText(aniName);
+    a_pSPU->m_strAniString.SetText(aniName);
 }
 
-static mCCallHook Hook_CombatMoveStartEvadeMovement;
-void CombatMoveStartEvadeMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Args *p_args,
-                                  gCScriptProcessingUnit *p_SPU)
+void ParryAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
 {
-    if (p_args->Action != gEAction_Evade)
+    if (a_pArgs->Action != gEAction_Parry)
+    {
+        return;
+    }
+
+    eCEntity *Self = a_pSPU->m_Speaker.GetEntity();
+    if (!Self)
+    {
+        return;
+    }
+
+    /*gCNPC_PS *selfNPC = GetPropertySet<gCNPC_PS>(Self, eEPropertySetType_NPC);
+    if (!selfNPC)
+    {
+        a_pSPU->m_strAniString.SetText("");
+        return;
+    }
+
+
+    gESpecies selfSpecies = selfNPC->GetSpecies();
+    if (selfSpecies != gESpecies_Human && selfSpecies != gESpecies_Orc)
         return;
 
-    eCEntity *Self = p_SPU->m_Speaker.GetEntity();
+    eCVisualAnimation_PS *selfAnimation = GetPropertySet<eCVisualAnimation_PS>(Self, eEPropertySetType_Animation);
+    if (!selfAnimation)
+        return;
+
+    auto actor = selfAnimation->GetActor();
+
+    if (!actor)
+        return;
+
+    bCString aniName = actor->GetActorName();
+
+    aniName += "_Stand_";*/
+
+    // For now leave the naming convention, but force P0 pose!
+    bCString strPose = "";
+    a_pSPU->m_strAniString.GetWord(4, "_", strPose, GETrue, GETrue);
+
+    a_pSPU->m_strAniString.Replace(strPose, "P0");
+}
+
+static mCCallHook Hook_CombatMoveStartAniString;
+void CombatMoveStartAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
+{
+    EvadeAniString(a_pArgs, a_pSPU);
+    ParryAniString(a_pArgs, a_pSPU);
+}
+
+void EvadeMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
+{
+    if (a_pArgs->Action != gEAction_Evade)
+        return;
+
+    eCEntity *Self = a_pSPU->m_Speaker.GetEntity();
     if (!Self)
         return;
 
-    if (p_SPU->m_SelfMovementPS)
+    if (a_pSPU->m_SelfMovementPS)
     {
-        p_SPU->m_SelfMovementPS->EnableCombatRotationFromSPU(GEFalse, 0.0f);
+        a_pSPU->m_SelfMovementPS->EnableCombatRotationFromSPU(GEFalse, 0.0f);
     }
 
-    if (p_SPU->m_SelfNavigationPS)
+    if (a_pSPU->m_SelfNavigationPS)
     {
-        p_SPU->m_SelfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
+        a_pSPU->m_SelfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
     }
 
-    if (!p_SPU->m_strAniString.Contains("Hit"))
+    if (!a_pSPU->m_strAniString.Contains("Hit"))
         return;
 
     const GEFloat evadeDistance = 250.0f;
 
-    if (p_args->PhaseName.Contains("Right"))
+    if (a_pArgs->PhaseName.Contains("Right"))
     {
-        p_SPU->m_DirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
+        a_pSPU->m_DirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }
-    else if (p_args->PhaseName.Contains("Left"))
+    else if (a_pArgs->PhaseName.Contains("Left"))
     {
-        p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
+        a_pSPU->m_DirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }
     else
     {
-        p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
+        a_pSPU->m_DirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
     }
 
-    eCWrapper_emfx2Actor *selfActor = p_SPU->m_SelfAnimationPS->GetActor();
+    eCWrapper_emfx2Actor *selfActor = a_pSPU->m_SelfAnimationPS->GetActor();
     GEFloat maxTime = static_cast<GEFloat>(selfActor->GetMaxTime(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst));
-    GEFloat aniLength = maxTime / p_args->AniSpeedScale;
-    p_SPU->m_DirectionVec *= evadeDistance / aniLength;
+    GEFloat aniLength = maxTime / a_pArgs->AniSpeedScale;
+    a_pSPU->m_DirectionVec *= evadeDistance / aniLength;
+}
+
+void ParryMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
+{
+    if (a_pArgs->Action != gEAction_Parry)
+        return;
+
+    eCEntity *Self = a_pSPU->m_Speaker.GetEntity();
+    if (!Self)
+        return;
+
+    if (a_pSPU->m_SelfMovementPS)
+    {
+        // a_pSPU->m_SelfMovementPS->EnableCombatRotationFromSPU(GEFalse, 0.0f);
+    }
+
+    if (a_pSPU->m_SelfNavigationPS)
+    {
+        a_pSPU->m_SelfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
+    }
+
+    if (!a_pSPU->m_strAniString.Contains("Hit"))
+        return;
+
+    a_pSPU->m_DirectionVec = bCVector(0.0f, 0.0f, 0.0f);
+}
+
+static mCCallHook Hook_CombatMoveStartMovement;
+void CombatMoveStartMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
+{
+    EvadeMovement(a_pArgs, a_pSPU);
+    ParryMovement(a_pArgs, a_pSPU);
 }
 
 void HookCallHooks()
 {
-    Hook_CombatMoveStartEvadeMovement.Prepare(RVA_Game(0x16b8a9), &CombatMoveStartEvadeMovement)
+    // Add Parry String to g_pstrActionString!
+    // Start of ActionArray string! 0x3f75c0
+    // is normally const!! but we need to add things there...
+    bCString *p_sParry = reinterpret_cast<bCString *>(RVA_Game(0x3f75c0 + 0x4 * static_cast<GEInt>(gEAction_Parry)));
+    *p_sParry = bCString("Parry");
+
+    Hook_CombatMoveStartMovement.Prepare(RVA_Game(0x16b8a9), &CombatMoveStartMovement)
         .InsertCall()
         .AddPtrStackArgEbp(0x8)
         .AddPtrStackArgEbp(0xC)
         .RestoreRegister()
         .Hook();
 
-    Hook_CombatMoveStartEvadeAniString.Prepare(RVA_Game(0x16b065), &CombatMoveStartEvadeAniString)
+    Hook_CombatMoveStartAniString.Prepare(RVA_Game(0x16b065), &CombatMoveStartAniString)
         .InsertCall()
         .AddPtrStackArgEbp(0x8)
         .AddPtrStackArgEbp(0xC)

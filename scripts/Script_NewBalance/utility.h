@@ -56,6 +56,8 @@ enum WarriorType
 // param 1: gEAction, param 2 Entity, param 3(EAX register): gEPhase
 extern mCFunctionHook Hook_GetAnimationSpeedModifier;
 
+void SetParadeMode(Entity a_Entity, GEBool a_bEnabled);
+
 std::vector<bCString> splitTobCStrings(const std::string str, char delim);
 void MagicPartyMemberRemover(Entity p_summoner);
 void VanishEntity(Entity &p_entity);

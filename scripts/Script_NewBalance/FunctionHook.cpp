@@ -2078,8 +2078,65 @@ GEBool GE_STDCALL Entity_AttachTo(LPVOID *a_peCEntity)
     return Hook_Entity_AttachTo.GetOriginalFunction(&Entity_AttachTo)(a_peCEntity);
 }*/
 
+static mCFunctionHook Hook_OnPlayerSecondaryAction_NB;
+DECLARE_SCRIPT(OnPlayerSecondaryAction_NB)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+
+    if (Self.Routine.GetCurrentTask() != "PS_Melee")
+    {
+        return Hook_OnPlayerSecondaryAction_NB.GetOriginalFunction(&OnPlayerSecondaryAction_NB)(
+            a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
+    }
+
+    // SafetyGuard for Parry and evade :))
+    if (Self.Routine.GetCurrentState().Contains("NB_"))
+    {
+        return Hook_OnPlayerSecondaryAction_NB.GetOriginalFunction(&OnPlayerSecondaryAction_NB)(
+            a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
+    }
+
+    if (!Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressed>()
+        && Self.CharacterControl.GetProperty<PSCharacterControl::PropertyDurationPressedMSecs>() <= 200)
+    {
+        gESpecies selfSpecies = Self.NPC.GetProperty<PSNpc::PropertySpecies>();
+        if (selfSpecies == gESpecies_Orc || selfSpecies == gESpecies_Human)
+        {
+
+            eCKeyboard &keyboard = eCApplication::GetInstance().GetKeyboard();
+
+            // Maps SessionKeys to physical Keyboard Keys
+            // Protected constructor workaround
+            // TODO: Make them external references in utility?
+            gCSessionKeys sessionKeys = gCSessionKeys();
+            sessionKeys = gCSession::GetInstance().GetSessionKeys();
+
+            eCPhysicalKey *shiftKey = sessionKeys.GetAssignedKey(gESessionKey_Walk, 0);
+            eCPhysicalKey *shiftKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_Walk, 1);
+
+            GEBool runKeyPressed = keyboard.KeyPressed(shiftKey->m_enuKeyboardStateOffset)
+                            || keyboard.KeyPressed(shiftKeyAlt->m_enuKeyboardStateOffset);
+
+            if (runKeyPressed)
+            {
+                GEBool *paradeBool = reinterpret_cast<GEBool*>(RVA_ScriptGame(0x118b41));
+                *paradeBool = GEFalse;
+                SetParadeMode(Self,GEFalse);
+                Self.Routine.SetState("NB_Melee_Parry");
+                return GETrue;
+            }
+        }
+    }
+
+    return Hook_OnPlayerSecondaryAction_NB.GetOriginalFunction(&OnPlayerSecondaryAction_NB)(a_pSPU, a_pSelfEntity,
+                                                                                            a_pOtherEntity, a_iArgs);
+}
+
 void HookFunctions()
 {
+    Hook_OnPlayerSecondaryAction_NB.Hook(GetScriptAdminExt().GetScript("OnPlayerSecondaryAction")->m_funcScript,
+                                         &OnPlayerSecondaryAction_NB);
+
     // Old variant
     // Hook_sAICombatMoveStart.Hook(RVA_Game(0x16abb0), &sAICombatMoveStart, mCBaseHook::mEHookType_ThisCall);
 

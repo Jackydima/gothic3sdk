@@ -41,3 +41,13 @@ class gSArgsFor__AI_ParryStumble : public gScrArgument
     Entity m_Self;
     Entity m_Other;
 };
+
+class gSArgsFor__AI_Parry : public gScrArgument
+{
+  public:
+    ~gSArgsFor__AI_Parry() override = default;
+
+  public:
+    Entity m_Self;
+    Entity m_Other;
+};

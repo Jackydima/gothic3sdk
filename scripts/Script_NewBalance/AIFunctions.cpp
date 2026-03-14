@@ -239,3 +239,55 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_ParryStumble)
     }
     return GETrue;
 }
+
+ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_Parry)
+{
+    // Setup
+    INIT_SCRIPT_STATE();
+    gSArgsFor__AI_Parry param =
+        *reinterpret_cast<gSArgsFor__AI_Parry *>(a_rRunTimeStack.GetAt(a_rRunTimeStack.GetCount() - 1).m_pArguments);
+
+    // Execution in seperated Blocks!
+    BREAK_BLOCK
+    {
+        ClearInputEntry(param.m_Self);
+
+        param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAction>() = gEAction_Parade; // Or add gEAction_Parry!
+        param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAniState>() = gEAniState_Stand;
+
+        // Consume Staminapoints
+        GetScriptAdmin().CallScriptFromScript("AddStaminaPoints", &param.m_Self, &None, -12);
+
+        gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_Parry, "Raise", 1.0f);
+
+        if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
+        {
+            return GEFalse;
+        }
+    }
+    BREAK_BLOCK
+    {
+        gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_Parry, "Hit", 1.0f);
+
+        if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
+        {
+            return GEFalse;
+        }
+    }
+    BREAK_BLOCK
+    {
+        gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_Parry, "Recover", 1.0f);
+
+        if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
+        {
+            return GEFalse;
+        }
+    }
+    BREAK_BLOCK
+    {}
+
+    return GETrue;
+}

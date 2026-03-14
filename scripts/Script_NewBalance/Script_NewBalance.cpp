@@ -173,14 +173,40 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     }
     gEAction DamagerOwnerAction = DamagerOwner.Routine.GetProperty<PSRoutine::PropertyAction>();
     gEAction VictimAction = Victim.Routine.GetProperty<PSRoutine::PropertyAction>();
-    auto damagerOwnerDamageReceiver = static_cast<gCDamageReceiver_PS_Ext *>(
-        DamagerOwner.GetGameEntity()->GetPropertySet(eEPropertySetType_DamageReceiver));
-    auto victimDamageReceiver = static_cast<gCDamageReceiver_PS_Ext *>(
-        Victim.GetGameEntity()->GetPropertySet(eEPropertySetType_DamageReceiver));
 
     Victim.DamageReceiver.AccessProperty<PSDamageReceiver::PropertyDamageAmount>() = 0;
+    Victim.DamageReceiver.AccessProperty<PSDamageReceiver::PropertyDamageType>() = gEDamageType_Blade; // Default!
     Victim.NPC.SetLastAttacker(Victim.NPC.GetCurrentAttacker());
     Victim.NPC.SetCurrentAttacker(DamagerOwner);
+
+    // Parry mechanic!
+    if (Victim.Routine.GetCurrentState() == "NB_Melee_Parry")
+    {
+        if (Victim.NPC.GetCurrentMovementAni().Contains("Hit"))
+        {
+            if (!ScriptAdmin.CallScriptFromScript("IsInFistMode", &Victim, &None, 0))
+            {
+                if (Damager.CollisionShape.GetPhysicMaterial() != eEShapeMaterial_Metal
+                    || (Victim.Inventory.GetItemFromSlot(gESlot_RightHand).CollisionShape.GetPhysicMaterial()
+                        != eEShapeMaterial_Metal))
+                {
+                    EffectSystem::StartEffect("eff_col_weaponhitslevel_metal_wood_01", Victim);
+                }
+                else
+                {
+                    EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
+                }
+            }
+
+            if (!Damager.GetName().Contains("Fist"))
+            {
+                DamagerOwner.Routine.FullStop();
+            }
+
+            DamagerOwner.Routine.SetTask("NB_ParryStumble");
+            return gEAction_Parade;
+        }
+    }
 
     Entity Player = Entity::GetPlayer();
 

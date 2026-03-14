@@ -200,6 +200,9 @@ enum gEAction
     gEAction_QuickUseH = 141,
     gEAction_QuickUseM = 142,
     gEAction_QuickUseS = 143,
+    // New Balance addition!
+    gEAction_Parry = 144,
+    // New Balance addition End!
     gEAction_Count = 145
 };
 
