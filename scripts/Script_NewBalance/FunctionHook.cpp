@@ -373,113 +373,176 @@ GEInt GE_STDCALL CanParade(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity
     INIT_SCRIPT_EXT(Victim, DamagerOwner);
     UNREFERENCED_PARAMETER(a_iArgs);
 
-    auto &SA = GetScriptAdmin();
-    GEBool canParadeMoveOf = SA.CallScriptFromScript("CanParadeMoveOf", &Victim, &DamagerOwner, 0);
+    // Only Parade With Melee weapons!
+    if (GetHeldWeaponCategoryNB(Victim) != gEWeaponCategory_Melee)
+        return GEFalse;
+
+    if (Victim.NPC.HasStatusEffects(gEStatusEffect_Frozen))
+        return GEFalse;
+
+    // Only Block when in FOV!
+    if (!Victim.IsInFOV(DamagerOwner))
+        return GEFalse;
+
+    gCScriptAdmin &ScriptAdmin = GetScriptAdmin();
     gEAction victimAction = Victim.Routine.GetProperty<PSRoutine::PropertyAction>();
-    GEBool isMonsterDamager = !SA.CallScriptFromScript("IsHumanoid", &DamagerOwner, &None, 0);
-    gEAction damagerAction = DamagerOwner.Routine.GetProperty<PSRoutine::PropertyAction>();
-    GEBool victimInParade = SA.CallScriptFromScript("IsInParadeMode", &Victim, &None, 0);
+    gEAniState victimAniState = Victim.Routine.GetProperty<PSRoutine::PropertyAniState>();
 
-    /*
-        Special Request Change
-    */
-
-    if (NBConfig::useExtendedBlocking)
+    // Special Block for melee weapons while beeing knockdowned!
+    if (victimAniState == gEAniState_SitKnockDown || victimAction == gEAction_GetUpParade)
     {
-        // gEUseType rightWeaponUseType = Victim.Inventory.GetItemFromSlot ( gESlot_RightHand ).Interaction.GetUseType (
-        // );
-
-        // Special return true for Blocking Hackattacks with a 2H Weapon, Axe, Halbert, Staff
-        GEBool victimHolding2HWeap = IsHoldingTwoHandedWeapon(Victim);
-        if (victimHolding2HWeap && victimInParade && damagerAction == gEAction_HackAttack
-            && victimAction != gEAction_HackAttack && victimAction != gEAction_WhirlAttack
-            && victimAction != gEAction_FinishingAttack)
+        if (GetHeldWeaponCategoryNB(DamagerOwner) == gEWeaponCategory_Melee)
         {
-            if (Victim.IsInFOV(DamagerOwner))
-            {
-                return 1;
-            }
-        }
-        // Special return for Blocking Monsterdamage with a 2H Weapon, Axe, Halbert, Staff and 1H When skilled up
-        GEInt weaponLevel = getWeaponLevelNB(Victim);
-        if (isBigMonster(DamagerOwner))
-        {
-            weaponLevel -= 1;
-        }
-        if (victimInParade && victimAction != gEAction_HackAttack && victimAction != gEAction_PierceAttack
-            && victimAction != gEAction_WhirlAttack && victimAction != gEAction_FinishingAttack && isMonsterDamager
-            && (weaponLevel >= 2
-                || (!isBigMonster(DamagerOwner) && DamagerOwner.GetWeapon(GETrue) != None
-                    && !DamagerOwner.GetWeapon(GETrue).GetName().Contains("Fist")))
-            && (damagerAction != gEAction_PierceAttack || CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, Victim))
-            && (damagerAction != gEAction_HackAttack || victimHolding2HWeap))
-        {
-            if (Victim.IsInFOV(DamagerOwner))
-            {
-                return 1;
-            }
-        }
-
-        // 1H1H can block PierceAttacks
-        if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, Victim) && victimInParade
-            && victimAction != gEAction_PierceAttack && victimAction != gEAction_FinishingAttack
-            && damagerAction == gEAction_PierceAttack)
-        {
-            if (Victim.IsInFOV(DamagerOwner))
-            {
-                return 1;
-            }
-        }
-    }
-    else
-    {
-        // Special return for Blocking Monsterdamage with a 2H Weapon, Axe, Halbert, Staff and 1H When skilled up
-        // GEBool victimHolding2HWeap = IsHoldingTwoHandedWeapon ( Victim );
-        GEInt weaponLevel = getWeaponLevelNB(Victim);
-        if (isBigMonster(DamagerOwner))
-        {
-            weaponLevel -= 1;
-        }
-        if (victimInParade && victimAction != gEAction_HackAttack && victimAction != gEAction_PierceAttack
-            && victimAction != gEAction_WhirlAttack && victimAction != gEAction_FinishingAttack && isMonsterDamager
-            && (weaponLevel >= 2
-                || (!isBigMonster(DamagerOwner) && DamagerOwner.GetWeapon(GETrue) != None
-                    && !DamagerOwner.GetWeapon(GETrue).GetName().Contains("Fist"))))
-        {
-            if (Victim.IsInFOV(DamagerOwner))
-            {
-                return 1;
-            }
+            return GETrue;
         }
     }
 
-    // Human Fists are blockable
-    if (victimInParade && GetScriptAdmin().CallScriptFromScript("IsHumanoid", &DamagerOwner, &None, 0)
-        && GetScriptAdmin().CallScriptFromScript("IsInFistMode", &DamagerOwner, &None, 0))
+    if (!ScriptAdmin.CallScriptFromScript("IsInParadeMode", &Victim, &None, 0))
+        return GEFalse;
+
+    if (!ScriptAdmin.CallScriptFromScript("CanParadeMoveOf", &Victim, &DamagerOwner, 0))
+        return GEFalse;
+
+    if (victimAction == gEAction_HackAttack)
+        return GEFalse;
+
+    if (eCApplication::GetInstance().GetEngineSetup().AlternativeAI
+        && (victimAction == gEAction_PierceAttack || victimAction == gEAction_WhirlAttack
+            || victimAction == gEAction_FinishingAttack))
     {
-        if (Victim.IsInFOV(DamagerOwner))
+        return GEFalse;
+    }
+    return GETrue;
+}
+
+DECLARE_SCRIPT(CanParadeMoveOf)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+    UNREFERENCED_PARAMETER(a_iArgs);
+
+    GEBool bVictimHasShield = CheckHandUseTypesNB(gEUseType_Shield, gEUseType_1H, Self);
+    gESpecies otherSpecies = Other.NPC.GetProperty<PSNpc::PropertySpecies>();
+    gCScriptAdmin &ScriptAdmin = GetScriptAdmin();
+
+    if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Other, &None))
+    {
+        // Human Fists can be blocked always!
+        if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &Other, &None))
         {
-            return 1;
+            return GETrue;
         }
+
+        switch (otherSpecies)
+        {
+            case gESpecies_Minecrawler:
+            case gESpecies_Sabertooth:
+            case gESpecies_Shadowbeast:
+            case gESpecies_Bison:
+            case gESpecies_Rhino:
+            case gESpecies_Ripper:
+            case gESpecies_Alligator:
+            case gESpecies_Golem:
+            case gESpecies_FireGolem:
+            case gESpecies_IceGolem:
+            case gESpecies_ScorpionKing: return bVictimHasShield;
+
+            case gESpecies_Troll:
+            case gESpecies_Trex:
+            case gESpecies_Gargoyle:
+                // No Shield returns False
+                if (!bVictimHasShield)
+                    return GEFalse;
+
+                if (Self.IsPlayer())
+                    return Self.Inventory.IsSkillActive("Perk_Shield_2");
+
+                return (35 <= Self.NPC.GetProperty<PSNpc::PropertyLevelMax>());
+        }
+
+        // Humans can not block monster fists with fists!
+        if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Self, &None))
+        {
+            return GEFalse;
+        }
+
+        // Small Monsters can be block with weapons now
+        return GETrue;
     }
 
-    /*
-        Special Request Change End
-    */
-
-    if (canParadeMoveOf && victimInParade && victimAction != gEAction::gEAction_HackAttack)
+    // Fist cannot block weapons!
+    if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Self, &None))
     {
-        if (!eCApplication::GetInstance().GetEngineSetup().AlternativeAI
-            || (victimAction != gEAction_PierceAttack && victimAction != gEAction_WhirlAttack
-                && victimAction != gEAction_FinishingAttack && damagerAction != gEAction_SprintAttack))
+        return GEFalse;
+    }
+
+    // Strong Monsters with weapons!
+    if (otherSpecies == gESpecies_Demon || otherSpecies == gESpecies_Ogre)
+    {
+        if (!Self.IsPlayer())
         {
-            if (Victim.IsInFOV(DamagerOwner))
+            return 35 <= Self.NPC.GetProperty<PSNpc::PropertyLevelMax>();
+        }
+
+        if (bVictimHasShield && Self.Inventory.IsSkillActive("Perk_Shield_2"))
+            return GETrue;
+
+        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_1H, Self) && Self.Inventory.IsSkillActive("Perk_1H_3"))
+            return GETrue;
+
+        if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, Self) && Self.Inventory.IsSkillActive("Perk_1H1H_2"))
+            return GETrue;
+
+        if ((CheckHandUseTypesNB(gEUseType_None, gEUseType_Axe, Self)
+             || CheckHandUseTypesNB(gEUseType_None, gEUseType_2H, Self)
+             || CheckHandUseTypesNB(gEUseType_None, gEUseType_Halberd, Self)
+             || CheckHandUseTypesNB(gEUseType_None, gEUseType_Pickaxe, Self))
+            && Self.Inventory.IsSkillActive("Perk_Axe_3"))
+        {
+            return GETrue;
+        }
+
+        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Staff, Self) && Self.Inventory.IsSkillActive("Perk_Staff_3"))
+            return GETrue;
+
+        return GEFalse;
+    }
+
+    switch (Other.Routine.GetProperty<PSRoutine::PropertyAction>())
+    {
+        case gEAction_PowerAttack:
+            // Dual Wielded 1H can get through blocks against victims only at the initial startup of the attack
+            if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, Other)
+                && 1 >= Other.Routine.GetProperty<PSRoutine::PropertyStatePosition>())
             {
-                return 1;
+                // Can not block initial Attack of dual wielding powerattack!
+                return GEFalse;
             }
-        }
+            break;
+        case gEAction_PierceAttack:
+            if (NBConfig::useExtendedBlocking)
+            {
+                if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, Self))
+                    return GETrue;
+            }
+            if (bVictimHasShield)
+                return GETrue;
+
+            return GEFalse;
+        case gEAction_HackAttack:
+            if (NBConfig::useExtendedBlocking)
+            {
+                if (IsHoldingTwoHandedWeapon(Self))
+                    return GETrue;
+            }
+            if (bVictimHasShield)
+                return GETrue;
+
+            return GEFalse;
+        default: break;
     }
-    return 0;
+
+    // default
+    return GETrue;
 }
 
 static mCFunctionHook Hook_OnTick;
@@ -2108,7 +2171,7 @@ DECLARE_SCRIPT(OnPlayerSecondaryAction_NB)
     if (runKeyPressed)
     {
         // Do to allow spamming Parry or canceling forced recovery in other states!
-        //if (Self.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_Parry
+        // if (Self.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_Parry
         if (Self.Routine.GetCurrentState() != "PS_Melee_Loop")
         {
             return GETrue;
@@ -2272,6 +2335,9 @@ void HookFunctions()
     static mCFunctionHook Hook_OnPlayerGetDamage;
     Hook_GetQualityBonus.Hook(GetScriptAdminExt().GetScript("GetQualityBonus")->m_funcScript, &GetQualityBonus);
     Hook_GetQualityBonus.Hook(GetScriptAdminExt().GetScript("OnPlayerGetDamage")->m_funcScript, &OnPlayerGetDamage);
+
+    static mCFunctionHook Hook_CanParadeMoveOf;
+    Hook_CanParadeMoveOf.Hook(GetScriptAdminExt().GetScript("CanParadeMoveOf")->m_funcScript, &CanParadeMoveOf);
 
     // Hook_GetMaxLevel.Hook ( GetScriptAdminExt ( ).GetScript ( "GetLevelMax" )->m_funcScript , &GetMaxLevel );
 

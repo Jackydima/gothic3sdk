@@ -179,32 +179,37 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     Victim.NPC.SetLastAttacker(Victim.NPC.GetCurrentAttacker());
     Victim.NPC.SetCurrentAttacker(DamagerOwner);
 
-    // Parry mechanic!
-    if (Victim.Routine.GetCurrentState() == "NB_Melee_Parry")
+    if (!Victim.NPC.IsFrozen() // Frozen Victim cannot parry!, should also never happen with state checks!
+    && !Damager.Projectile.IsValid() && !IsSpellContainerNB(Damager) // No projectiles and no spell parry!
+    && ScriptAdmin.CallScriptFromScript("CanParadeMoveOf", &Victim, &DamagerOwner, 0))
     {
-        if (Victim.NPC.GetCurrentMovementAni().Contains("Hit"))
+        // Parry mechanic!
+        if (Victim.Routine.GetCurrentState() == "NB_Melee_Parry")
         {
-            if (!ScriptAdmin.CallScriptFromScript("IsInFistMode", &Victim, &None, 0))
+            if (Victim.NPC.GetCurrentMovementAni().Contains("Hit"))
             {
-                if (Damager.CollisionShape.GetPhysicMaterial() != eEShapeMaterial_Metal
-                    || (Victim.Inventory.GetItemFromSlot(gESlot_RightHand).CollisionShape.GetPhysicMaterial()
-                        != eEShapeMaterial_Metal))
+                if (!ScriptAdmin.CallScriptFromScript("IsInFistMode", &Victim, &None, 0))
                 {
-                    EffectSystem::StartEffect("eff_col_weaponhitslevel_metal_wood_01", Victim);
+                    if (Damager.CollisionShape.GetPhysicMaterial() != eEShapeMaterial_Metal
+                        || (Victim.Inventory.GetItemFromSlot(gESlot_RightHand).CollisionShape.GetPhysicMaterial()
+                            != eEShapeMaterial_Metal))
+                    {
+                        EffectSystem::StartEffect("eff_col_weaponhitslevel_metal_wood_01", Victim);
+                    }
+                    else
+                    {
+                        EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
+                    }
                 }
-                else
+
+                if (!Damager.GetName().Contains("Fist"))
                 {
-                    EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
+                    DamagerOwner.Routine.FullStop();
                 }
-            }
 
-            if (!Damager.GetName().Contains("Fist"))
-            {
-                DamagerOwner.Routine.FullStop();
+                DamagerOwner.Routine.SetTask("NB_ParryStumble");
+                return gEAction_Parade;
             }
-
-            DamagerOwner.Routine.SetTask("NB_ParryStumble");
-            return gEAction_Parade;
         }
     }
 
