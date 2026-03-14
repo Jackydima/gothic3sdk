@@ -243,8 +243,14 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
 
     Hook_Evade.SetImmEax(1);
 
-    // Do to allow spamming Evading!
-    if (Self.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_Evade)
+    // Usually it would be better to add an action instead of hard setting states,
+    // for the current task loop to handle, but we want less hooks :)
+
+    // Do to allow spamming Evading or Canceling forced recovery in other states!
+    //gEAction selfCurrentAction = Self.Routine.GetProperty<PSRoutine::PropertyAction>();
+    //if (selfCurrentAction == gEAction_Evade || selfCurrentAction == gEAction_PierceAttack
+    //    || selfCurrentAction == gEAction_HackAttack || selfCurrentAction == gEAction_Parry)
+    if (!Self.Routine.GetCurrentState().Contains("_Loop"))
     {
         return;
     }

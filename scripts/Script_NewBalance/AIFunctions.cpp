@@ -1,13 +1,5 @@
 #include "AIFunctions.h"
 
-void ClearInputEntry(Entity a_Entity)
-{
-    using mFClearInputEntry = void(GE_STDCALL *)(Entity p_selfEntity);
-    static mFClearInputEntry s_fClearInputEntry = force_cast<mFClearInputEntry>(RVA_ScriptGame(0x79a0));
-
-    return s_fClearInputEntry(a_Entity);
-}
-
 ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeBackward)
 {
     // Setup
@@ -252,7 +244,7 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_Parry)
     {
         ClearInputEntry(param.m_Self);
 
-        param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAction>() = gEAction_Parade; // Or add gEAction_Parry!
+        param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAction>() = gEAction_Parry; // Or add gEAction_Parry!
         param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAniState>() = gEAniState_Stand;
 
         // Consume Staminapoints

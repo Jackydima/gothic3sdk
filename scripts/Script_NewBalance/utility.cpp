@@ -2,10 +2,18 @@
 
 void SetParadeMode(Entity a_Entity, GEBool a_bEnabled)
 {
-    using mFSetParadeMode = void(GE_STDCALL*)(Entity,GEBool);
+    using mFSetParadeMode = void(GE_STDCALL *)(Entity, GEBool);
     static mCCaller SetParadeModeCaller(mCCaller::GetCallerParams(RVA_ScriptGame(0x1d90), mERegisterType_Ecx));
     SetParadeModeCaller.SetImmEcx(RVA_ScriptGame(0x118aac)); // This object of static helper object
     SetParadeModeCaller.GetFunction<mFSetParadeMode>()(a_Entity, a_bEnabled);
+}
+
+void ClearInputEntry(Entity a_Entity)
+{
+    using mFClearInputEntry = void(GE_STDCALL *)(Entity p_selfEntity);
+    static mFClearInputEntry s_fClearInputEntry = force_cast<mFClearInputEntry>(RVA_ScriptGame(0x79a0));
+
+    return s_fClearInputEntry(a_Entity);
 }
 
 std::vector<bCString> splitTobCStrings(const std::string str, char delim)

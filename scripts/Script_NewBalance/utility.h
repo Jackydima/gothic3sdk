@@ -57,6 +57,7 @@ enum WarriorType
 extern mCFunctionHook Hook_GetAnimationSpeedModifier;
 
 void SetParadeMode(Entity a_Entity, GEBool a_bEnabled);
+void ClearInputEntry(Entity a_Entity);
 
 std::vector<bCString> splitTobCStrings(const std::string str, char delim);
 void MagicPartyMemberRemover(Entity p_summoner);

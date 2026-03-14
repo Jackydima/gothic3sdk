@@ -2089,43 +2089,45 @@ DECLARE_SCRIPT(OnPlayerSecondaryAction_NB)
             a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
     }
 
-    // SafetyGuard for Parry and evade :))
-    if (Self.Routine.GetCurrentState().Contains("NB_"))
-    {
-        return Hook_OnPlayerSecondaryAction_NB.GetOriginalFunction(&OnPlayerSecondaryAction_NB)(
-            a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
-    }
+    // Usually it would be better to add an action instead of hard setting states,
+    // for the current task loop to handle, but we want less hooks :)
 
-    if (!Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressed>()
-        && Self.CharacterControl.GetProperty<PSCharacterControl::PropertyDurationPressedMSecs>() <= 200)
+    static eCKeyboard &keyboard = eCApplication::GetInstance().GetKeyboard();
+    // Maps SessionKeys to physical Keyboard Keys
+    // Protected constructor workaround
+    static gCSessionKeys sessionKeys = gCSessionKeys();
+    sessionKeys = gCSession::GetInstance().GetSessionKeys();
+
+    eCPhysicalKey *shiftKey = sessionKeys.GetAssignedKey(gESessionKey_Walk, 0);
+    eCPhysicalKey *shiftKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_Walk, 1);
+
+    GEBool runKeyPressed = keyboard.KeyPressed(shiftKey->m_enuKeyboardStateOffset)
+                        || keyboard.KeyPressed(shiftKeyAlt->m_enuKeyboardStateOffset);
+
+    // Tries to parry!
+    if (runKeyPressed)
     {
-        gESpecies selfSpecies = Self.NPC.GetProperty<PSNpc::PropertySpecies>();
-        if (selfSpecies == gESpecies_Orc || selfSpecies == gESpecies_Human)
+        // Do to allow spamming Parry or canceling forced recovery in other states!
+        //if (Self.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_Parry
+        if (Self.Routine.GetCurrentState() != "PS_Melee_Loop")
         {
+            return GETrue;
+        }
 
-            eCKeyboard &keyboard = eCApplication::GetInstance().GetKeyboard();
-
-            // Maps SessionKeys to physical Keyboard Keys
-            // Protected constructor workaround
-            // TODO: Make them external references in utility?
-            gCSessionKeys sessionKeys = gCSessionKeys();
-            sessionKeys = gCSession::GetInstance().GetSessionKeys();
-
-            eCPhysicalKey *shiftKey = sessionKeys.GetAssignedKey(gESessionKey_Walk, 0);
-            eCPhysicalKey *shiftKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_Walk, 1);
-
-            GEBool runKeyPressed = keyboard.KeyPressed(shiftKey->m_enuKeyboardStateOffset)
-                            || keyboard.KeyPressed(shiftKeyAlt->m_enuKeyboardStateOffset);
-
-            if (runKeyPressed)
+        if (!Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressed>()
+            && Self.CharacterControl.GetProperty<PSCharacterControl::PropertyDurationPressedMSecs>() <= 200)
+        {
+            gESpecies selfSpecies = Self.NPC.GetProperty<PSNpc::PropertySpecies>();
+            if (selfSpecies == gESpecies_Orc || selfSpecies == gESpecies_Human)
             {
-                GEBool *paradeBool = reinterpret_cast<GEBool*>(RVA_ScriptGame(0x118b41));
+                GEBool *paradeBool = reinterpret_cast<GEBool *>(RVA_ScriptGame(0x118b41));
                 *paradeBool = GEFalse;
-                SetParadeMode(Self,GEFalse);
+                SetParadeMode(Self, GEFalse);
                 Self.Routine.SetState("NB_Melee_Parry");
-                return GETrue;
             }
         }
+
+        return GETrue;
     }
 
     return Hook_OnPlayerSecondaryAction_NB.GetOriginalFunction(&OnPlayerSecondaryAction_NB)(a_pSPU, a_pSelfEntity,
