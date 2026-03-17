@@ -2170,6 +2170,11 @@ DECLARE_SCRIPT(OnPlayerSecondaryAction_NB)
     // Tries to parry!
     if (runKeyPressed)
     {
+        if (GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &Self, &None) < 20)
+        {
+            return GETrue;
+        }
+
         // Do to allow spamming Parry or canceling forced recovery in other states!
         // if (Self.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_Parry
         if (Self.Routine.GetCurrentState() != "PS_Melee_Loop")
@@ -2197,8 +2202,32 @@ DECLARE_SCRIPT(OnPlayerSecondaryAction_NB)
                                                                                             a_pOtherEntity, a_iArgs);
 }
 
+static mCFunctionHook Hook__AI_Parade;
+DECLARE_SCRIPT_FUNCTION(_AI_Parade)
+{
+    gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
+        GetPropertySet<gCDamageReceiver_PS_Ext>(a_pSPU->GetSelfEntity(), eEPropertySetType_DamageReceiver);
+    if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
+    {
+        GEU32 uWorldTimeStamp = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
+        GEU32 lastParade = uWorldTimeStamp - pSelfDamageReceiver->GetLastBlockTimeStamp();
+        if (lastParade <= 25)
+        {
+            pSelfDamageReceiver->SetPerfectBlockDelayed(1);
+        }
+        else 
+        {
+            pSelfDamageReceiver->SetPerfectBlockDelayed(0);
+        }
+        pSelfDamageReceiver->SetLastBlockTimeStamp(Entity::GetWorldEntity().Clock.GetTimeStampInSeconds());
+    }
+    return Hook__AI_Parade.GetOriginalFunction(&_AI_Parade)(a_rRunTimeStack, a_pSPU);
+}
+
 void HookFunctions()
 {
+    Hook__AI_Parade.Hook(GetScriptAdminExt().GetScriptAIFunction("_AI_Parade")->m_funcScriptAIFunction, &_AI_Parade);
+
     Hook_OnPlayerSecondaryAction_NB.Hook(GetScriptAdminExt().GetScript("OnPlayerSecondaryAction")->m_funcScript,
                                          &OnPlayerSecondaryAction_NB);
 

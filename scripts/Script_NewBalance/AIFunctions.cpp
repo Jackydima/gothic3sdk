@@ -248,7 +248,7 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_Parry)
         param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAniState>() = gEAniState_Stand;
 
         // Consume Staminapoints
-        GetScriptAdmin().CallScriptFromScript("AddStaminaPoints", &param.m_Self, &None, -12);
+        GetScriptAdmin().CallScriptFromScript("AddStaminaPoints", &param.m_Self, &None, -20);
 
         gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
             param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_Parry, "Raise", 1.0f);

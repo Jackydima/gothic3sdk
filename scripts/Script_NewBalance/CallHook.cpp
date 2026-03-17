@@ -247,8 +247,8 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     // for the current task loop to handle, but we want less hooks :)
 
     // Do to allow spamming Evading or Canceling forced recovery in other states!
-    //gEAction selfCurrentAction = Self.Routine.GetProperty<PSRoutine::PropertyAction>();
-    //if (selfCurrentAction == gEAction_Evade || selfCurrentAction == gEAction_PierceAttack
+    // gEAction selfCurrentAction = Self.Routine.GetProperty<PSRoutine::PropertyAction>();
+    // if (selfCurrentAction == gEAction_Evade || selfCurrentAction == gEAction_PierceAttack
     //    || selfCurrentAction == gEAction_HackAttack || selfCurrentAction == gEAction_Parry)
     if (!Self.Routine.GetCurrentState().Contains("_Loop"))
     {
@@ -389,11 +389,41 @@ void ParryAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gC
 
     aniName += "_Stand_";*/
 
-    // For now leave the naming convention, but force P0 pose!
+    // For now leave the naming convention, but change P2/P3 pose!
     bCString strPose = "";
     a_pSPU->m_strAniString.GetWord(4, "_", strPose, GETrue, GETrue);
 
-    a_pSPU->m_strAniString.Replace(strPose, "P0");
+    if (strPose == "P2")
+        a_pSPU->m_strAniString.Replace(strPose, "P0");
+
+    if (strPose == "P3")
+        a_pSPU->m_strAniString.Replace(strPose, "P1");
+
+    bCString strExt;
+    eCResourceAnimationMotion_PS::GetNativeFileExt(strExt);
+    bCString strAniName = a_pSPU->m_strAniString + strExt;
+
+    eCAnimationAdmin *pAnimationAdmin = FindModule<eCAnimationAdmin>();
+    GEBool bAniMissed = pAnimationAdmin->IsAnimationMissed(strAniName);
+    if (bAniMissed)
+    {
+        a_pSPU->m_strAniString.GetWord(4, "_", strPose, GETrue, GETrue);
+        a_pSPU->m_strAniString.Replace(strPose, "P0");
+        return;
+    }
+
+    eCResourceDataEntity *pResource = pAnimationAdmin->QueryMotionDataEntity(strAniName, eEResourceCacheBehavior_Lazy);
+    if (pResource == nullptr)
+    {
+        pAnimationAdmin->AddMissingAnimation(strAniName);
+        a_pSPU->m_strAniString.GetWord(4, "_", strPose, GETrue, GETrue);
+        a_pSPU->m_strAniString.Replace(strPose, "P0");
+    }
+    else
+    {
+        pResource->ReleaseReference();
+        pResource = NULL;
+    }
 }
 
 static mCCallHook Hook_CombatMoveStartAniString;

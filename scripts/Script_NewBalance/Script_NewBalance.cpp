@@ -1,7 +1,6 @@
 #include "Script_NewBalance.h"
 
 // eSSetupEngine[1ea] = AB; eSSetupEngine[1eb] alternative AI
-static std::map<bCString, GEU32> PerfektBlockTimeStampMap = {};
 
 gSScriptInit &GetScriptInit()
 {
@@ -121,30 +120,6 @@ void LoadSettings()
     }
 }
 
-static GEU32 getPerfectBlockLastTime(bCString iD)
-{
-    GEU32 worldTime = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
-    GEU32 retVal = 0;
-    for (auto it = PerfektBlockTimeStampMap.cbegin(); it != PerfektBlockTimeStampMap.cend();)
-    {
-        if (worldTime - it->second > 400)
-            PerfektBlockTimeStampMap.erase(it++);
-        else
-            ++it;
-    }
-
-    auto it = PerfektBlockTimeStampMap.find(iD);
-    if (it != PerfektBlockTimeStampMap.end())
-    {
-        retVal = worldTime - it->second;
-    }
-    else
-    {
-        retVal = ULONG_MAX;
-    }
-
-    return retVal;
-}
 // wird aufgerufen von DoLogicalDamage
 gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity,
                               GEU32 a_iArgs)
@@ -156,9 +131,6 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         return gEAction_None;
 
     gCScriptAdmin &ScriptAdmin = GetScriptAdmin();
-    GEU32 lastHit = getPerfectBlockLastTime(Victim.GetGameEntity()->GetID().GetText());
-    PerfektBlockTimeStampMap[Victim.GetGameEntity()->GetID().GetText()] =
-        Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
     // std::cout << "\n--------------------------------------------------------------\n";
 
     //
@@ -180,8 +152,8 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     Victim.NPC.SetCurrentAttacker(DamagerOwner);
 
     if (!Victim.NPC.IsFrozen() // Frozen Victim cannot parry!, should also never happen with state checks!
-    && !Damager.Projectile.IsValid() && !IsSpellContainerNB(Damager) // No projectiles and no spell parry!
-    && ScriptAdmin.CallScriptFromScript("CanParadeMoveOf", &Victim, &DamagerOwner, 0))
+        && !Damager.Projectile.IsValid() && !IsSpellContainerNB(Damager) // No projectiles and no spell parry!
+        && ScriptAdmin.CallScriptFromScript("CanParadeMoveOf", &Victim, &DamagerOwner, 0))
     {
         // Parry mechanic!
         if (Victim.Routine.GetCurrentState() == "NB_Melee_Parry")
@@ -754,6 +726,8 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
        H�nden einen Stab und einen Zauberspruch.
          6. Fernkampf-Angriffe kann man nur mit einem Schild abwehren.
     */
+    gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
+        GetPropertySet<gCDamageReceiver_PS_Ext>(Victim.GetGameEntity(), eEPropertySetType_DamageReceiver);
 
     if (Victim == Player)
         Victim.Effect.StopEffect(GETrue);
@@ -822,14 +796,53 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     // Can parade meele?
     else if (!Victim.NPC.IsFrozen()
              && (ScriptAdmin.CallScriptFromScript("CanParade", &Victim, &DamagerOwner, 0)
-                 || (Victim.Routine.GetStateTime() < 0.1f
+                 // Special Perfect Block now!
+                 || (NBConfig::enablePerfectBlock && (!NBConfig::playerOnlyPerfectBlock || Victim.IsPlayer())
+                     && pSelfDamageReceiver && pSelfDamageReceiver->IsValid()
+                     && pSelfDamageReceiver->GetPerfectBlockDelayed() == 0 && Victim.Routine.GetStateTime() < 0.1f
                      && Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAniState_Parade
-                     && Victim.IsInFOV(DamagerOwner))
-                 // This can maybe a good feature , when registering attacks right in the beginning
-                 || (Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAniState_SitKnockDown
-                     && GetHeldWeaponCategoryNB(Victim) == gEWeaponCategory_Melee && Victim.IsInFOV(DamagerOwner)
-                     && !IsNormalProjectileNB(Damager) && !IsSpellContainerNB(Damager))))
+                     && Victim.IsInFOV(DamagerOwner))))
     {
+        if (GetHeldWeaponCategoryNB(DamagerOwner) == gEWeaponCategory_Melee)
+        {
+            if (NBConfig::enablePerfectBlock && (!NBConfig::playerOnlyPerfectBlock || Victim.IsPlayer())
+                && pSelfDamageReceiver && pSelfDamageReceiver->IsValid()
+                && pSelfDamageReceiver->GetPerfectBlockDelayed() == 0
+                && (Victim.Routine.GetStateTime() < 0.1f
+                    || (DamagerOwnerAction != gEAction_PowerAttack && DamagerOwnerAction != gEAction_HackAttack
+                        && DamagerOwnerAction != gEAction_SprintAttack && Victim.Routine.GetStateTime() < 0.15f)))
+            {
+                pSelfDamageReceiver->SetLastBlockTimeStamp(0);
+                pSelfDamageReceiver->SetPerfectBlockDelayed(0);
+                Victim.Routine.SetStateTime(0.0f); // Reset Timing
+
+                if (!ScriptAdmin.CallScriptFromScript("IsInFistMode", &Victim, &None, 0))
+                {
+                    if (Damager.CollisionShape.GetPhysicMaterial() != eEShapeMaterial_Metal
+                        || (Victim.Inventory.GetItemFromSlot(gESlot_RightHand).CollisionShape.GetPhysicMaterial()
+                            != eEShapeMaterial_Metal))
+                    {
+                        EffectSystem::StartEffect("eff_col_weaponhitslevel_metal_wood_01", Victim);
+                    }
+                    else
+                    {
+                        EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
+                    }
+                }
+
+                gEAction stumbleAction = gEAction_StumbleL;
+                if (Victim.Routine.GetProperty<PSRoutine::PropertyHitDirection>() == gEHitDirection_Right)
+                    stumbleAction = gEAction_StumbleR;
+
+                gCScriptProcessingUnit::sAICombatMoveInstr_Args InstrArgs(
+                    DamagerOwner.GetInstance(), Victim.GetInstance(), stumbleAction, bCString("Hit"),
+                    1.5f); // g_pstrPhaseString[gEPhase_Recover]
+
+                gCScriptProcessingUnit::sAICombatMoveInstr(&InstrArgs, a_pSPU, GEFalse);
+                return gEAction_ParadeStumble;
+            }
+        }
+
         GEFloat staminaDamageMultiplier = -0.5f;
         // Reduce damage if parading melee with shield
         if (Victim == Player && CheckHandUseTypesNB(gEUseType_Shield, gEUseType_1H, Victim))
@@ -857,41 +870,6 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         print("StaminaDamageMultiplier: %f\n", staminaDamageMultiplier);
         GEInt FinalDamage3 = static_cast<GEInt>(FinalDamage * staminaDamageMultiplier);
         print("FinalDamage3: %d\n", FinalDamage3);
-
-        if (NBConfig::enablePerfectBlock && GetHeldWeaponCategoryNB(DamagerOwner) == gEWeaponCategory_Melee
-            && (!NBConfig::playerOnlyPerfectBlock || Victim.IsPlayer()))
-        {
-            if (lastHit > 12 && Victim.IsInFOV(DamagerOwner)
-                && (Victim.Routine.GetStateTime() < 0.05
-                    || (DamagerOwnerAction != gEAction_PowerAttack && DamagerOwnerAction != gEAction_HackAttack
-                        && DamagerOwnerAction != gEAction_SprintAttack && Victim.Routine.GetStateTime() < 0.1f))
-                && Victim.Routine.GetProperty<PSRoutine::PropertyAniState>() == gEAniState_Parade)
-            {
-                PerfektBlockTimeStampMap[Victim.GetGameEntity()->GetID().GetText()] = 0;
-                Victim.Routine.SetStateTime(0.0f);
-                if (!ScriptAdmin.CallScriptFromScript("IsInFistMode", &Victim, &None, 0))
-                {
-                    if (Damager.CollisionShape.GetPhysicMaterial() != eEShapeMaterial_Metal
-                        || (Victim.Inventory.GetItemFromSlot(gESlot_RightHand).CollisionShape.GetPhysicMaterial()
-                            != eEShapeMaterial_Metal))
-                    {
-                        EffectSystem::StartEffect("eff_col_weaponhitslevel_metal_wood_01", Victim);
-                    }
-                    else
-                    {
-                        EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
-                    }
-                }
-
-                if (!Damager.GetName().Contains("Fist"))
-                {
-                    DamagerOwner.Routine.FullStop();
-                }
-
-                DamagerOwner.Routine.SetTask("NB_ParryStumble");
-                return gEAction_Parade;
-            }
-        }
 
         // AlternativeAI parade (es werden keine Lebenspunkte angezogen)
         if (NBConfig::useStaticBlocks && eCApplication::GetInstance().GetEngineSetup().AlternativeAI)
