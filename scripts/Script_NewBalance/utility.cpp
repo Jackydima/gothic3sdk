@@ -114,6 +114,8 @@ void VanishEntity(Entity &p_entity)
     // Completely Remove Entity!
     auto entityInstance = p_entity.GetInstance();
     auto selfNPCPtr = GetPropertySet<gCNPC_PS>(entityInstance, eEPropertySetType_NPC);
+    if (selfNPCPtr == nullptr)
+        return;
     selfNPCPtr->AccessSpecies() = gESpecies_EMPTY_B; // Lets the OnEnterProcessRange remove the dead entity!
     entityInstance->Enable(GEFalse);
 }
@@ -153,11 +155,14 @@ GEBool IsInActiveAttack(Entity &p_entity)
         case gEAction_WhirlAttack:
         case gEAction_SprintAttack:
             va = GetPropertySet<eCVisualAnimation_PS>(p_entity.GetGameEntity(), eEPropertySetType_Animation);
+            if (!va)
+                return GEFalse;
+
             ptrCurrentMotionDescription = va->GetMotionDesc((eCWrapper_emfx2Actor::eEMotionType)0).GetMotionFilename();
             print("%sEntity -> Motion:%s\n", p_entity.GetName().GetText(), ptrCurrentMotionDescription.GetText());
             if (ptrCurrentMotionDescription.Contains("Hit"))
                 return GETrue;
-        default: return GEFalse;
+        default: break;
     }
     return GEFalse;
 }

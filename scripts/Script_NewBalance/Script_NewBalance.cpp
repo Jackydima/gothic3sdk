@@ -1084,9 +1084,10 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
                                          DamagerOwnerAction == gEAction_PierceAttack
                                              || DamagerOwnerAction == gEAction_HackAttack))
     {
-        auto damageReceiver = static_cast<gCDamageReceiver_PS_Ext *>(
-            Victim.GetGameEntity()->GetPropertySet(eEPropertySetType_DamageReceiver));
-        damageReceiver->AccessPoisonDamage() = GetPoisonDamage(DamagerOwner);
+        if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
+        {
+            pSelfDamageReceiver->AccessPoisonDamage() = GetPoisonDamage(DamagerOwner);
+        }
         Victim.NPC.EnableStatusEffects(gEStatusEffect_Poisoned, GETrue);
     }
 
@@ -1144,12 +1145,21 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         && !Victim.Interaction.GetSpell().GetName().Contains("Cure"))
     {
         // If a special attack, or any strong attack-force is executed against the caster
-        if (gEAction_HackAttack != DamagerOwnerAction && gEAction_PierceAttack != DamagerOwnerAction && 4 > HitForce
-            && !isHeadshot)
+        if (gEAction_HackAttack != DamagerOwnerAction && gEAction_PierceAttack != DamagerOwnerAction
+            && NBConfig::KnockDownThreshold > HitForce && !isHeadshot)
         {
             ScriptAdmin.CallScriptFromScript("PipiStumble", &Victim, &None, 0); // Make Noice without Stumbles
             return gEAction_Stumble;
         }
+    }
+
+    // Troll are now more resistant to attacks but are a bit slower now
+    if (Victim.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Troll
+        && (VictimAction == gEAction_PowerAttack || VictimAction == gEAction_SprintAttack
+            || VictimAction == gEAction_Attack))
+    {
+        ScriptAdmin.CallScriptFromScript("PipiStumble", &Victim, &None, 0);
+        return gEAction_QuickStumble;
     }
 
     // Scream or make HitEffect, but no Stumble also processes logic when you hit someone, like setting up combat mode
@@ -1163,7 +1173,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
             return gEAction_QuickStumble;
         }
         ScriptAdmin.CallScriptFromScript("PipiStumble", &Victim, &None, 0);
-        return DamagerOwnerAction;
+        return gEAction_QuickStumble;
     }
 
     if (GetHeldWeaponCategoryNB(Victim) != gEWeaponCategory_None

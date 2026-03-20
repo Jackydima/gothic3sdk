@@ -45,6 +45,9 @@ void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_tar
     if (*p_self == Entity::GetPlayer())
         return;
 
+    if (p_projectile == nullptr)
+        return;
+
     Entity projectileItem = p_self->Inventory.GetItemFromSlot(gESlot_RightHand);
     p_projectile->AccessProperty<PSProjectile::PropertyShootVelocity>() = static_cast<GEFloat>(NBConfig::shootVelocity);
 
