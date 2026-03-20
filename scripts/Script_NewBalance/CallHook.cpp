@@ -265,6 +265,15 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
         return;
     }
 
+    eCVisualAnimation_PS *selfAnimation = GetPropertySet<eCVisualAnimation_PS>(Self.GetGameEntity(), eEPropertySetType_Animation);
+    if (!selfAnimation && !selfAnimation->HasActor())
+        return;
+
+    // For now limit it the Hero Skeleton!
+    bCString test = selfAnimation->GetActor()->GetActorName();
+    if (!selfAnimation->GetActor()->GetActorName().Contains("Hero"))
+        return;
+
     // if (keyboard.KeyPressed(eCInpShared::eEKeyboardStateOffset_A))
     if (leftPressed && !rightPressed)
     {
