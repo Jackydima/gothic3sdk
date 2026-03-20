@@ -270,7 +270,6 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
         return;
 
     // For now limit it the Hero Skeleton!
-    bCString test = selfAnimation->GetActor()->GetActorName();
     if (!selfAnimation->GetActor()->GetActorName().Contains("Hero"))
         return;
 
