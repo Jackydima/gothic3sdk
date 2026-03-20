@@ -48,6 +48,13 @@ void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_tar
     if (p_projectile == nullptr)
         return;
 
+    // NPC Arrows should not be picked up!
+    gCProjectile_PS *pProjectilePS = dynamic_cast<gCProjectile_PS *>(p_projectile->m_pEngineEntityPropertySet);
+    if (pProjectilePS != nullptr && pProjectilePS->GetEntity() != nullptr)
+    {
+        pProjectilePS->GetEntity()->EnablePicking(GEFalse, GEFalse);
+    }
+
     Entity projectileItem = p_self->Inventory.GetItemFromSlot(gESlot_RightHand);
     p_projectile->AccessProperty<PSProjectile::PropertyShootVelocity>() = static_cast<GEFloat>(NBConfig::shootVelocity);
 

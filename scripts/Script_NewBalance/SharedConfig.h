@@ -34,7 +34,7 @@ extern GEBool useExtendedBlocking;
 extern GEBool useHardCoreAttacks;
 extern GEBool useDamagingInnosLight;
 extern GEBool useNewBalanceMagicWeapon;
-extern GEBool useNewStaminaRecovery;
+extern GEBool useNewStaminaMechanic;
 extern GEBool useAlwaysMaxLevel;
 extern GEBool enablePerfectBlock;
 extern GEBool playerOnlyPerfectBlock;
@@ -62,7 +62,7 @@ extern GEFloat NPCDamageReductionMultiplicator;
 extern GEInt poiseThreshold;
 extern GEFloat npcArenaSpeedMultiplier;
 extern GEFloat npcWeaponDamageMultiplier;
-extern GEInt staminaRecoveryDelay;
+extern GEU32 staminaRecoveryDelay;
 extern GEInt staminaRecoveryPerTick;
 extern GEFloat fMonsterDamageMultiplicator; // Default 0.5
 extern GEDouble npcArmorMultiplier;

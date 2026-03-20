@@ -16,19 +16,22 @@ GEFloat GE_STDCALL GetAnimationSpeedModifier(Entity a_Entity, gEPhase a_Phase)
 
     Entity Player = Entity::GetPlayer();
 
-    if (staminaPoints <= 20)
+    if (!NBConfig::useNewStaminaMechanic)
     {
-        if (isArenaNPC)
-            multiPlier = 0.9f;
-        else
-            multiPlier = 0.8f;
-    }
-    else if (staminaPoints <= 50)
-    {
-        if (isArenaNPC)
-            multiPlier = 0.95f;
-        else
-            multiPlier = 0.9f;
+        if (staminaPoints <= 20)
+        {
+            if (isArenaNPC)
+                multiPlier = 0.9f;
+            else
+                multiPlier = 0.8f;
+        }
+        else if (staminaPoints <= 50)
+        {
+            if (isArenaNPC)
+                multiPlier = 0.95f;
+            else
+                multiPlier = 0.9f;
+        }
     }
 
     if (a_Action == gEAction_SprintAttack)
@@ -246,7 +249,6 @@ GEInt OnPowerAim_Loop(gCScriptProcessingUnit *p_PSU)
 }
 
 static std::map<bCString, GEInt> LastHealthDamageMap = {};
-static std::map<bCString, GEInt> LastStaminaUsageMap = {};
 static GEInt healthRecoveryDelay = 60;
 
 GEInt HealthUpdateOnTickHelper(Entity &p_entity, GEInt p_healthValue)
@@ -674,6 +676,7 @@ void GE_STDCALL StartTransform(Entity *p_targetEntity, GEFloat p_duration, GEBoo
     GEBool isWaterMage = Self.Inventory.IsSkillActive("Perk_Watermage");
     GEBool hasManaRegen = Self.Inventory.IsSkillActive("Perk_MasterMage");
     GEInt targetLevel = p_targetEntity->NPC.GetProperty<PSNpc::PropertyLevelMax>();
+    GEInt healthPointsPercent = GetScriptAdmin().CallScriptFromScript("GetHitPointsPercent", &Self, &None);
 
     /**
      * �fter TakeOver, The Player Takes over the targetEntity
@@ -721,7 +724,8 @@ void GE_STDCALL StartTransform(Entity *p_targetEntity, GEFloat p_duration, GEBoo
     }
 
     player.PlayerMemory.SetHitPointsMax(healthStat);
-    player.PlayerMemory.SetHitPoints(healthStat);
+    player.PlayerMemory.SetHitPoints(
+        static_cast<GEInt>(static_cast<GEFloat>(healthStat) * healthPointsPercent / 100.0f));
     player.PlayerMemory.SetManaPointsMax(otherAttributStat);
     player.PlayerMemory.SetManaPoints(otherAttributStat);
     player.PlayerMemory.SetStaminaPointsMax(otherAttributStat);
@@ -1044,21 +1048,22 @@ GEInt GE_STDCALL GetMaxLevel(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnti
 
 GEInt StaminaUpdateOnTickHelper(Entity &p_entity, GEInt p_staminaValue)
 {
-    if (p_staminaValue > 0
-        && getLastTimeFromMap(p_entity.GetGameEntity()->GetID().GetText(), LastStaminaUsageMap)
-               < NBConfig::staminaRecoveryDelay)
-        return 0;
+    gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
+        GetPropertySet<gCDamageReceiver_PS_Ext>(p_entity.GetGameEntity(), eEPropertySetType_DamageReceiver);
+    if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
+    {
+        GEU32 worldTime = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
+        if (p_staminaValue > 0
+            && worldTime <= (NBConfig::staminaRecoveryDelay + pSelfDamageReceiver->GetLastStaminaUsage()))
+            return 0;
+    }
     return p_staminaValue;
 }
 
 static mCFunctionHook Hook_StaminaUpdateOnTick;
 GEInt StaminaUpdateOnTick(Entity p_entity)
 {
-    const GEInt standardStaminaRecovery =
-        NBConfig::staminaRecoveryPerTick
-        + GetScriptAdmin().CallScriptFromScript("GetStaminaPointsMax", &p_entity, &None, 0) / 100;
-    // TODO Change that again;
-    // GEInt retStaminaDelta = 0;
+    const GEInt standardStaminaRecovery = NBConfig::staminaRecoveryPerTick;
 
     if (p_entity.IsPlayer() && p_entity.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction::gEAction_Aim)
     {
@@ -1073,7 +1078,7 @@ GEInt StaminaUpdateOnTick(Entity p_entity)
     }
 
     // For Now Only for player!
-    if (p_entity.IsPlayer() && (p_entity.IsSprinting() || (p_entity.IsSwimming() && *(BYTE *)RVA_Executable(0x27FD2))))
+    if (p_entity.IsSprinting() || (p_entity.IsSwimming() && *(BYTE *)RVA_Executable(0x27FD2)))
     {
         if (p_entity.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Bloodfly)
         {
@@ -1097,11 +1102,11 @@ GEInt StaminaUpdateOnTick(Entity p_entity)
         return StaminaUpdateOnTickHelper(p_entity, 0);
 
     if (p_entity.NPC.IsDiseased())
-        return StaminaUpdateOnTickHelper(p_entity, 1);
+        return StaminaUpdateOnTickHelper(p_entity, 2);
 
     // HoldingBlockFlag 0x118ab0
     if (*(BYTE *)RVA_ScriptGame(0x118ab0) && eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing)
-        return StaminaUpdateOnTickHelper(p_entity, 1);
+        return StaminaUpdateOnTickHelper(p_entity, 2);
     typedef GEU32(GetWeatherAdmin)(void);
     // Get eCWeatherAdmin *! also available at RVA_ScriptGame(0x11a210)
     GetWeatherAdmin *getWeatherAdminFunction = (GetWeatherAdmin *)RVA_ScriptGame(0x12e0);
@@ -1114,14 +1119,14 @@ GEInt StaminaUpdateOnTick(Entity p_entity)
     if (weatherCondition >= 40.0)
     {
         if (p_entity.IsPlayer() && !p_entity.Inventory.IsSkillActive(Template("Perk_ResistHeat")))
-            return StaminaUpdateOnTickHelper(p_entity, 2);
+            return StaminaUpdateOnTickHelper(p_entity, 4);
         return StaminaUpdateOnTickHelper(p_entity, standardStaminaRecovery);
     }
 
     if (weatherCondition <= -40.0)
     {
         if (p_entity.IsPlayer() && !p_entity.Inventory.IsSkillActive(Template("Perk_ResistCold")))
-            return StaminaUpdateOnTickHelper(p_entity, 2);
+            return StaminaUpdateOnTickHelper(p_entity, 4);
         return StaminaUpdateOnTickHelper(p_entity, standardStaminaRecovery);
     }
 
@@ -1134,8 +1139,21 @@ GEInt AddStaminaPoints(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, En
     INIT_SCRIPT_EXT(Self, Other);
     if (a_iArgs < 0)
     {
-        LastStaminaUsageMap[Self.GetGameEntity()->GetID().GetText()] =
-            Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
+        gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
+            GetPropertySet<gCDamageReceiver_PS_Ext>(Self.GetGameEntity(), eEPropertySetType_DamageReceiver);
+        if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
+        {
+            GEU32 uTimeStamp = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
+            // Extra stamina punish if all stamina was depleted!
+            if ((GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &Self, &None) + a_iArgs) <= 0)
+            {
+                uTimeStamp += NBConfig::staminaRecoveryDelay;
+            }
+            pSelfDamageReceiver->AccessLastStaminaUsage() = uTimeStamp;
+        }
+
+        // LastStaminaUsageMap[Self.GetGameEntity()->GetID().GetText()] = static_cast<GEInt>(
+        //     Entity::GetWorldEntity().Clock.GetTimeStampInSeconds());
     }
     return Hook_AddStaminaPoints.GetOriginalFunction(&AddStaminaPoints)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
 }
@@ -1329,7 +1347,7 @@ void OnTouch(eCEntity *p_entity, eCContactIterator *p_contactIterator)
     Hook_OnTouch.GetOriginalFunction (&OnTouch)(p_entity, p_contactIterator);
     if (HasCollided || !IsFlying)
         return;
-    eCEntity *eCE = *(eCEntity **)((DWORD)This + 0xC);
+    eCEntity *eCE = This->GetEntity();
     gCInteraction_PS *interaction = (gCInteraction_PS *)eCE->GetPropertySet(eEPropertySetType_Interaction);
     gCDamage_PS *damage = (gCDamage_PS *)eCE->GetPropertySet(eEPropertySetType_Damage);
     PSDamage damagePS = (PSDamage)damage;
@@ -1339,31 +1357,6 @@ void OnTouch(eCEntity *p_entity, eCContactIterator *p_contactIterator)
         if (entry != "" && eCE->GetName().Contains(entry.GetText()))
         {
             This->AccessTouchBehavior() = gEProjectileTouchBehavior_KillSelf;
-            /*bCVector loc = p_contactIterator->GetAvgCollisionPosition ( );
-            //std::cout << "Location: x= " << loc.AccessX ( ) << "\ty= " << loc.AccessY ( )
-            //    << "\tz= " << loc.AccessZ ( ) << "\n";
-            bCMatrix pos = bCMatrix ( 0.0 );
-            pos.SetToTranslation ( loc );
-
-            Entity temp = Template ( "Spl_HeatWave" );
-            if ( temp == None )
-                return;
-            Template templateSpawn = temp.Magic.GetSpawn ( ).GetTemplate ( );
-
-            if ( !templateSpawn.IsValid ( ) )
-                return;
-            Entity spawn = Entity::Spawn ( templateSpawn , pos );
-            PSDamage damagePS = damage;
-            spawn.Interaction.SetOwner ( owner );
-            spawn.Interaction.SetSpell ( interaction->GetSpell ( ).GetEntity ( ) );
-            std::cout << "Name Spell = " << interaction->GetSpell ( ).GetEntity ( )->GetName() << "\n";
-            GEInt damageAmount = damagePS.GetProperty<PSDamage::PropertyDamageAmount> ( );
-            spawn.Damage.AccessProperty<PSDamage::PropertyDamageAmount> ( ) = damageAmount;
-            std::cout << "DamageAmount in Ontouch = " << spawn.Damage.GetProperty<PSDamage::PropertyDamageAmount> ( ) <<
-            "\n"; gEDamageType damageType = damagePS.GetProperty<PSDamage::PropertyDamageType> ( );
-            spawn.Damage.AccessProperty<PSDamage::PropertyDamageType> ( ) = damageType;
-            //std::cout << "DamageType = " << damageType << "\n";
-            //eCE->EnableDeactivation ( GETrue ); //good one!*/
             bCVector loc = p_contactIterator->GetAvgCollisionPosition();
             bCMatrix pos = bCMatrix(0.0);
             pos.SetToTranslation(loc);
@@ -2215,13 +2208,125 @@ DECLARE_SCRIPT_FUNCTION(_AI_Parade)
         {
             pSelfDamageReceiver->SetPerfectBlockDelayed(1);
         }
-        else 
+        else
         {
             pSelfDamageReceiver->SetPerfectBlockDelayed(0);
         }
         pSelfDamageReceiver->SetLastBlockTimeStamp(Entity::GetWorldEntity().Clock.GetTimeStampInSeconds());
     }
     return Hook__AI_Parade.GetOriginalFunction(&_AI_Parade)(a_rRunTimeStack, a_pSPU);
+}
+
+static mCFunctionHook Hook_PS_Melee_Attack;
+DECLARE_SCRIPT_STATE(PS_Melee_Attack)
+{
+    INIT_SCRIPT_STATE();
+    GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
+    if (iStaminaPoints <= 0)
+    {
+        SelfEntity.Routine.SetState("PS_Melee");
+        return GETrue;
+    }
+
+    return Hook_PS_Melee_Attack.GetOriginalFunction(&PS_Melee_Attack)(a_rRunTimeStack, a_pSPU);
+}
+
+static mCFunctionHook Hook_PS_Melee_SimpleWhirl;
+DECLARE_SCRIPT_STATE(PS_Melee_SimpleWhirl)
+{
+    INIT_SCRIPT_STATE();
+    GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
+    if (iStaminaPoints <= 0)
+    {
+        SelfEntity.Routine.SetState("PS_Melee");
+        return GETrue;
+    }
+
+    return Hook_PS_Melee_SimpleWhirl.GetOriginalFunction(&PS_Melee_SimpleWhirl)(a_rRunTimeStack, a_pSPU);
+}
+
+static mCFunctionHook Hook_PS_Melee_PowerAttack;
+DECLARE_SCRIPT_STATE(PS_Melee_PowerAttack)
+{
+    INIT_SCRIPT_STATE();
+    GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
+    if (iStaminaPoints <= 0)
+    {
+        SelfEntity.Routine.SetState("PS_Melee");
+        return GETrue;
+    }
+
+    return Hook_PS_Melee_PowerAttack.GetOriginalFunction(&PS_Melee_PowerAttack)(a_rRunTimeStack, a_pSPU);
+}
+
+static mCFunctionHook Hook_PS_Melee_QuickAttack;
+DECLARE_SCRIPT_STATE(PS_Melee_QuickAttack)
+{
+    INIT_SCRIPT_STATE();
+    GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
+    if (iStaminaPoints <= 0)
+    {
+        SelfEntity.Routine.SetState("PS_Melee");
+        return GETrue;
+    }
+
+    return Hook_PS_Melee_QuickAttack.GetOriginalFunction(&PS_Melee_QuickAttack)(a_rRunTimeStack, a_pSPU);
+}
+
+static mCFunctionHook Hook_PS_Melee_WhirlAttack;
+DECLARE_SCRIPT_STATE(PS_Melee_WhirlAttack)
+{
+    INIT_SCRIPT_STATE();
+    GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
+    if (iStaminaPoints <= 0)
+    {
+        SelfEntity.Routine.SetState("PS_Melee");
+        return GETrue;
+    }
+
+    return Hook_PS_Melee_WhirlAttack.GetOriginalFunction(&PS_Melee_WhirlAttack)(a_rRunTimeStack, a_pSPU);
+}
+
+static mCFunctionHook Hook_PS_Melee_PierceAttack;
+DECLARE_SCRIPT_STATE(PS_Melee_PierceAttack)
+{
+    INIT_SCRIPT_STATE();
+    GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
+    if (iStaminaPoints <= 0)
+    {
+        SelfEntity.Routine.SetState("PS_Melee");
+        return GETrue;
+    }
+
+    return Hook_PS_Melee_PierceAttack.GetOriginalFunction(&PS_Melee_PierceAttack)(a_rRunTimeStack, a_pSPU);
+}
+
+static mCFunctionHook Hook_PS_Melee_HackAttack;
+DECLARE_SCRIPT_STATE(PS_Melee_HackAttack)
+{
+    INIT_SCRIPT_STATE();
+    GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
+    if (iStaminaPoints <= 0)
+    {
+        SelfEntity.Routine.SetState("PS_Melee");
+        return GETrue;
+    }
+
+    return Hook_PS_Melee_HackAttack.GetOriginalFunction(&PS_Melee_HackAttack)(a_rRunTimeStack, a_pSPU);
+}
+
+static mCFunctionHook Hook_PS_Melee_FinishingAttack;
+DECLARE_SCRIPT_STATE(PS_Melee_FinishingAttack)
+{
+    INIT_SCRIPT_STATE();
+    GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
+    if (iStaminaPoints <= 0)
+    {
+        SelfEntity.Routine.SetState("PS_Melee");
+        return GETrue;
+    }
+
+    return Hook_PS_Melee_FinishingAttack.GetOriginalFunction(&PS_Melee_FinishingAttack)(a_rRunTimeStack, a_pSPU);
 }
 
 void HookFunctions()
@@ -2349,13 +2454,31 @@ void HookFunctions()
     if (NBConfig::useAlwaysMaxLevel)
         Hook_GetCurrentLevel.Hook(GetScriptAdminExt().GetScript("GetCurrentLevel")->m_funcScript, &GetCurrentLevel);
 
-    if (NBConfig::useNewStaminaRecovery)
+    if (NBConfig::useNewStaminaMechanic)
     {
         Hook_AddStaminaPoints.Hook(GetScriptAdminExt().GetScript("AddStaminaPoints")->m_funcScript, &AddStaminaPoints);
 
         Hook_StaminaUpdateOnTick
             .Prepare(RVA_ScriptGame(0xb0520), &StaminaUpdateOnTick, mCBaseHook::mEHookType_OnlyStack)
             .Hook();
+
+        Hook_PS_Melee_Attack.Hook(GetScriptAdminExt().GetScriptAIState("PS_Melee_Attack")->m_funcScriptAIState,
+                                  &PS_Melee_Attack);
+        Hook_PS_Melee_SimpleWhirl.Hook(
+            GetScriptAdminExt().GetScriptAIState("PS_Melee_SimpleWhirl")->m_funcScriptAIState, &PS_Melee_SimpleWhirl);
+        Hook_PS_Melee_PowerAttack.Hook(
+            GetScriptAdminExt().GetScriptAIState("PS_Melee_PowerAttack")->m_funcScriptAIState, &PS_Melee_PowerAttack);
+        Hook_PS_Melee_QuickAttack.Hook(
+            GetScriptAdminExt().GetScriptAIState("PS_Melee_QuickAttack")->m_funcScriptAIState, &PS_Melee_QuickAttack);
+        Hook_PS_Melee_WhirlAttack.Hook(
+            GetScriptAdminExt().GetScriptAIState("PS_Melee_WhirlAttack")->m_funcScriptAIState, &PS_Melee_WhirlAttack);
+        Hook_PS_Melee_PierceAttack.Hook(
+            GetScriptAdminExt().GetScriptAIState("PS_Melee_PierceAttack")->m_funcScriptAIState, &PS_Melee_PierceAttack);
+        Hook_PS_Melee_HackAttack.Hook(GetScriptAdminExt().GetScriptAIState("PS_Melee_HackAttack")->m_funcScriptAIState,
+                                      &PS_Melee_HackAttack);
+        Hook_PS_Melee_FinishingAttack.Hook(
+            GetScriptAdminExt().GetScriptAIState("PS_Melee_FinishingAttack")->m_funcScriptAIState,
+            &PS_Melee_FinishingAttack);
     }
 
     Hook_GetAttituteSummons.Hook(GetScriptAdminExt().GetScript("GetAttitude")->m_funcScript, &GetAttitudeSummons);
@@ -2369,18 +2492,6 @@ void HookFunctions()
     Hook_CanParadeMoveOf.Hook(GetScriptAdminExt().GetScript("CanParadeMoveOf")->m_funcScript, &CanParadeMoveOf);
 
     // Hook_GetMaxLevel.Hook ( GetScriptAdminExt ( ).GetScript ( "GetLevelMax" )->m_funcScript , &GetMaxLevel );
-
-    // TODO: Bring that shit on!
-    // Hook_PS_Melee_Attack
-    //	.Prepare ( RVA_ScriptGame ( 0x7eee0 ) , &PS_Melee_Attack )
-    //	.Hook ( );
-
-    // Hook_PS_Melee_PowerAttack
-    //	.Prepare ( RVA_ScriptGame ( 0x7f420 ) , &PS_Melee_PowerAttack )
-    //	.Hook ( );
-    // Hook_GetAniName
-    //	.Prepare ( RVA_Game ( 0x16f840 ) , &GetAniName , mCBaseHook::mEHookType_ThisCall )
-    //	.Hook ( );
 }
 
 /*ME_DEFINE_AND_REGISTER_SCRIPT ( MagicSummonWolfPack )

@@ -35,8 +35,8 @@ void LoadSettings()
         NBConfig::useHardCoreAttacks = config.GetBool("Script", "UseHardCoreAttacks", NBConfig::useHardCoreAttacks);
         NBConfig::useDamagingInnosLight =
             config.GetBool("Script", "UseDamagingInnosLight", NBConfig::useDamagingInnosLight);
-        NBConfig::useNewStaminaRecovery =
-            config.GetBool("Script", "UseNewStaminaRecovery", NBConfig::useNewStaminaRecovery);
+        NBConfig::useNewStaminaMechanic =
+            config.GetBool("Script", "UseNewStaminaMechanic", NBConfig::useNewStaminaMechanic);
         NBConfig::useAlwaysMaxLevel = config.GetBool("Script", "DisableNPCLeveling", NBConfig::useAlwaysMaxLevel);
         NBConfig::enablePerfectBlock = config.GetBool("Script", "EnablePerfectBlock", NBConfig::enablePerfectBlock);
         NBConfig::playerOnlyPerfectBlock =
@@ -73,7 +73,7 @@ void LoadSettings()
         NBConfig::poiseThreshold = config.GetInt("Script", "PoiseThreshold", NBConfig::poiseThreshold);
         NBConfig::MonsterRageModus = config.GetInt("Script", "MonsterRageModus", NBConfig::MonsterRageModus);
         NBConfig::staminaRecoveryDelay =
-            config.GetInt("Script", "StaminaRecoveryDelay", NBConfig::staminaRecoveryDelay);
+            config.GetU32("Script", "StaminaRecoveryDelay", NBConfig::staminaRecoveryDelay);
         NBConfig::staminaRecoveryPerTick =
             config.GetInt("Script", "StaminaRecoveryPerTick", NBConfig::staminaRecoveryPerTick);
         NBConfig::npcArmorMultiplier = static_cast<GEDouble>(

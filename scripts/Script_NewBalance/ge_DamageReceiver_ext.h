@@ -13,6 +13,7 @@ class __declspec(dllexport) gCDamageReceiver_PS_Ext : public gCDamageReceiver_PS
     GE_DEFINE_PROPERTY(gCDamageReceiver_PS, GEU32, m_PoisonDamage, PoisonDamage)
     GE_DEFINE_PROPERTY(gCDamageReceiver_PS, GEU32, m_LastBlockTimeStamp, LastBlockTimeStamp)
     GE_DEFINE_PROPERTY(gCDamageReceiver_PS, GEInt, m_PerfectBlockDelayed, PerfectBlockDelayed)
+    GE_DEFINE_PROPERTY(gCDamageReceiver_PS, GEU32, m_LastStaminaUsage, LastStaminaUsage)
 
   public:
     gCDamageReceiver_PS_Ext(void);
@@ -21,4 +22,4 @@ class __declspec(dllexport) gCDamageReceiver_PS_Ext : public gCDamageReceiver_PS
     void Invalidate(void);
 };
 
-GE_ASSERT_SIZEOF(gCDamageReceiver_PS_Ext, 0x54 + 0xC)
+GE_ASSERT_SIZEOF(gCDamageReceiver_PS_Ext, 0x54 + 0x10)
