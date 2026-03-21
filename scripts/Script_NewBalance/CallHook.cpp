@@ -110,15 +110,18 @@ void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_tar
     p_projectile->AccessProperty<PSProjectile::PropertyTargetDirection>() = newTargetDirectionVec.GetNormalized();
 }
 
+// TODO Make config values for each reach!
 static mCCallHook Hook_CombatMoveScale;
-void CombatMoveScale(void *p_Ptr, gCScriptProcessingUnit *p_PSU, bCVector *vec)
+void CombatMoveScale(void *a_pArgs, gCScriptProcessingUnit *a_pSPU, bCVector *a_pVec)
 {
-    UNREFERENCED_PARAMETER(p_Ptr);
-    Entity Self = (Entity)p_PSU->GetSelfEntity();
+    UNREFERENCED_PARAMETER(a_pArgs);
+    Entity Self = (Entity)a_pSPU->GetSelfEntity();
     // std::cout << "Name: " << Self.GetName ( ) << "\nRoutine: " << Self.Routine.GetProperty<PSRoutine::PropertyAction>
     // ( ) << "\n";
     switch (Self.Routine.GetProperty<PSRoutine::PropertyAction>())
     {
+        case gEAction_JumpBack:
+            break;
         case gEAction_Stumble:
         case gEAction_StumbleL:
         case gEAction_StumbleR:
@@ -129,21 +132,21 @@ void CombatMoveScale(void *p_Ptr, gCScriptProcessingUnit *p_PSU, bCVector *vec)
         case gEAction_ParadeStumble:
         case gEAction_ParadeStumbleL:
         case gEAction_ParadeStumbleR:
-        case gEAction_PierceStumble:      vec->Scale(0.5f); break;
+        case gEAction_PierceStumble:      a_pVec->Scale(0.5f); break;
         case gEAction_LieKnockDown:
         case gEAction_LieKnockOut:
         case gEAction_FinishingAttack:    break;
         case gEAction_HackAttack:
             if (Self.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Orc)
-                vec->Scale(2.17f * NBConfig::ATTACK_REACH_MULTIPLIER);
+                a_pVec->Scale(2.17f * NBConfig::ATTACK_REACH_MULTIPLIER);
             else
-                vec->Scale(1.2f * NBConfig::ATTACK_REACH_MULTIPLIER);
+                a_pVec->Scale(1.2f * NBConfig::ATTACK_REACH_MULTIPLIER);
             break;
         case gEAction_QuickAttack:
         case gEAction_QuickAttackR:
-        case gEAction_QuickAttackL: vec->Scale(0.85f * NBConfig::ATTACK_REACH_MULTIPLIER); break;
-        case gEAction_PowerAttack:  vec->Scale(1.2f * NBConfig::ATTACK_REACH_MULTIPLIER); break;
-        default:                    vec->Scale(NBConfig::ATTACK_REACH_MULTIPLIER);
+        case gEAction_QuickAttackL: a_pVec->Scale(0.85f * NBConfig::ATTACK_REACH_MULTIPLIER); break;
+        case gEAction_PowerAttack:  a_pVec->Scale(1.2f * NBConfig::ATTACK_REACH_MULTIPLIER); break;
+        default:                    a_pVec->Scale(NBConfig::ATTACK_REACH_MULTIPLIER);
     }
 }
 
