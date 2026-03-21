@@ -121,6 +121,7 @@ void CombatMoveScale(void *a_pArgs, gCScriptProcessingUnit *a_pSPU, bCVector *a_
     switch (Self.Routine.GetProperty<PSRoutine::PropertyAction>())
     {
         case gEAction_JumpBack:
+            a_pVec->Scale(0.8f * NBConfig::ATTACK_REACH_MULTIPLIER);
             break;
         case gEAction_Stumble:
         case gEAction_StumbleL:
