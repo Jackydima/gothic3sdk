@@ -50,7 +50,13 @@ extern GEBool enableNewTransformation;
 extern GEBool disableMonsterRage;
 extern GEBool enableNewMagicAiming;
 extern GEBool enableAOEDamage;
+extern GEBool bEnableEvading;
+extern GEBool bEnableParry;
 extern std::vector<bCString> AOENames;
+
+extern GEFloat fEvadeDistance;
+extern GEFloat fEvadeSpeed;
+extern GEFloat fParrySpeed;
 
 extern GEFloat PerfectBlockDamageMult;
 extern GEFloat PowerAttackArmorPen;

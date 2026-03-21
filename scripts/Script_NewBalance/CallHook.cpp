@@ -265,7 +265,8 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
         return;
     }
 
-    eCVisualAnimation_PS *selfAnimation = GetPropertySet<eCVisualAnimation_PS>(Self.GetGameEntity(), eEPropertySetType_Animation);
+    eCVisualAnimation_PS *selfAnimation =
+        GetPropertySet<eCVisualAnimation_PS>(Self.GetGameEntity(), eEPropertySetType_Animation);
     if (!selfAnimation && !selfAnimation->HasActor())
         return;
 
@@ -447,8 +448,11 @@ void ParryAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gC
 static mCCallHook Hook_CombatMoveStartAniString;
 void CombatMoveStartAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
 {
-    EvadeAniString(a_pArgs, a_pSPU);
-    ParryAniString(a_pArgs, a_pSPU);
+    if (NBConfig::bEnableEvading)
+        EvadeAniString(a_pArgs, a_pSPU);
+
+    if (NBConfig::bEnableParry)
+        ParryAniString(a_pArgs, a_pSPU);
 }
 
 void EvadeMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
@@ -473,7 +477,7 @@ void EvadeMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCS
     if (!a_pSPU->m_strAniString.Contains("Hit"))
         return;
 
-    const GEFloat evadeDistance = 250.0f;
+    const GEFloat evadeDistance = NBConfig::fEvadeDistance;
 
     if (a_pArgs->PhaseName.Contains("Right"))
     {
@@ -522,38 +526,48 @@ void ParryMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCS
 static mCCallHook Hook_CombatMoveStartMovement;
 void CombatMoveStartMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
 {
-    EvadeMovement(a_pArgs, a_pSPU);
-    ParryMovement(a_pArgs, a_pSPU);
+    if (NBConfig::bEnableEvading)
+        EvadeMovement(a_pArgs, a_pSPU);
+
+    if (NBConfig::bEnableParry)
+        ParryMovement(a_pArgs, a_pSPU);
 }
 
 void HookCallHooks()
 {
-    // Add Parry String to g_pstrActionString!
-    // Start of ActionArray string! 0x3f75c0
-    // is normally const!! but we need to add things there...
-    bCString *p_sParry = reinterpret_cast<bCString *>(RVA_Game(0x3f75c0 + 0x4 * static_cast<GEInt>(gEAction_Parry)));
-    *p_sParry = bCString("Parry");
+    if (NBConfig::bEnableEvading || NBConfig::bEnableParry)
+    {
+        // Add Parry String to g_pstrActionString!
+        // Start of ActionArray string! 0x3f75c0
+        // is normally const!! but we need to add things there...
+        bCString *p_sParry =
+            reinterpret_cast<bCString *>(RVA_Game(0x3f75c0 + 0x4 * static_cast<GEInt>(gEAction_Parry)));
+        *p_sParry = bCString("Parry");
 
-    Hook_CombatMoveStartMovement.Prepare(RVA_Game(0x16b8a9), &CombatMoveStartMovement)
-        .InsertCall()
-        .AddPtrStackArgEbp(0x8)
-        .AddPtrStackArgEbp(0xC)
-        .RestoreRegister()
-        .Hook();
+        Hook_CombatMoveStartMovement.Prepare(RVA_Game(0x16b8a9), &CombatMoveStartMovement)
+            .InsertCall()
+            .AddPtrStackArgEbp(0x8)
+            .AddPtrStackArgEbp(0xC)
+            .RestoreRegister()
+            .Hook();
 
-    Hook_CombatMoveStartAniString.Prepare(RVA_Game(0x16b065), &CombatMoveStartAniString)
-        .InsertCall()
-        .AddPtrStackArgEbp(0x8)
-        .AddPtrStackArgEbp(0xC)
-        .RestoreRegister()
-        .Hook();
+        Hook_CombatMoveStartAniString.Prepare(RVA_Game(0x16b065), &CombatMoveStartAniString)
+            .InsertCall()
+            .AddPtrStackArgEbp(0x8)
+            .AddPtrStackArgEbp(0xC)
+            .RestoreRegister()
+            .Hook();
+    }
 
-    Hook_Evade.Prepare(RVA_ScriptGame(0x62119), &EvadeMechanic, mCBaseHook::mEHookType_Mixed, mERegisterType_Eax)
-        .InsertCall()
-        .AddPtrStackArgEbp(0x8)
-        .RestoreRegister()
-        .ReplaceSize(0x6212f - 0x62119)
-        .Hook();
+    if (NBConfig::bEnableEvading)
+    {
+        Hook_Evade.Prepare(RVA_ScriptGame(0x62119), &EvadeMechanic, mCBaseHook::mEHookType_Mixed, mERegisterType_Eax)
+            .InsertCall()
+            .AddPtrStackArgEbp(0x8)
+            .RestoreRegister()
+            .ReplaceSize(0x6212f - 0x62119)
+            .Hook();
+    }
 
     Hook_FixDualOneHanded.Prepare(RVA_ScriptGame(0x482e7), &FixDualOneHanded, mCBaseHook::mEHookType_OnlyStack)
         .InsertCall()

@@ -2224,6 +2224,7 @@ DECLARE_SCRIPT_STATE(PS_Melee_Attack)
     GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
     if (iStaminaPoints <= 0)
     {
+        ClearInputEntry(SelfEntity);
         SelfEntity.Routine.SetState("PS_Melee");
         return GETrue;
     }
@@ -2238,6 +2239,7 @@ DECLARE_SCRIPT_STATE(PS_Melee_SimpleWhirl)
     GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
     if (iStaminaPoints <= 0)
     {
+        ClearInputEntry(SelfEntity);
         SelfEntity.Routine.SetState("PS_Melee");
         return GETrue;
     }
@@ -2252,6 +2254,7 @@ DECLARE_SCRIPT_STATE(PS_Melee_PowerAttack)
     GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
     if (iStaminaPoints <= 0)
     {
+        ClearInputEntry(SelfEntity);
         SelfEntity.Routine.SetState("PS_Melee");
         return GETrue;
     }
@@ -2266,6 +2269,7 @@ DECLARE_SCRIPT_STATE(PS_Melee_QuickAttack)
     GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
     if (iStaminaPoints <= 0)
     {
+        ClearInputEntry(SelfEntity);
         SelfEntity.Routine.SetState("PS_Melee");
         return GETrue;
     }
@@ -2280,6 +2284,7 @@ DECLARE_SCRIPT_STATE(PS_Melee_WhirlAttack)
     GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
     if (iStaminaPoints <= 0)
     {
+        ClearInputEntry(SelfEntity);
         SelfEntity.Routine.SetState("PS_Melee");
         return GETrue;
     }
@@ -2294,6 +2299,7 @@ DECLARE_SCRIPT_STATE(PS_Melee_PierceAttack)
     GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
     if (iStaminaPoints <= 0)
     {
+        ClearInputEntry(SelfEntity);
         SelfEntity.Routine.SetState("PS_Melee");
         return GETrue;
     }
@@ -2308,6 +2314,7 @@ DECLARE_SCRIPT_STATE(PS_Melee_HackAttack)
     GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
     if (iStaminaPoints <= 0)
     {
+        ClearInputEntry(SelfEntity);
         SelfEntity.Routine.SetState("PS_Melee");
         return GETrue;
     }
@@ -2322,6 +2329,7 @@ DECLARE_SCRIPT_STATE(PS_Melee_FinishingAttack)
     GEInt iStaminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None);
     if (iStaminaPoints <= 0)
     {
+        ClearInputEntry(SelfEntity);
         SelfEntity.Routine.SetState("PS_Melee");
         return GETrue;
     }
@@ -2333,8 +2341,11 @@ void HookFunctions()
 {
     Hook__AI_Parade.Hook(GetScriptAdminExt().GetScriptAIFunction("_AI_Parade")->m_funcScriptAIFunction, &_AI_Parade);
 
-    Hook_OnPlayerSecondaryAction_NB.Hook(GetScriptAdminExt().GetScript("OnPlayerSecondaryAction")->m_funcScript,
-                                         &OnPlayerSecondaryAction_NB);
+    if (NBConfig::bEnableParry)
+    {
+        Hook_OnPlayerSecondaryAction_NB.Hook(GetScriptAdminExt().GetScript("OnPlayerSecondaryAction")->m_funcScript,
+                                             &OnPlayerSecondaryAction_NB);
+    }
 
     // Old variant
     // Hook_sAICombatMoveStart.Hook(RVA_Game(0x16abb0), &sAICombatMoveStart, mCBaseHook::mEHookType_ThisCall);

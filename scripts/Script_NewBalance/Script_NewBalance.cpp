@@ -51,6 +51,10 @@ void LoadSettings()
         NBConfig::summoningLevelMultiplier =
             config.GetFloat("Script", "SummoningLevelMultiplier", NBConfig::summoningLevelMultiplier);
 
+        NBConfig::fEvadeDistance = config.GetFloat("Script", "EvadeDistance", NBConfig::fEvadeDistance);
+        NBConfig::fEvadeSpeed = config.GetFloat("Script", "EvadeSpeed", NBConfig::fEvadeSpeed);
+        NBConfig::fParrySpeed = config.GetFloat("Script", "ParrySpeed", NBConfig::fParrySpeed);
+
         NBConfig::PerfectBlockDamageMult =
             config.GetFloat("Script", "PerfectBlockDamageMult", NBConfig::PerfectBlockDamageMult);
         NBConfig::PowerAttackArmorPen = config.GetFloat("Script", "PowerAttackArmorPen", NBConfig::PowerAttackArmorPen);
@@ -108,6 +112,8 @@ void LoadSettings()
         NBConfig::disableMonsterRage = config.GetBool("Script", "DisableMonsterRage", NBConfig::disableMonsterRage);
         NBConfig::enableNewMagicAiming =
             config.GetBool("Script", "EnableNewMagicAiming", NBConfig::enableNewMagicAiming);
+        NBConfig::bEnableEvading = config.GetBool("Script", "EnableEvading", NBConfig::bEnableEvading);
+        NBConfig::bEnableParry = config.GetBool("Script", "EnableParry", NBConfig::bEnableParry);
         NBConfig::enableAOEDamage = config.GetBool("Script", "EnableAOEDamage", NBConfig::enableAOEDamage);
         bCString AOENamesString = config.GetString("Script", "AOENames", "");
         NBConfig::AOENames = splitTobCStrings(AOENamesString.GetText(), ',');
