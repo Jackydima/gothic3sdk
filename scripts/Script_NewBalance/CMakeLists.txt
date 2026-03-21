@@ -28,4 +28,6 @@ target_tree_sources(Script_NewBalance
     AIFunctions.h
     AIFunctions.cpp
     ScriptArgs.h
+    Script_NewBalance.rc
+    resource.h
 )
