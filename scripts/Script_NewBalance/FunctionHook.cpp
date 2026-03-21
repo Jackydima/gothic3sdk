@@ -2337,8 +2337,35 @@ DECLARE_SCRIPT_STATE(PS_Melee_FinishingAttack)
     return Hook_PS_Melee_FinishingAttack.GetOriginalFunction(&PS_Melee_FinishingAttack)(a_rRunTimeStack, a_pSPU);
 }
 
+static mCFunctionHook Hook_ZS_SitKnockDown_Loop;
+DECLARE_SCRIPT_STATE(ZS_SitKnockDown_Loop)
+{
+    INIT_SCRIPT_STATE();
+
+    if (!SelfEntity.IsPlayer())
+    {
+        // Generate more random getup moves!
+        if (Entity::GetRandomNumber(100) < 30)
+        {
+            SelfEntity.Routine.SetState("ZS_SitKnockDown_GetUpParade");
+            return GETrue;
+        }
+
+        if (Entity::GetRandomNumber(100) < 30)
+        {
+            SelfEntity.Routine.SetState("ZS_SitKnockDown_GetUpAttack");
+            return GETrue;
+        }
+    }
+
+    return Hook_ZS_SitKnockDown_Loop.GetOriginalFunction(&ZS_SitKnockDown_Loop)(a_rRunTimeStack, a_pSPU);
+}
+
 void HookFunctions()
 {
+    Hook_ZS_SitKnockDown_Loop.Hook(GetScriptAdminExt().GetScriptAIState("ZS_SitKnockDown_Loop")->m_funcScriptAIState,
+                                   &ZS_SitKnockDown_Loop);
+
     Hook__AI_Parade.Hook(GetScriptAdminExt().GetScriptAIFunction("_AI_Parade")->m_funcScriptAIFunction, &_AI_Parade);
 
     if (NBConfig::bEnableParry)

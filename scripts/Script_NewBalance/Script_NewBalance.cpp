@@ -159,6 +159,7 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
 
     if (!Victim.NPC.IsFrozen() // Frozen Victim cannot parry!, should also never happen with state checks!
         && !Damager.Projectile.IsValid() && !IsSpellContainerNB(Damager) // No projectiles and no spell parry!
+        && DamagerOwnerAction != gEAction_GetUpAttack // Parrying GetUpAttack of NPCs is easily exploitable :(
         && ScriptAdmin.CallScriptFromScript("CanParadeMoveOf", &Victim, &DamagerOwner, 0))
     {
         // Parry mechanic!
