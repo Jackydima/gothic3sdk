@@ -3,10 +3,10 @@
 mCFunctionHook Hook_GetAnimationSpeedModifier;
 GEFloat GE_STDCALL GetAnimationSpeedModifier(Entity a_Entity, gEPhase a_Phase)
 {
-    gEAction a_Action = Hook_GetAnimationSpeedModifier.GetImmEax<gEAction>(); // param 1
-
+    //gEAction a_Action = Hook_GetAnimationSpeedModifier.GetImmEax<gEAction>(); // param 1 but we ignore it for now 
+    
     gESpecies species = a_Entity.NPC.GetProperty<PSNpc::PropertySpecies>();
-    // gEAction a_Action = a_Entity.Routine.GetProperty<PSRoutine::PropertyAction>();
+    gEAction a_Action = a_Entity.Routine.GetProperty<PSRoutine::PropertyAction>();
     GEInt staminaPoints = GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &a_Entity, &None, 0);
     GEBool isArenaNPC = a_Entity != Entity::GetPlayer()
                      && a_Entity.NPC.GetProperty<PSNpc::PropertyAttackReason>() == gEAttackReason_Arena;
@@ -679,7 +679,7 @@ void GE_STDCALL StartTransform(Entity *p_targetEntity, GEFloat p_duration, GEBoo
     GEInt healthPointsPercent = GetScriptAdmin().CallScriptFromScript("GetHitPointsPercent", &Self, &None);
 
     /**
-     * �fter TakeOver, The Player Takes over the targetEntity
+     * After TakeOver, The Player Takes over the targetEntity
      * The TargetEntity had no PlayerMemory and after the TakeOver, it gets the PlayerMem
      * with every Attribute of the Player on 100
      * Also the Self Entity (PC_Hero) is no longer the Player in checks
@@ -2217,6 +2217,97 @@ DECLARE_SCRIPT_FUNCTION(_AI_Parade)
     return Hook__AI_Parade.GetOriginalFunction(&_AI_Parade)(a_rRunTimeStack, a_pSPU);
 }
 
+static mCFunctionHook Hook_AI_PowerAttack;
+DECLARE_SCRIPT_FUNCTION(_AI_PowerAttack)
+{
+    INIT_SCRIPT_STATE()
+    if (SelfEntity.NPC.GetProperty<PSNpc::PropertySpecies>() != gESpecies_Zombie)
+        return Hook_AI_PowerAttack.GetOriginalFunction(&_AI_PowerAttack)(a_rRunTimeStack, a_pSPU);
+
+    BREAK_BLOCK
+    {
+        gEPose selfPose = SelfEntity.NPC.GetPrimaryPoseExt(gEAction_PowerAttack, gEPhase_Hit);
+        switch (selfPose)
+        {
+            case gEPose_P0:
+            case gEPose_P2:
+                SelfEntity.Routine.AccessProperty<PSRoutine::PropertyHitDirection>() = gEHitDirection_Right;
+                break;
+            case gEPose_P1:
+            case gEPose_P3:
+                SelfEntity.Routine.AccessProperty<PSRoutine::PropertyHitDirection>() = gEHitDirection_Left;
+                break;
+            default: break;
+        }
+
+        if (SelfEntity.Routine.GetProperty<PSRoutine::PropertyAction>() != gEAction_SprintAttack)
+        {
+            SelfEntity.Routine.AccessProperty<PSRoutine::PropertyAction>() = gEAction_PowerAttack;
+        }
+
+        SelfEntity.Routine.AccessProperty<PSRoutine::PropertyAniState>() = gEAniState_Stand;
+        ClearInputEntry(SelfEntity);
+
+        Hook_GetAnimationSpeedModifier.SetImmEax(gEAction_PowerAttack);
+        gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
+            SelfEntity.GetInstance(), TargetEntity.GetInstance(), gEAction_PowerAttack, "Raise", GetAnimationSpeedModifier(SelfEntity, gEPhase_Raise));
+
+        if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
+        {
+            return GEFalse;
+        }
+    }
+
+    BREAK_BLOCK
+    {
+        // Default Powerattack Stamin is 20:
+        GetScriptAdmin().CallScriptFromScript("AddStaminaPoints", &SelfEntity, &None, -20);
+
+        SelfEntity.Routine.SetLocalCallback("OnAI_PowerAttack");
+
+        Entity RightWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
+        RightWeapon.Strip.AccessProperty<PSStrip::PropertyEnabled>() = GETrue;
+        if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, SelfEntity))
+        {
+            Entity LeftWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_LeftHand);
+            LeftWeapon.Strip.AccessProperty<PSStrip::PropertyEnabled>() = GETrue;
+        }
+
+        Hook_GetAnimationSpeedModifier.SetImmEax(gEAction_PowerAttack);
+        gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
+            SelfEntity.GetInstance(), TargetEntity.GetInstance(), gEAction_PowerAttack, "Hit", GetAnimationSpeedModifier(SelfEntity, gEPhase_Hit));
+
+        if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
+        {
+            return GEFalse;
+        }
+    }
+
+    BREAK_BLOCK
+    {
+        Entity RightWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
+        RightWeapon.Strip.AccessProperty<PSStrip::PropertyEnabled>() = GEFalse;
+        RightWeapon.SetCollisionGroup(eECollisionGroup_Item_Equipped);
+        RightWeapon.TouchDamage.AccessProperty<PSTouchDamage::PropertyResetOnUntouch>() = GEFalse;
+
+        Entity LeftWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_LeftHand);
+        LeftWeapon.Strip.AccessProperty<PSStrip::PropertyEnabled>() = GEFalse;
+        LeftWeapon.SetCollisionGroup(eECollisionGroup_Item_Equipped);
+        LeftWeapon.TouchDamage.AccessProperty<PSTouchDamage::PropertyResetOnUntouch>() = GEFalse;
+
+        Hook_GetAnimationSpeedModifier.SetImmEax(gEAction_PowerAttack);
+        gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
+            SelfEntity.GetInstance(), TargetEntity.GetInstance(), gEAction_PowerAttack, "Recover", GetAnimationSpeedModifier(SelfEntity, gEPhase_Recover));
+
+        if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
+        {
+            return GEFalse;
+        }
+    }
+
+    return GETrue;
+}
+
 static mCFunctionHook Hook_PS_Melee_Attack;
 DECLARE_SCRIPT_STATE(PS_Melee_Attack)
 {
@@ -2367,6 +2458,8 @@ void HookFunctions()
                                    &ZS_SitKnockDown_Loop);
 
     Hook__AI_Parade.Hook(GetScriptAdminExt().GetScriptAIFunction("_AI_Parade")->m_funcScriptAIFunction, &_AI_Parade);
+
+    Hook_AI_PowerAttack.Hook(GetScriptAdminExt().GetScriptAIFunction("_AI_PowerAttack")->m_funcScriptAIFunction, &_AI_PowerAttack);
 
     if (NBConfig::bEnableParry)
     {

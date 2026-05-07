@@ -1160,6 +1160,25 @@ gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
         }
     }
 
+    // Special Zombie Protection
+    if (Victim.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Zombie)
+    {
+        if (Victim.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_PowerAttack
+            && Victim.GetCurrentAniPhase() != gEPhase_Recover
+            //&& DamagerOwnerAction != gEAction_PowerAttack
+            && DamagerOwnerAction != gEAction_HackAttack)
+        {
+            ScriptAdmin.CallScriptFromScript("PipiStumble", &Victim, &None, 0);
+            return gEAction_Stumble;
+        }
+
+        if ((IsNormalProjectileNB(Damager) || IsMagicProjectileNB(Damager)) && !isHeadshot)
+        {
+            ScriptAdmin.CallScriptFromScript("PipiStumble", &Victim, &None, 0);
+            return gEAction_Stumble;
+        }
+    }
+
     // Troll are now more resistant to attacks but are a bit slower now
     if (Victim.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Troll
         && (VictimAction == gEAction_PowerAttack || VictimAction == gEAction_SprintAttack
