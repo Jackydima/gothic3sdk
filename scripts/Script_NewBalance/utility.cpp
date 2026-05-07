@@ -1089,7 +1089,7 @@ GEInt getLastTimeFromMap(bCString iD, std::map<bCString, GEInt> &map)
     }
     else
     {
-        retVal = ULONG_MAX;
+        retVal = INT_MAX;
     }
 
     return retVal;
