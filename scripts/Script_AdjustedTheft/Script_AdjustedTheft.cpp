@@ -14,9 +14,34 @@ DECLARE_SCRIPT(IsBotheredByPlayerTheftOf)
 {
     INIT_SCRIPT_EXT(Self, Other);
     if (/* !Other.Item.IsValid() ||*/ !Other.Interaction.IsValid())
+    {
         // Should not happen? Maybe Chests then
         return Hook_IsBotheredByPlayerTheftOf.GetOriginalFunction(&IsBotheredByPlayerTheftOf)(a_pSPU, a_pSelfEntity,
                                                                                               a_pOtherEntity, a_iArgs);
+    }
+
+    // Dropped Weapons should be Ignored
+    if (Other.Item.IsValid() && Other.Item.IsDropped())
+    {
+        return Hook_IsBotheredByPlayerTheftOf.GetOriginalFunction(&IsBotheredByPlayerTheftOf)(a_pSPU, a_pSelfEntity,
+                                                                                              a_pOtherEntity, a_iArgs);
+    }
+
+    // Ignore Projectiles for now
+    if (Other.Projectile.IsValid())
+    {
+        return Hook_IsBotheredByPlayerTheftOf.GetOriginalFunction(&IsBotheredByPlayerTheftOf)(a_pSPU, a_pSelfEntity,
+                                                                                              a_pOtherEntity, a_iArgs);
+    }
+
+    Entity Player = Entity::GetPlayer();
+    // If Self is together with the player in a party, ignore it
+    if (Self.Party.GetPartyLeader() == Player || Player.Party.GetPartyLeader() == Self)
+    {
+        return Hook_IsBotheredByPlayerTheftOf.GetOriginalFunction(&IsBotheredByPlayerTheftOf)(a_pSPU, a_pSelfEntity,
+                                                                                              a_pOtherEntity, a_iArgs);
+    }
+
     Entity owner = Other.Interaction.GetOwner();
 #ifndef NDEBUG
     std::cout << "First Self!: " << Self.GetName() << "\n";
@@ -51,7 +76,7 @@ DECLARE_SCRIPT(IsBotheredByPlayerTheftOf)
         // If NPCs in Range are befriended with the Owner they do too
         gEAttitude att = static_cast<gEAttitude>(RUN_SCRIPT("GetAttitude", a_pSelfEntity, &owner, 0));
 #ifndef NDEBUG
-        std::cout << "Friends?: " << att << "\n"; 
+        std::cout << "Friends?: " << att << "\n";
 #endif
         if (att == gEAttitude_Friendly)
             return GETrue;
@@ -67,7 +92,8 @@ DECLARE_SCRIPT(IsBotheredByPlayerTheftOf)
         std::cout << "Enclave!: " << Self.NPC.GetEnclave().GetName() << "\n";
         std::cout << "Other!: " << owner.GetName() << "\n";
 #endif
-        if (gEAttitude_Friendly == static_cast<gEAttitude>(RUN_SCRIPT("GetPoliticalAttitude", a_pSelfEntity, &owner, 0)))
+        if (gEAttitude_Friendly
+            == static_cast<gEAttitude>(RUN_SCRIPT("GetPoliticalAttitude", a_pSelfEntity, &owner, 0)))
         {
             return GETrue;
         }
@@ -93,14 +119,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID)
 {
     switch (dwReason)
     {
-    case DLL_PROCESS_ATTACH:
+        case DLL_PROCESS_ATTACH:
 #ifndef NDEBUG
-        AllocConsole();
-        freopen_s((FILE **)stdout, "CONOUT$", "w", stdout);
+            AllocConsole();
+            freopen_s((FILE **)stdout, "CONOUT$", "w", stdout);
 #endif // !NDEBUG
-        ::DisableThreadLibraryCalls(hModule);
-        break;
-    case DLL_PROCESS_DETACH: break;
+            ::DisableThreadLibraryCalls(hModule);
+            break;
+        case DLL_PROCESS_DETACH: break;
     }
     return TRUE;
 }
