@@ -48,7 +48,8 @@ DECLARE_SCRIPT(IsBotheredByPlayerTheftOf)
     std::cout << "First Owner!: " << owner.GetName() << "\n";
 #endif
 
-    if (owner == None)
+    // If there is no Owner, or Owner is Player handle it like in vanilla!
+    if (owner == None || owner == Player)
         return Hook_IsBotheredByPlayerTheftOf.GetOriginalFunction(&IsBotheredByPlayerTheftOf)(a_pSPU, a_pSelfEntity,
                                                                                               a_pOtherEntity, a_iArgs);
     // If NPC is close friend
