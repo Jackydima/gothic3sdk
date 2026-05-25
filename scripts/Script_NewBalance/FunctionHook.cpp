@@ -2361,8 +2361,91 @@ DECLARE_SCRIPT_STATE(ZS_SitKnockDown_Loop)
     return Hook_ZS_SitKnockDown_Loop.GetOriginalFunction(&ZS_SitKnockDown_Loop)(a_rRunTimeStack, a_pSPU);
 }
 
+// New Combined Inputs for the Player
+static mCFunctionHook Hook_OnPlayerGameKeyPressed;
+DECLARE_SCRIPT(OnPlayerGameKeyPressed)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+
+    gESessionKey currentKey = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyPressedKey>();
+
+    // First check if we need new functionality
+    switch (currentKey)
+    {
+        // All the supported new keys or updates
+        case gESessionKey_Backward:
+        case gESessionKey_StrafeLeft:
+        case gESessionKey_StrafeRight:
+        case gESessionKey_Parry:       break;
+        default:
+            return Hook_OnPlayerGameKeyPressed.GetOriginalFunction(&OnPlayerGameKeyPressed)(a_pSPU, a_pSelfEntity,
+                                                                                            a_pOtherEntity, a_iArgs);
+    }
+
+    // Check if the Games Inputs are already handled
+    auto &ScriptAdmin = GetScriptAdminExt();
+    if (ScriptAdmin.CallScriptFromScript("OnHUDHandleInput", &Self, &None))
+    {
+        return Hook_OnPlayerGameKeyPressed.GetOriginalFunction(&OnPlayerGameKeyPressed)(a_pSPU, a_pSelfEntity,
+                                                                                        a_pOtherEntity, a_iArgs);
+    }
+
+    if (ScriptAdmin.CallScriptFromScript("OnMagicHandleInput", &Self, &None))
+    {
+        return Hook_OnPlayerGameKeyPressed.GetOriginalFunction(&OnPlayerGameKeyPressed)(a_pSPU, a_pSelfEntity,
+                                                                                        a_pOtherEntity, a_iArgs);
+    }
+
+    switch (currentKey)
+    {
+        case gESessionKey_Backward:
+        case gESessionKey_StrafeLeft:
+        case gESessionKey_StrafeRight:
+        {
+            GEBool dClicked = IsDoubleClick(Self);
+            if (!dClicked)
+                break;
+
+            if (!Self.Routine.GetCurrentState().Contains("_Loop"))
+                break;
+
+            eCVisualAnimation_PS *selfAnimation =
+                GetPropertySet<eCVisualAnimation_PS>(Self.GetGameEntity(), eEPropertySetType_Animation);
+            if (!selfAnimation && !selfAnimation->HasActor())
+                break;
+
+            if (currentKey == gESessionKey_StrafeLeft)
+            {
+                Self.Routine.SetState("NB_EvadeLeft");
+                return GETrue;
+            }
+
+            if (currentKey == gESessionKey_StrafeRight)
+            {
+                Self.Routine.SetState("NB_EvadeRight");
+                return GETrue;
+            }
+
+            if (currentKey == gESessionKey_Backward)
+            {
+                Self.Routine.SetState("NB_EvadeBackward");
+                return GETrue;
+            }
+        }
+        break;
+
+        default: break;
+    }
+
+    return Hook_OnPlayerGameKeyPressed.GetOriginalFunction(&OnPlayerGameKeyPressed)(a_pSPU, a_pSelfEntity,
+                                                                                    a_pOtherEntity, a_iArgs);
+}
+
 void HookFunctions()
 {
+    Hook_OnPlayerGameKeyPressed.Hook(GetScriptAdminExt().GetScript("OnPlayerGameKeyPressed")->m_funcScript,
+                                     &OnPlayerGameKeyPressed);
+
     Hook_ZS_SitKnockDown_Loop.Hook(GetScriptAdminExt().GetScriptAIState("ZS_SitKnockDown_Loop")->m_funcScriptAIState,
                                    &ZS_SitKnockDown_Loop);
 

@@ -16,6 +16,87 @@ void ClearInputEntry(Entity a_Entity)
     return s_fClearInputEntry(a_Entity);
 }
 
+enum EButtonState
+{
+    EButtonState_Reset = 0,
+    EButtonState_Init = 1,
+    EButtonState_WaitForRepeat = 2,
+};
+GEBool IsDoubleClick(Entity &Self)
+{
+    if (!Self.IsPlayer())
+        return GEFalse;
+
+    static gESessionKey lastKey = gESessionKey_None;
+    static EButtonState state = EButtonState_Reset;
+    static std::chrono::steady_clock::time_point lastTimePoint;
+
+    const GEBool pressed = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressed>();
+    const GEBool pressedBefore = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressedBefore>();
+    const GEU32 pressedDuration = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyDurationPressedMSecs>();
+    const gESessionKey currentKey = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyPressedKey>();
+    const auto now = std::chrono::steady_clock::now();
+
+    const bool justPressed = pressed && !pressedBefore;
+    const bool justReleased = !pressed && pressedBefore;
+
+    switch (state)
+    {
+        case EButtonState_Reset:
+            if (justPressed)
+            {
+                lastKey = currentKey;
+                state = EButtonState_Init;
+            }
+            break;
+
+        case EButtonState_Init:
+            if (lastKey == currentKey && justReleased)
+            {
+                if (pressedDuration <= 200)
+                {
+                    state = EButtonState_WaitForRepeat;
+                    lastTimePoint = now;
+                }
+                else
+                {
+                    lastKey = gESessionKey_None;
+                    state = EButtonState_Reset;
+                }
+            }
+            break;
+
+        case EButtonState_WaitForRepeat:
+        {
+            auto delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimePoint);
+
+            if (delay > std::chrono::milliseconds(200))
+            {
+                lastKey = gESessionKey_None;
+                state = EButtonState_Reset;
+                break;
+            }
+
+            if (justPressed)
+            {
+                if (lastKey == currentKey)
+                {
+                    lastKey = gESessionKey_None;
+                    state = EButtonState_Reset;
+                    return GETrue;
+                }
+
+                lastKey = gESessionKey_None;
+                state = EButtonState_Reset;
+            }
+
+            break;
+        }
+    }
+
+    return GEFalse;
+}
+
 std::vector<bCString> splitTobCStrings(const std::string str, char delim)
 {
     std::vector<bCString> result;

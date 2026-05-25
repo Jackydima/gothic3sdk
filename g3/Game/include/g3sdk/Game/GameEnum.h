@@ -976,8 +976,12 @@ enum gESessionKey
     gESessionKey_Look = 40,
     gESessionKey_FirstPerson = 41,
     gESessionKey_ResetCamera = 42,
-
-    gESessionKey_MAX = 45
+    gESessionKey_Unknown1 = 43,
+    gESessionKey_Unknown2 = 44,
+    // Custom Keys
+    gESessionKey_Parry = 45,
+    // Custom Keys End
+    gESessionKey_MAX,
 };
 
 // gCInfoManager_PS.lastSessionState

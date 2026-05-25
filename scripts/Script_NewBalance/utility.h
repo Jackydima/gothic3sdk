@@ -11,6 +11,7 @@
 #include <g3sdk/util/Util.h>
 
 #include <iostream>
+#include <chrono>
 #include <map>
 
 #ifndef GE_DEBUG
@@ -58,6 +59,8 @@ extern mCFunctionHook Hook_GetAnimationSpeedModifier;
 
 void SetParadeMode(Entity a_Entity, GEBool a_bEnabled);
 void ClearInputEntry(Entity a_Entity);
+
+GEBool IsDoubleClick(Entity& Self);
 
 std::vector<bCString> splitTobCStrings(const std::string str, char delim);
 void MagicPartyMemberRemover(Entity p_summoner);
