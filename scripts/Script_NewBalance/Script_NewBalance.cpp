@@ -113,6 +113,8 @@ void LoadSettings()
         NBConfig::enableNewMagicAiming =
             config.GetBool("Script", "EnableNewMagicAiming", NBConfig::enableNewMagicAiming);
         NBConfig::bEnableEvading = config.GetBool("Script", "EnableEvading", NBConfig::bEnableEvading);
+        NBConfig::bEnableEvadeWithJump =
+            config.GetBool("Script", "EnableEvadeWithJump", NBConfig::bEnableEvadeWithJump);
         NBConfig::bEnableParry = config.GetBool("Script", "EnableParry", NBConfig::bEnableParry);
         NBConfig::enableAOEDamage = config.GetBool("Script", "EnableAOEDamage", NBConfig::enableAOEDamage);
         bCString AOENamesString = config.GetString("Script", "AOENames", "");
@@ -131,8 +133,9 @@ void AssignNewKeys()
     static gCSessionKeys sessionKeys = gCSessionKeys();
     sessionKeys = gCSession::GetInstance().GetSessionKeys();
 
-    // Getting Keys at https://github.com/Jackydima/gothic3sdk/blob/master/g3/Engine/include/g3sdk/Engine/io/ge_inpshared.h#L9
-    
+    // Getting Keys at
+    // https://github.com/Jackydima/gothic3sdk/blob/master/g3/Engine/include/g3sdk/Engine/io/ge_inpshared.h#L9
+
     eCConfigFile config = eCConfigFile();
     if (config.ReadFile(bCString("newbalance.ini")))
     {
@@ -145,17 +148,17 @@ void AssignNewKeys()
         bCString keyName = "Parry";
         static eSSetupEngine::SPhysicalKeys pKeys;
         pKeys.m_iKey1DeviceType = config.GetInt("SessionKey.Parry", "Key1.Type", eEDeviceType_Mouse);
-        pKeys.m_iKey1DeviceOffset = config.GetInt("SessionKey.Parry", "Key1.Offset",eCInpShared::eEMouseOffset_Button3);
+        pKeys.m_iKey1DeviceOffset =
+            config.GetInt("SessionKey.Parry", "Key1.Offset", eCInpShared::eEMouseOffset_Button3);
         pKeys.m_iKey2DeviceType = config.GetInt("SessionKey.Parry", "Key2.Type", -1);
         pKeys.m_iKey2DeviceOffset = config.GetInt("SessionKey.Parry", "Key2.Offset", -1);
 
-        mCCaller CallerAssignSingleKey(mCCaller::GetCallerParams(RVA_Game(0x1829d0), mERegisterType::mERegisterType_Ecx));
-        using AssignSingleKey_t = void(GE_STDCALL*)(gESessionKey, bCString, eSSetupEngine::SPhysicalKeys*);
+        mCCaller CallerAssignSingleKey(
+            mCCaller::GetCallerParams(RVA_Game(0x1829d0), mERegisterType::mERegisterType_Ecx));
+        using AssignSingleKey_t = void(GE_STDCALL *)(gESessionKey, bCString, eSSetupEngine::SPhysicalKeys *);
         CallerAssignSingleKey.SetEcx(&sessionKeys);
         CallerAssignSingleKey.GetFunction<AssignSingleKey_t>()(gESessionKey_Parry, keyName, &pKeys);
     }
-
-    
 }
 
 // wird aufgerufen von DoLogicalDamage

@@ -45,6 +45,7 @@ GEBool disableMonsterRage = GETrue;
 GEBool enableNewMagicAiming = GETrue;
 GEBool enableAOEDamage = GETrue;
 GEBool bEnableEvading = GETrue;
+GEBool bEnableEvadeWithJump = GETrue;
 GEBool bEnableParry = GETrue;
 std::vector<bCString> AOENames = {};
 

@@ -236,14 +236,18 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     sessionKeys = gCSession::GetInstance().GetSessionKeys();
 
     // Index 0 is default cursor arrows, Index 1 is the alternative keybinds (WASD)
+    eCPhysicalKey *forwardKey = sessionKeys.GetAssignedKey(gESessionKey_Forward, 0);
     eCPhysicalKey *backKey = sessionKeys.GetAssignedKey(gESessionKey_Backward, 0);
     eCPhysicalKey *leftKey = sessionKeys.GetAssignedKey(gESessionKey_StrafeLeft, 0);
     eCPhysicalKey *rightKey = sessionKeys.GetAssignedKey(gESessionKey_StrafeRight, 0);
 
+    eCPhysicalKey *forwardKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_Forward, 1);
     eCPhysicalKey *backKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_Backward, 1);
     eCPhysicalKey *leftKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_StrafeLeft, 1);
     eCPhysicalKey *rightKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_StrafeRight, 1);
 
+    GEBool forwardPressed = keyboard.KeyPressed(forwardKey->m_enuKeyboardStateOffset)
+                         || keyboard.KeyPressed(forwardKeyAlt->m_enuKeyboardStateOffset);
     GEBool backPressed = keyboard.KeyPressed(backKey->m_enuKeyboardStateOffset)
                       || keyboard.KeyPressed(backKeyAlt->m_enuKeyboardStateOffset);
     GEBool leftPressed = keyboard.KeyPressed(leftKey->m_enuKeyboardStateOffset)
@@ -268,30 +272,43 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     eCVisualAnimation_PS *selfAnimation =
         GetPropertySet<eCVisualAnimation_PS>(Self.GetGameEntity(), eEPropertySetType_Animation);
     if (!selfAnimation && !selfAnimation->HasActor())
+    {
+        GEInt retVal = GetScriptAdmin().CallScriptFromScript("OnPlayerJump", &Self, &None);
+        Hook_Evade.SetImmEax(retVal);
         return;
+    }
 
     // For now limit it the Hero Skeleton!
     if (!selfAnimation->GetActor()->GetActorName().Contains("Hero"))
+    {
+        GEInt retVal = GetScriptAdmin().CallScriptFromScript("OnPlayerJump", &Self, &None);
+        Hook_Evade.SetImmEax(retVal);
         return;
+    }
+
+    // Never try to evade with forwardkey active now
+    if (forwardPressed)
+    {
+        GEInt retVal = GetScriptAdmin().CallScriptFromScript("OnPlayerJump", &Self, &None);
+        Hook_Evade.SetImmEax(retVal);
+        return;
+    }
 
     // if (keyboard.KeyPressed(eCInpShared::eEKeyboardStateOffset_A))
     if (leftPressed && !rightPressed)
     {
-        println("Left Evade Initialized");
         Self.Routine.SetState("NB_EvadeLeft");
         return;
     }
 
     if (rightPressed && !leftPressed)
     {
-        println("Right Evade Initialized");
         Self.Routine.SetState("NB_EvadeRight");
         return;
     }
 
     if (backPressed)
     {
-        println("Back Evade Initialized");
         Self.Routine.SetState("NB_EvadeBackward");
         return;
     }
@@ -559,7 +576,7 @@ void HookCallHooks()
             .Hook();
     }
 
-    if (NBConfig::bEnableEvading)
+    if (NBConfig::bEnableEvading && NBConfig::bEnableEvadeWithJump)
     {
         Hook_Evade.Prepare(RVA_ScriptGame(0x62119), &EvadeMechanic, mCBaseHook::mEHookType_Mixed, mERegisterType_Eax)
             .InsertCall()

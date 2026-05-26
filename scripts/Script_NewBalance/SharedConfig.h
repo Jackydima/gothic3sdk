@@ -51,6 +51,7 @@ extern GEBool disableMonsterRage;
 extern GEBool enableNewMagicAiming;
 extern GEBool enableAOEDamage;
 extern GEBool bEnableEvading;
+extern GEBool bEnableEvadeWithJump;
 extern GEBool bEnableParry;
 extern std::vector<bCString> AOENames;
 
