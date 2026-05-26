@@ -63,6 +63,7 @@ GEBool IsDoubleClick(Entity &Self)
             break;
 
         case EButtonState_Init:
+        {
             auto delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimePoint);
             if (delay > std::chrono::milliseconds(200))
             {
@@ -84,6 +85,7 @@ GEBool IsDoubleClick(Entity &Self)
                 }
             }
             break;
+        }
 
         case EButtonState_WaitForRepeat:
         {
