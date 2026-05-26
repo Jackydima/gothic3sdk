@@ -976,10 +976,15 @@ enum gESessionKey
     gESessionKey_Look = 40,
     gESessionKey_FirstPerson = 41,
     gESessionKey_ResetCamera = 42,
-    gESessionKey_Unknown1 = 43,
-    gESessionKey_Unknown2 = 44,
+    gESessionKey_ToggleHUD = 43,
+    // TODO Jackys Extension RVA_Game(0xa8f30) for reference and ingame options
+    gESessionKey_TakeAll = 44,
+    gESessionKey_UsePotionHP = 45,
+    gESessionKey_UsePotionMP = 46,
+    gESessionKey_UsePotionSP = 47,
+    // TODO Jackys Extension END
     // Custom Keys
-    gESessionKey_Parry = 45,
+    gESessionKey_Parry = 48,
     // Custom Keys End
     gESessionKey_MAX,
 };

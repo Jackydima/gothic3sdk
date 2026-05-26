@@ -10,8 +10,8 @@
 #include <g3sdk/util/ScriptUtil.h>
 #include <g3sdk/util/Util.h>
 
-#include <iostream>
 #include <chrono>
+#include <iostream>
 #include <map>
 
 #ifndef GE_DEBUG
@@ -54,13 +54,18 @@ enum WarriorType
     WarriorType_Elite = 3,
 };
 
+// GLOBAL Script Helper Objects
+extern const uintptr_t *ActionBufferObject;
+// GLOBAL Script Helper Objects END
+
 // param 1: gEAction, param 2 Entity, param 3(EAX register): gEPhase
 extern mCFunctionHook Hook_GetAnimationSpeedModifier;
 
 void SetParadeMode(Entity a_Entity, GEBool a_bEnabled);
 void ClearInputEntry(Entity a_Entity);
+void AddAction(Entity a_Self, gEAction a_Action, gEDirection a_Direction, Entity a_Target);
 
-GEBool IsDoubleClick(Entity& Self);
+GEBool IsDoubleClick(Entity &Self);
 
 std::vector<bCString> splitTobCStrings(const std::string str, char delim);
 void MagicPartyMemberRemover(Entity p_summoner);

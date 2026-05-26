@@ -6,11 +6,26 @@
 
 class eCMenuItem;
 
+// TODO: Jackys Addition
+enum eEDeviceType
+{
+    eEDeviceType_KeyBoard = 0,
+    eEDeviceType_Mouse = 1,
+    // TODO Maybe any other types?
+};
+
 class eCPhysicalKey : public bCObjectRefBase
 {
   public:
-    eCInpShared::eEKeyboardStateOffset m_enuKeyboardStateOffset;
-    GEInt m_iPriority;
+    // TODO: Jackys Addition
+    // eCInpShared::eEKeyboardStateOffset m_enuKeyboardStateOffset;
+    union
+    {
+        eCInpShared::eEKeyboardStateOffset m_enuKeyboardStateOffset;
+        eCInpShared::eEMouseOffset m_enuMouseStateOffset;
+    };
+    // GEInt m_iPriority;
+    eEDeviceType m_eDeviceType;
     bCUnicodeString m_strLocalizedKeyName;
 };
 GE_ASSERT_SIZEOF(eCPhysicalKey, 0x18)

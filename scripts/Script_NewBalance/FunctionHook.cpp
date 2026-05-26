@@ -2134,67 +2134,6 @@ GEBool GE_STDCALL Entity_AttachTo(LPVOID *a_peCEntity)
     return Hook_Entity_AttachTo.GetOriginalFunction(&Entity_AttachTo)(a_peCEntity);
 }*/
 
-static mCFunctionHook Hook_OnPlayerSecondaryAction_NB;
-DECLARE_SCRIPT(OnPlayerSecondaryAction_NB)
-{
-    INIT_SCRIPT_EXT(Self, Other);
-
-    if (Self.Routine.GetCurrentTask() != "PS_Melee")
-    {
-        return Hook_OnPlayerSecondaryAction_NB.GetOriginalFunction(&OnPlayerSecondaryAction_NB)(
-            a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
-    }
-
-    // Usually it would be better to add an action instead of hard setting states,
-    // for the current task loop to handle, but we want less hooks :)
-
-    static eCKeyboard &keyboard = eCApplication::GetInstance().GetKeyboard();
-    // Maps SessionKeys to physical Keyboard Keys
-    // Protected constructor workaround
-    static gCSessionKeys sessionKeys = gCSessionKeys();
-    sessionKeys = gCSession::GetInstance().GetSessionKeys();
-
-    eCPhysicalKey *shiftKey = sessionKeys.GetAssignedKey(gESessionKey_Walk, 0);
-    eCPhysicalKey *shiftKeyAlt = sessionKeys.GetAssignedKey(gESessionKey_Walk, 1);
-
-    GEBool runKeyPressed = keyboard.KeyPressed(shiftKey->m_enuKeyboardStateOffset)
-                        || keyboard.KeyPressed(shiftKeyAlt->m_enuKeyboardStateOffset);
-
-    // Tries to parry!
-    if (runKeyPressed)
-    {
-        if (GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &Self, &None) < 20)
-        {
-            return GETrue;
-        }
-
-        // Do to allow spamming Parry or canceling forced recovery in other states!
-        // if (Self.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_Parry
-        if (Self.Routine.GetCurrentState() != "PS_Melee_Loop")
-        {
-            return GETrue;
-        }
-
-        if (!Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressed>()
-            && Self.CharacterControl.GetProperty<PSCharacterControl::PropertyDurationPressedMSecs>() <= 200)
-        {
-            gESpecies selfSpecies = Self.NPC.GetProperty<PSNpc::PropertySpecies>();
-            if (selfSpecies == gESpecies_Orc || selfSpecies == gESpecies_Human)
-            {
-                GEBool *paradeBool = reinterpret_cast<GEBool *>(RVA_ScriptGame(0x118b41));
-                *paradeBool = GEFalse;
-                SetParadeMode(Self, GEFalse);
-                Self.Routine.SetState("NB_Melee_Parry");
-            }
-        }
-
-        return GETrue;
-    }
-
-    return Hook_OnPlayerSecondaryAction_NB.GetOriginalFunction(&OnPlayerSecondaryAction_NB)(a_pSPU, a_pSelfEntity,
-                                                                                            a_pOtherEntity, a_iArgs);
-}
-
 static mCFunctionHook Hook__AI_Parade;
 DECLARE_SCRIPT_FUNCTION(_AI_Parade)
 {
@@ -2337,6 +2276,55 @@ DECLARE_SCRIPT_STATE(PS_Melee_FinishingAttack)
     return Hook_PS_Melee_FinishingAttack.GetOriginalFunction(&PS_Melee_FinishingAttack)(a_rRunTimeStack, a_pSPU);
 }
 
+static mCFunctionHook Hook_PS_Melee_Loop;
+DECLARE_SCRIPT_STATE(PS_Melee_Loop)
+{
+    INIT_SCRIPT_STATE();
+    GEBool result = Hook_PS_Melee_Loop.GetOriginalFunction(&PS_Melee_Loop)(a_rRunTimeStack, a_pSPU);
+
+    // State not yet done!
+    if (!result)
+        return result;
+
+    GEInt *actionAmounts = reinterpret_cast<GEInt *>(RVA_ScriptGame(0x118d58));
+
+    if (actionAmounts && *actionAmounts < 1)
+    {
+        return result;
+    }
+
+    // Is an array buffer, but only one element is filled at max
+    gEAction **pAction = reinterpret_cast<gEAction **>(RVA_ScriptGame(0x118d54));
+    if (pAction && *pAction && **pAction == gEAction_Parry)
+    {
+        ClearInputEntry(SelfEntity);
+        // Stamine needed!
+        if (GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &SelfEntity, &None) < 20)
+        {
+            return result;
+        }
+
+        // Only Hero Animations are working now!
+        eCVisualAnimation_PS *selfAnimation =
+            GetPropertySet<eCVisualAnimation_PS>(SelfEntity.GetGameEntity(), eEPropertySetType_Animation);
+        if (!selfAnimation && !selfAnimation->HasActor())
+            return result;
+
+        // For now limit it to the Hero Skeleton!
+        if (!selfAnimation->GetActor()->GetActorName().Contains("Hero"))
+            return result;
+
+        // Remove Parade States!
+        GEBool *paradeBool = reinterpret_cast<GEBool *>(RVA_ScriptGame(0x118b41));
+        *paradeBool = GEFalse;
+        SetParadeMode(SelfEntity, GEFalse);
+        SelfEntity.Routine.SetState("NB_Melee_Parry");
+        return GETrue;
+    }
+
+    return result;
+}
+
 static mCFunctionHook Hook_ZS_SitKnockDown_Loop;
 DECLARE_SCRIPT_STATE(ZS_SitKnockDown_Loop)
 {
@@ -2368,6 +2356,10 @@ DECLARE_SCRIPT(OnPlayerGameKeyPressed)
     INIT_SCRIPT_EXT(Self, Other);
 
     gESessionKey currentKey = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyPressedKey>();
+    GEBool pressed = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressed>();
+    GEBool pressedBefore = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressedBefore>();
+    GEBool justPressed = pressed && !pressedBefore;
+    // GEBool justReleased = !pressed && pressedBefore;
 
     // First check if we need new functionality
     switch (currentKey)
@@ -2434,6 +2426,14 @@ DECLARE_SCRIPT(OnPlayerGameKeyPressed)
         }
         break;
 
+        case gESessionKey_Parry:
+            if (justPressed)
+            {
+                AddAction(Self, gEAction_Parry, gEDirection_Fwd, Other);
+                return GETrue;
+            }
+            break;
+
         default: break;
     }
 
@@ -2441,21 +2441,50 @@ DECLARE_SCRIPT(OnPlayerGameKeyPressed)
                                                                                     a_pOtherEntity, a_iArgs);
 }
 
+// Populate the new Controlls Items
+static mCFunctionHook Hook_OptionControll_InitControllList;
+void __stdcall OptionControll_InitControllList(void)
+{
+    CFFGFCListCtrl *options = Hook_OptionControll_InitControllList.GetEdi<CFFGFCListCtrl *>();
+    options->DeleteAllItems();
+
+    using IncludeSessionKey_t = int(__stdcall *)(CFFGFCListCtrl *);
+    static mCCaller CallIncludeSessionKey(mCCaller::GetCallerParams(RVA_Game(0xa8fd0), mERegisterType_Eax));
+
+    for (GEInt i = 0; i < gESessionKey_MAX; i++)
+    {
+        switch (i)
+        {
+            case gESessionKey_None:
+            case gESessionKey_TurnPlayerLeft:
+            case gESessionKey_TurnPlayerRight:
+            case gESessionKey_WalkToggle:
+            case gESessionKey_Cancel:          continue;
+        }
+        CallIncludeSessionKey.SetImmEax(i);
+        CallIncludeSessionKey.GetFunction<IncludeSessionKey_t>()(options);
+    }
+}
+
 void HookFunctions()
 {
+    Hook_OptionControll_InitControllList
+        .Prepare(RVA_Game(0xa8f30), &OptionControll_InitControllList, mCBaseHook::mEHookType_Mixed, mERegisterType_Edi)
+        .Hook();
+
     Hook_OnPlayerGameKeyPressed.Hook(GetScriptAdminExt().GetScript("OnPlayerGameKeyPressed")->m_funcScript,
                                      &OnPlayerGameKeyPressed);
 
     Hook_ZS_SitKnockDown_Loop.Hook(GetScriptAdminExt().GetScriptAIState("ZS_SitKnockDown_Loop")->m_funcScriptAIState,
                                    &ZS_SitKnockDown_Loop);
 
-    Hook__AI_Parade.Hook(GetScriptAdminExt().GetScriptAIFunction("_AI_Parade")->m_funcScriptAIFunction, &_AI_Parade);
-
     if (NBConfig::bEnableParry)
     {
-        Hook_OnPlayerSecondaryAction_NB.Hook(GetScriptAdminExt().GetScript("OnPlayerSecondaryAction")->m_funcScript,
-                                             &OnPlayerSecondaryAction_NB);
+        Hook_PS_Melee_Loop.Hook(GetScriptAdminExt().GetScriptAIState("PS_Melee_Loop")->m_funcScriptAIState,
+                                &PS_Melee_Loop);
     }
+
+    Hook__AI_Parade.Hook(GetScriptAdminExt().GetScriptAIFunction("_AI_Parade")->m_funcScriptAIFunction, &_AI_Parade);
 
     // Old variant
     // Hook_sAICombatMoveStart.Hook(RVA_Game(0x16abb0), &sAICombatMoveStart, mCBaseHook::mEHookType_ThisCall);

@@ -1,5 +1,7 @@
 #include "utility.h"
 
+const uintptr_t *ActionBufferObject = reinterpret_cast<uintptr_t *>(RVA_ScriptGame(0x118b40));
+
 void SetParadeMode(Entity a_Entity, GEBool a_bEnabled)
 {
     using mFSetParadeMode = void(GE_STDCALL *)(Entity, GEBool);
@@ -14,6 +16,15 @@ void ClearInputEntry(Entity a_Entity)
     static mFClearInputEntry s_fClearInputEntry = force_cast<mFClearInputEntry>(RVA_ScriptGame(0x79a0));
 
     return s_fClearInputEntry(a_Entity);
+}
+
+void AddAction(Entity a_Self, gEAction a_Action, gEDirection a_Direction, Entity a_Target)
+{
+    using mFAddAction = void(GE_STDCALL *)(Entity, gEAction, gEDirection, Entity);
+    static mCCaller CallAddAction(mCCaller::GetCallerParams(RVA_ScriptGame(0x7940), mERegisterType_Eax));
+
+    CallAddAction.SetEax(ActionBufferObject);
+    CallAddAction.GetFunction<mFAddAction>()(a_Self, a_Action, a_Direction, a_Target);
 }
 
 enum EButtonState

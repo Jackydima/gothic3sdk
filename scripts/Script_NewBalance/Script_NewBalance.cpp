@@ -126,6 +126,24 @@ void LoadSettings()
     }
 }
 
+void AssignNewKeys()
+{
+    static gCSessionKeys sessionKeys = gCSessionKeys();
+    sessionKeys = gCSession::GetInstance().GetSessionKeys();
+
+    // Getting Keys at https://github.com/Jackydima/gothic3sdk/blob/master/g3/Engine/include/g3sdk/Engine/io/ge_inpshared.h#L9
+    static bTPtrArray<eCPhysicalKey*> parryKeyList;
+    parryKeyList.Clear();
+    static eCPhysicalKey key = eCPhysicalKey();
+    key.m_enuMouseStateOffset = eCInpShared::eEMouseOffset_Button3;
+    key.m_eDeviceType = eEDeviceType::eEDeviceType_Mouse;
+    key.m_strLocalizedKeyName = "Change o. Tempurary";
+    static bCUnicodeString keyName = "Parry";
+
+    parryKeyList.Add(&key);
+    sessionKeys.AssignKey(gESessionKey_Parry, keyName, parryKeyList);
+}
+
 // wird aufgerufen von DoLogicalDamage
 gEAction GE_STDCALL AssessHit(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity,
                               GEU32 a_iArgs)
@@ -1241,6 +1259,7 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
     // Ensure that that Script_Game.dll is loaded.
     GetScriptAdmin().LoadScriptDLL("Script_Game.dll");
     LoadSettings();
+    AssignNewKeys();
     PatchCode();
     AddNewEffect();
     if (NBConfig::enableNewMagicAiming)

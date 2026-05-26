@@ -120,9 +120,7 @@ void CombatMoveScale(void *a_pArgs, gCScriptProcessingUnit *a_pSPU, bCVector *a_
     // ( ) << "\n";
     switch (Self.Routine.GetProperty<PSRoutine::PropertyAction>())
     {
-        case gEAction_JumpBack:
-            a_pVec->Scale(0.8f * NBConfig::ATTACK_REACH_MULTIPLIER);
-            break;
+        case gEAction_JumpBack:           a_pVec->Scale(0.8f * NBConfig::ATTACK_REACH_MULTIPLIER); break;
         case gEAction_Stumble:
         case gEAction_StumbleL:
         case gEAction_StumbleR:
@@ -230,9 +228,7 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
 {
     Entity Self = Entity(a_PSU->GetSelfEntity());
     Entity Other = Entity(a_PSU->GetOtherEntity());
-    println("Call Hooked OnPlayerGamePressed function in jump session logic");
     eCKeyboard &keyboard = eCApplication::GetInstance().GetKeyboard();
-    println("Address of Keyboard: %x", &keyboard);
 
     // Maps SessionKeys to physical Keyboard Keys
     // Protected constructor workaround
