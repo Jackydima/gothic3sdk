@@ -132,16 +132,30 @@ void AssignNewKeys()
     sessionKeys = gCSession::GetInstance().GetSessionKeys();
 
     // Getting Keys at https://github.com/Jackydima/gothic3sdk/blob/master/g3/Engine/include/g3sdk/Engine/io/ge_inpshared.h#L9
-    static bTPtrArray<eCPhysicalKey*> parryKeyList;
-    parryKeyList.Clear();
-    static eCPhysicalKey key = eCPhysicalKey();
-    key.m_enuMouseStateOffset = eCInpShared::eEMouseOffset_Button3;
-    key.m_eDeviceType = eEDeviceType::eEDeviceType_Mouse;
-    key.m_strLocalizedKeyName = "Change o. Tempurary";
-    static bCUnicodeString keyName = "Parry";
+    
+    eCConfigFile config = eCConfigFile();
+    if (config.ReadFile(bCString("newbalance.ini")))
+    {
+        /*[SessionKey.Parry]
+        Key1.Type=1
+        Key1.Offset=6  // Mouse4
+        Key2.Type=-1
+        Key2.Offset=-1*/
 
-    parryKeyList.Add(&key);
-    sessionKeys.AssignKey(gESessionKey_Parry, keyName, parryKeyList);
+        bCString keyName = "Parry";
+        static eSSetupEngine::SPhysicalKeys pKeys;
+        pKeys.m_iKey1DeviceType = config.GetInt("SessionKey.Parry", "Key1.Type", eEDeviceType_Mouse);
+        pKeys.m_iKey1DeviceOffset = config.GetInt("SessionKey.Parry", "Key1.Offset",eCInpShared::eEMouseOffset_Button3);
+        pKeys.m_iKey2DeviceType = config.GetInt("SessionKey.Parry", "Key2.Type", -1);
+        pKeys.m_iKey2DeviceOffset = config.GetInt("SessionKey.Parry", "Key2.Offset", -1);
+
+        mCCaller CallerAssignSingleKey(mCCaller::GetCallerParams(RVA_Game(0x1829d0), mERegisterType::mERegisterType_Ecx));
+        using AssignSingleKey_t = void(GE_STDCALL*)(gESessionKey, bCString, eSSetupEngine::SPhysicalKeys*);
+        CallerAssignSingleKey.SetEcx(&sessionKeys);
+        CallerAssignSingleKey.GetFunction<AssignSingleKey_t>()(gESessionKey_Parry, keyName, &pKeys);
+    }
+
+    
 }
 
 // wird aufgerufen von DoLogicalDamage

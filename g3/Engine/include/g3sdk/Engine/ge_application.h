@@ -18,9 +18,17 @@ class eCSplash;
 
 struct eSSetupEngine
 {
-    struct SPhysicalKeys
+    // TODO Jackys Addition:
+    /*struct SPhysicalKeys
     {
         GE_UNIMPL_STRUCT(SPhysicalKeys)
+    };*/
+    struct SPhysicalKeys
+    {
+        GEInt m_iKey1DeviceType = {-1};
+        GEInt m_iKey1DeviceOffset = {-1};
+        GEInt m_iKey2DeviceType = {-1};
+        GEInt m_iKey2DeviceOffset = {-1};
     };
 
     GEU8 f0[4];

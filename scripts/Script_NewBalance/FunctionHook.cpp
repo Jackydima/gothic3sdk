@@ -2442,10 +2442,10 @@ DECLARE_SCRIPT(OnPlayerGameKeyPressed)
 }
 
 // Populate the new Controlls Items
-static mCFunctionHook Hook_OptionControll_InitControllList;
-void __stdcall OptionControll_InitControllList(void)
+static mCFunctionHook Hook_OptionsControll_InitControllList;
+void GE_STDCALL OptionsControll_InitControllList(void)
 {
-    CFFGFCListCtrl *options = Hook_OptionControll_InitControllList.GetEdi<CFFGFCListCtrl *>();
+    CFFGFCListCtrl *options = Hook_OptionsControll_InitControllList.GetEdi<CFFGFCListCtrl *>();
     options->DeleteAllItems();
 
     using IncludeSessionKey_t = int(__stdcall *)(CFFGFCListCtrl *);
@@ -2464,12 +2464,48 @@ void __stdcall OptionControll_InitControllList(void)
         CallIncludeSessionKey.SetImmEax(i);
         CallIncludeSessionKey.GetFunction<IncludeSessionKey_t>()(options);
     }
+
+    // Manually Set the Text afterwards
+    options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX-gESessionKey_Parry), 0, "Parry");
+}
+
+static mCFunctionHook Hook_OptionsControll_UpdateConfig;
+void GE_STDCALL OptionsControll_UpdateConfig(eCConfigFile * a_pConfigFile)
+{
+    Hook_OptionsControll_UpdateConfig.GetOriginalFunction(&OptionsControll_UpdateConfig)(a_pConfigFile);
+
+    static eCConfigFile config = eCConfigFile();
+    if (config.ReadFile(bCString("newbalance.ini")))
+    {
+        static gCSessionKeys sessionKeys = gCSessionKeys();
+        sessionKeys = gCSession::GetInstance().GetSessionKeys();
+
+        auto pKey1 = sessionKeys.GetAssignedKey(gESessionKey_Parry, 0);
+        if (pKey1)
+        {
+            config.SetValue("SessionKey.Parry", "Key1.Type", pKey1->m_eDeviceType);
+            config.SetValue("SessionKey.Parry", "Key1.Offset", pKey1->m_enuKeyboardStateOffset); // In union should be the same value!
+        }
+
+        auto pKey2 = sessionKeys.GetAssignedKey(gESessionKey_Parry, 1);
+        if (pKey2)
+        {
+            config.SetValue("SessionKey.Parry", "Key2.Type", pKey2->m_eDeviceType);
+            config.SetValue("SessionKey.Parry", "Key2.Offset", pKey2->m_enuKeyboardStateOffset); // In union should be the same value!
+        }
+
+        config.WriteFile();
+    }
 }
 
 void HookFunctions()
 {
-    Hook_OptionControll_InitControllList
-        .Prepare(RVA_Game(0xa8f30), &OptionControll_InitControllList, mCBaseHook::mEHookType_Mixed, mERegisterType_Edi)
+    Hook_OptionsControll_UpdateConfig
+    .Prepare(RVA_Game(0x93690), &OptionsControll_UpdateConfig, mCBaseHook::mEHookType_ThisCall)
+    .Hook();
+
+    Hook_OptionsControll_InitControllList
+        .Prepare(RVA_Game(0xa8f30), &OptionsControll_InitControllList, mCBaseHook::mEHookType_Mixed, mERegisterType_Edi)
         .Hook();
 
     Hook_OnPlayerGameKeyPressed.Hook(GetScriptAdminExt().GetScript("OnPlayerGameKeyPressed")->m_funcScript,
