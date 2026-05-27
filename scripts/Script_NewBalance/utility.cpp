@@ -618,6 +618,7 @@ GEInt CanFreeze(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a
 GEInt CanBePoisoned(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs)
 {
     INIT_SCRIPT_EXT(Victim, Damager);
+    UNREFERENCED_PARAMETER(a_iArgs);
 
     if (GetScriptAdmin().CallScriptFromScript("IsEvil", &Victim, &None, 0))
     {
@@ -634,23 +635,123 @@ GEInt CanBePoisoned(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entit
         return 0;
     }
 
-    if (!a_iArgs && Damager.Damage.GetProperty<PSDamage::PropertyDamageType>() == 2 && !IsNormalProjectileNB(Damager))
+    if (Victim.IsPlayer() && Victim.Inventory.IsSkillActive("Perk_ImmuneToPoison"))
     {
         return 0;
     }
 
-    if (Victim.IsPlayer())
+    // Human Elite Assassins are resistant to regular poison!
+    if (!Victim.IsPlayer() && Victim.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Human
+        && Victim.NPC.GetProperty<PSNpc::PropertyPoliticalAlignment>() == gEPoliticalAlignment_Ass
+        && Victim.NPC.GetProperty<PSNpc::PropertyLevelMax>() >= NBConfig::eliteLevel)
     {
-        if (Victim.Inventory.IsSkillActive("Perk_ImmuneToPoison"))
-        {
-            return 0;
-        }
+        return 0;
+    }
+
+    Entity DamagerOwner = Damager.Interaction.GetOwner();
+    if (DamagerOwner == None)
+        return 0;
+
+    auto &ScriptAdmin = GetScriptAdmin();
+    // Non Humanoids with fist weapons, Like Bloodfly always poison!
+    if (!ScriptAdmin.CallScriptFromScript("IsHumanoid", &DamagerOwner, &None)
+        && ScriptAdmin.CallScriptFromScript("IsInFistMode", &Victim, &None, 0))
+    {
         return 1;
     }
 
-    if (Victim.NPC.GetProperty<PSNpc::PropertyPoliticalAlignment>() == gEPoliticalAlignment_Ass)
+    gEAction DamagerOwnerAction = DamagerOwner.Routine.GetProperty<PSRoutine::PropertyAction>();
+    GEInt random = Entity::GetRandomNumber(100);
+
+    switch (DamagerOwnerAction)
+    {
+        case gEAction_QuickAttack:
+        case gEAction_QuickAttackR:
+        case gEAction_QuickAttackL:
+            if (random <= 15)
+                return 1;
+            break;
+        case gEAction_PowerAttack:
+        case gEAction_SprintAttack:
+            if (random <= 30)
+                return 1;
+            break;
+        case gEAction_HackAttack:
+        case gEAction_PierceAttack: return 1;
+
+        // All regular other attacks
+        default:
+            if (random <= 20)
+                return 1;
+            break;
+    }
+
+    return 0;
+}
+
+GEInt CanBeDiseased(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs)
+{
+    INIT_SCRIPT_EXT(Victim, Damager);
+    UNREFERENCED_PARAMETER(a_iArgs);
+
+    if (GetScriptAdmin().CallScriptFromScript("IsEvil", &Victim, &None, 0))
+    {
         return 0;
-    return 1;
+    }
+
+    if (Damager.Magic.IsValid())
+    {
+        return 1;
+    }
+
+    if (!Damager.IsItem() || !(Damager.Item.GetQuality() & gEItemQuality_Diseased))
+    {
+        return 0;
+    }
+
+    if (Victim.IsPlayer() && Victim.Inventory.IsSkillActive("Perk_ImmuneToDisease"))
+    {
+        return 0;
+    }
+
+    auto &ScriptAdmin = GetScriptAdmin();
+    // Bosses get immunity for now
+    if (ScriptAdmin.CallScriptFromScript("IsBoss", &Victim, &None))
+    {
+        return 0;
+    }
+
+    Entity DamagerOwner = Damager.Interaction.GetOwner();
+    if (DamagerOwner == None)
+        return 0;
+
+    gEAction DamagerOwnerAction = DamagerOwner.Routine.GetProperty<PSRoutine::PropertyAction>();
+    GEInt random = Entity::GetRandomNumber(100);
+
+    switch (DamagerOwnerAction)
+    {
+        case gEAction_QuickAttack:
+        case gEAction_QuickAttackR:
+        case gEAction_QuickAttackL:
+            if (random <= 15)
+                return 1;
+            break;
+        case gEAction_PowerAttack:
+        case gEAction_SprintAttack:
+            if (random <= 30)
+                return 1;
+            break;
+        case gEAction_HackAttack:
+        case gEAction_PierceAttack: return 1;
+
+        // All regular other attacks
+        default:
+            if (random <= 20)
+                return 1;
+            break;
+    }
+
+    return 0;
 }
 
 GEBool IsNormalProjectileNB(Entity &p_damager)

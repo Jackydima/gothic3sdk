@@ -84,6 +84,7 @@ GEInt IsEvil(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pO
 GEInt CanBurn(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs);
 GEInt CanFreeze(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs);
 GEInt CanBePoisoned(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs);
+GEInt CanBeDiseased(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs);
 GEBool IsNormalProjectileNB(Entity &p_damager);
 GEBool IsSpellContainerNB(Entity &p_damager);
 GEBool IsMagicProjectileNB(Entity &p_damager);

@@ -922,9 +922,7 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         return gEAction_LieKnockDown;
     }
 
-    if (ScriptAdmin.CallScriptFromScript("CanBePoisoned", &Victim, &Damager,
-                                         DamagerOwnerAction == gEAction_PierceAttack
-                                             || DamagerOwnerAction == gEAction_HackAttack))
+    if (ScriptAdmin.CallScriptFromScript("CanBePoisoned", &Victim, &Damager))
     {
         if (pVictimDamageReceiver && pVictimDamageReceiver->IsValid())
         {
@@ -936,6 +934,10 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     if (ScriptAdmin.CallScriptFromScript("CanBeDiseased", &Victim, &Damager, 0))
     {
         Victim.NPC.EnableStatusEffects(gEStatusEffect_Diseased, GETrue);
+        if (pVictimDamageReceiver && pVictimDamageReceiver->IsValid())
+        {
+            pVictimDamageReceiver->AccessDiseaseTimeStamp() = Entity::GetWorldEntity().Clock.GetWorldTime();
+        }
     }
 
     if (ScriptAdmin.CallScriptFromScript("CanFreeze", &Victim, &Damager, FinalDamage2))
@@ -1957,6 +1959,10 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     if (ScriptAdmin.CallScriptFromScript("CanBeDiseased", &Victim, &Damager, 0))
     {
         Victim.NPC.EnableStatusEffects(gEStatusEffect_Diseased, GETrue);
+        if (pVictimDamageReceiver && pVictimDamageReceiver->IsValid())
+        {
+            pVictimDamageReceiver->AccessDiseaseTimeStamp() = Entity::GetWorldEntity().Clock.GetWorldTime();
+        }
     }
 
     if (ScriptAdmin.CallScriptFromScript("CanFreeze", &Victim, &Damager, FinalDamage2))

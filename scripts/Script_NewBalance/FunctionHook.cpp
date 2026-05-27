@@ -705,6 +705,13 @@ GEInt GE_STDCALL OnTick(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, E
         }
     }
 
+    // Handle Disease Time now too!
+    if (Self.NPC.IsDiseased())
+    {
+        // TODO Handle Timer!
+        //Entity::GetWorldEntity().Clock.GetWorldTime();
+    }
+
     return Hook_OnTick.GetOriginalFunction(&OnTick)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
 }
 
@@ -2600,6 +2607,9 @@ void HookFunctions()
     static mCFunctionHook Hook_CanBePoisoned;
     Hook_CanBePoisoned.Hook(GetScriptAdminExt().GetScript("CanBePoisoned")->m_funcScript, &CanBePoisoned);
 
+    static mCFunctionHook Hook_CanBeDiseased;
+    Hook_CanBeDiseased.Hook(GetScriptAdminExt().GetScript("CanBeDiseased")->m_funcScript, &CanBeDiseased);
+    
     Hook_AddHitPoints.Prepare(RVA_ScriptGame(0x35b50), &AddHitPoints).Hook();
     Hook_OnTick.Prepare(RVA_ScriptGame(0xb0ef0), &OnTick).Hook();
 
