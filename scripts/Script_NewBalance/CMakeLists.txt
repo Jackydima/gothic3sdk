@@ -6,6 +6,8 @@ target_gothic_script_options(Script_NewBalance)
 
 target_tree_sources(Script_NewBalance
   PRIVATE
+    AssessHit.cpp
+    AssessHit.h
     CallHook.cpp
     CodePatch.cpp
     FunctionHook.cpp

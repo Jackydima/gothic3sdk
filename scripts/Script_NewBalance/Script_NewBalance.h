@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CallHook.h"
+#include "AssessHit.h"
 #include "CodePatch.h"
 #include "FunctionHook.h"
 #include "MyGUI.h"

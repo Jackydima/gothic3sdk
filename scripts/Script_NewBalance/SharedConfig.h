@@ -27,9 +27,10 @@ extern GEInt MonsterRageModus;
 
 extern GEFloat summoningLevelMultiplier;
 
+extern GEBool UseNewDamageCalculation;
 extern GEBool newSummoning;
 extern GEBool vanishSummons;
-extern GEBool onlyHeaveAttackKnockDown;
+extern GEBool onlyHeavyAttackKnockDown;
 extern GEBool useExtendedBlocking;
 extern GEBool useHardCoreAttacks;
 extern GEBool useDamagingInnosLight;
@@ -91,6 +92,8 @@ extern GEInt sharpBonus;
 extern GEBool useSharpPercentage;
 extern GEInt forgedBonus;
 extern GEInt wornPercentageMalus;
+
+extern GEInt healthRecoveryDelay;
 
 //
 //

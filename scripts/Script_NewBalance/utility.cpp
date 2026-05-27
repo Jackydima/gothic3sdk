@@ -256,13 +256,7 @@ GEBool IsInActiveAttack(Entity &p_entity)
         case gEAction_SimpleWhirl:
         case gEAction_WhirlAttack:
         case gEAction_SprintAttack:
-            va = GetPropertySet<eCVisualAnimation_PS>(p_entity.GetGameEntity(), eEPropertySetType_Animation);
-            if (!va)
-                return GEFalse;
-
-            ptrCurrentMotionDescription = va->GetMotionDesc((eCWrapper_emfx2Actor::eEMotionType)0).GetMotionFilename();
-            print("%sEntity -> Motion:%s\n", p_entity.GetName().GetText(), ptrCurrentMotionDescription.GetText());
-            if (ptrCurrentMotionDescription.Contains("Hit"))
+            if (p_entity.GetCurrentAniPhase() == gEPhase_Hit)
                 return GETrue;
         default: break;
     }

@@ -21,9 +21,10 @@ GEInt MonsterRageModus = 0;
 
 GEFloat summoningLevelMultiplier = 7.5f;
 
+GEBool UseNewDamageCalculation = GETrue;
 GEBool newSummoning = GETrue;
 GEBool vanishSummons = GETrue;
-GEBool onlyHeaveAttackKnockDown = GEFalse;
+GEBool onlyHeavyAttackKnockDown = GEFalse;
 GEBool useHardCoreAttacks = GETrue;
 GEBool useExtendedBlocking = GEFalse;
 GEBool useDamagingInnosLight = GETrue;
@@ -84,4 +85,5 @@ GEInt sharpBonus = 10;
 GEBool useSharpPercentage = GETrue;
 GEInt forgedBonus = 20;
 GEInt wornPercentageMalus = 70;
+GEInt healthRecoveryDelay = 60;
 } // namespace NBConfig

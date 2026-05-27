@@ -6,8 +6,9 @@ ME_DEFINE_PROPERTY_TYPE(gCDamageReceiver_PS_Ext, gCDamageReceiver_PS, PoisonDama
 ME_DEFINE_PROPERTY_TYPE(gCDamageReceiver_PS_Ext, gCDamageReceiver_PS, LastBlockTimeStamp, m_LastBlockTimeStamp)
 ME_DEFINE_PROPERTY_TYPE(gCDamageReceiver_PS_Ext, gCDamageReceiver_PS, PerfectBlockDelayed, m_PerfectBlockDelayed)
 ME_DEFINE_PROPERTY_TYPE(gCDamageReceiver_PS_Ext, gCDamageReceiver_PS, LastStaminaUsage, m_LastStaminaUsage)
+ME_DEFINE_PROPERTY_TYPE(gCDamageReceiver_PS_Ext, gCDamageReceiver_PS, LastHealthDamage, m_LastHealthDamage)
 
-gCDamageReceiver_PS_Ext::gCDamageReceiver_PS_Ext(void) : m_PoisonDamage(4), m_LastBlockTimeStamp(0), m_PerfectBlockDelayed(0), m_LastStaminaUsage(0)
+gCDamageReceiver_PS_Ext::gCDamageReceiver_PS_Ext(void) : m_PoisonDamage(4), m_LastBlockTimeStamp(0), m_PerfectBlockDelayed(0), m_LastStaminaUsage(0), m_LastHealthDamage(0)
 {}
 
 void gCDamageReceiver_PS_Ext::Invalidate()
@@ -17,6 +18,7 @@ void gCDamageReceiver_PS_Ext::Invalidate()
     this->m_LastBlockTimeStamp = 0;
     this->m_PerfectBlockDelayed = 0;
     this->m_LastBlockTimeStamp = 0;
+    this->m_LastHealthDamage = 0;
 }
 
 ME_MODULE(gCDamageReceiver_PS_Ext)

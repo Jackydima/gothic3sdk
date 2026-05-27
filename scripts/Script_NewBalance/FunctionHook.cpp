@@ -248,25 +248,6 @@ GEInt OnPowerAim_Loop(gCScriptProcessingUnit *p_PSU)
     return 1;
 }
 
-static std::map<bCString, GEInt> LastHealthDamageMap = {};
-static GEInt healthRecoveryDelay = 60;
-
-GEInt HealthUpdateOnTickHelper(Entity &p_entity, GEInt p_healthValue)
-{
-    // std::cout << "HealthInc: " << p_healthValue << "\t Last Time: " << getLastHealthDamageTime (
-    // p_entity.GetGameEntity ( )->GetID ( ).GetText ( ) ) << "\n";
-    if (p_healthValue > 0
-        && getLastTimeFromMap(p_entity.GetGameEntity()->GetID().GetText(), LastHealthDamageMap) < healthRecoveryDelay)
-        return 0;
-    return p_healthValue;
-}
-
-void ResetHitPointsRegen(Entity &p_entity)
-{
-    LastHealthDamageMap[p_entity.GetGameEntity()->GetID().GetText()] =
-        Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
-}
-
 GEInt GE_STDCALL MagicPoison(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity,
                              GEU32 a_iArgs)
 {
@@ -278,96 +259,16 @@ GEInt GE_STDCALL MagicPoison(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnti
     {
         auto damageReceiver = static_cast<gCDamageReceiver_PS_Ext *>(
             Other.GetGameEntity()->GetPropertySet(eEPropertySetType_DamageReceiver));
-        damageReceiver->AccessPoisonDamage() = GetPoisonDamage(Self);
-        Other.NPC.EnableStatusEffects(gEStatusEffect_Poisoned, GETrue);
+        if (damageReceiver && damageReceiver->IsValid())
+        {
+            damageReceiver->AccessPoisonDamage() = GetPoisonDamage(Self);
+            Other.NPC.EnableStatusEffects(gEStatusEffect_Poisoned, GETrue);
+        }
     }
 
     GetScriptAdmin().CallScriptFromScript("AssessTarget", &Other, &Self, gEAttackReason_ReactToDamage);
 
     return 1;
-}
-
-static mCFunctionHook Hook_AddHitPoints;
-GEInt GE_STDCALL AddHitPoints(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity,
-                              GEI32 a_iArgs)
-{
-    INIT_SCRIPT_EXT(Self, Other);
-    if (a_iArgs < 0)
-    {
-        ResetHitPointsRegen(Self);
-    }
-    return Hook_AddHitPoints.GetOriginalFunction(&AddHitPoints)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
-}
-
-GEInt UpdateHitPointsOnTick(Entity p_entity)
-{
-    GEInt retVal = 0;
-    gEAIMode aiMode = p_entity.Routine.GetProperty<PSRoutine::PropertyAIMode>();
-    // GEBool aBActive = eCApplication::GetInstance ( ).GetEngineSetup ( ).AlternativeBalancing;
-    if (aiMode == gEAIMode_Dead)
-    {
-        return 0;
-    }
-
-    if (p_entity.NPC.IsBurning())
-        retVal -= 5;
-
-    if (p_entity.NPC.IsPoisoned())
-    {
-        gCDamageReceiver_PS_Ext *damageReceiver = static_cast<gCDamageReceiver_PS_Ext *>(
-            p_entity.GetGameEntity()->GetPropertySet(eEPropertySetType_DamageReceiver));
-        GEU32 poisonDamage = damageReceiver->GetPoisonDamage();
-        if (poisonDamage <= 0)
-            poisonDamage = 5;
-        retVal -= poisonDamage;
-    }
-    if (p_entity.NPC.IsFrozen())
-    {
-        retVal -= 2;
-    }
-
-    if (p_entity.NPC.IsInMagicBarrier())
-        retVal -= 10;
-
-    if (retVal < 0)
-        return HealthUpdateOnTickHelper(p_entity, retVal);
-
-    if (p_entity.IsPlayer() && p_entity.Inventory.IsSkillActive("Perk_MasterGladiator"))
-    {
-        GEInt maxHealth = p_entity.PlayerMemory.GetHitPointsMax();
-        retVal += static_cast<GEInt>(maxHealth * 0.01);
-    }
-    else if (!p_entity.IsPlayer()
-             && p_entity.Party.AccessProperty<PSParty::PropertyPartyMemberType>() != gEPartyMemberType_Summoned
-             && getPowerLevel(p_entity) >= NBConfig::bossLevel)
-    {
-        GEInt maxHealth = p_entity.DamageReceiver.GetProperty<PSDamageReceiver::PropertyHitPointsMax>();
-        retVal += static_cast<GEInt>(maxHealth * 0.01);
-    }
-
-    if (retVal > 0)
-    {
-        if (aiMode == gEAIMode_Combat)
-            retVal = static_cast<GEInt>(retVal * 0.5);
-        if (retVal < 3)
-        {
-            retVal = 3;
-        }
-    }
-
-    gEAniState aniState = p_entity.Routine.GetProperty<PSRoutine::PropertyAniState>();
-    switch (aniState)
-    {
-        case gEAniState_SitThrone:
-        case gEAniState_SitGround:
-        case gEAniState_SitStool:
-        case gEAniState_SitBench:
-        case gEAniState_SleepGround:
-        case gEAniState_SleepBed:     retVal += 5; break;
-        case gEAniState_SitKnockDown:
-        case gEAniState_LieKnockDown: return 0;
-    }
-    return HealthUpdateOnTickHelper(p_entity, retVal);
 }
 
 GEInt GE_STDCALL CanParade(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs)
@@ -545,6 +446,220 @@ DECLARE_SCRIPT(CanParadeMoveOf)
 
     // default
     return GETrue;
+}
+
+GEInt StaminaUpdateOnTickHelper(Entity &p_entity, GEInt p_staminaValue)
+{
+    gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
+        GetPropertySet<gCDamageReceiver_PS_Ext>(p_entity.GetGameEntity(), eEPropertySetType_DamageReceiver);
+    if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
+    {
+        GEU32 worldTime = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
+        if (p_staminaValue > 0
+            && worldTime <= (NBConfig::staminaRecoveryDelay + pSelfDamageReceiver->GetLastStaminaUsage()))
+            return 0;
+    }
+    return p_staminaValue;
+}
+
+static mCFunctionHook Hook_StaminaUpdateOnTick;
+GEInt StaminaUpdateOnTick(Entity p_entity)
+{
+    const GEInt standardStaminaRecovery = NBConfig::staminaRecoveryPerTick;
+
+    if (p_entity.IsPlayer() && p_entity.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction::gEAction_Aim)
+    {
+        if (GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &p_entity, &None, 0) <= 7)
+        {
+            p_entity.Routine.FullStop();
+            p_entity.Routine.SetState("PS_Normal");
+            bCString aniname = p_entity.GetAni(gEAction_AbortAttack, gEPhase::gEPhase_Begin);
+            p_entity.StartPlayAni(aniname, 0, GETrue, 0, GEFalse);
+        }
+        return StaminaUpdateOnTickHelper(p_entity, -7);
+    }
+
+    // For Now Only for player!
+    if (p_entity.IsSprinting() || (p_entity.IsSwimming() && *(BYTE *)RVA_Executable(0x27FD2)))
+    {
+        if (p_entity.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Bloodfly)
+        {
+            return StaminaUpdateOnTickHelper(p_entity, -1);
+        }
+
+        if (eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing)
+        {
+            if (p_entity.Inventory.IsSkillActive(Template("Perk_Sprinter"))
+                || (p_entity != Entity::GetPlayer() && getPowerLevel(p_entity) >= NBConfig::warriorLevel))
+                return StaminaUpdateOnTickHelper(p_entity, -4);
+            return StaminaUpdateOnTickHelper(p_entity, -8);
+        }
+        if (p_entity.Inventory.IsSkillActive(Template("Perk_Sprinter"))
+            || (p_entity != Entity::GetPlayer() && getPowerLevel(p_entity) >= NBConfig::warriorLevel))
+            return StaminaUpdateOnTickHelper(p_entity, -5);
+        return StaminaUpdateOnTickHelper(p_entity, -10);
+    }
+
+    if (p_entity.IsJumping())
+        return StaminaUpdateOnTickHelper(p_entity, 0);
+
+    if (p_entity.NPC.IsDiseased())
+        return StaminaUpdateOnTickHelper(p_entity, 2);
+
+    // HoldingBlockFlag 0x118ab0
+    if (*(BYTE *)RVA_ScriptGame(0x118ab0) && eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing)
+        return StaminaUpdateOnTickHelper(p_entity, 2);
+    typedef GEU32(GetWeatherAdmin)(void);
+    // Get eCWeatherAdmin *! also available at RVA_ScriptGame(0x11a210)
+    GetWeatherAdmin *getWeatherAdminFunction = (GetWeatherAdmin *)RVA_ScriptGame(0x12e0);
+
+    GEU32 weatherAdmin = getWeatherAdminFunction();
+    // Or Temperatur
+    GEFloat weatherCondition = *(GEFloat *)(weatherAdmin + 0xd0);
+
+    // Maybe Add more complex logic for Npcs aswell bro
+    if (weatherCondition >= 40.0)
+    {
+        if (p_entity.IsPlayer() && !p_entity.Inventory.IsSkillActive(Template("Perk_ResistHeat")))
+            return StaminaUpdateOnTickHelper(p_entity, 4);
+        return StaminaUpdateOnTickHelper(p_entity, standardStaminaRecovery);
+    }
+
+    if (weatherCondition <= -40.0)
+    {
+        if (p_entity.IsPlayer() && !p_entity.Inventory.IsSkillActive(Template("Perk_ResistCold")))
+            return StaminaUpdateOnTickHelper(p_entity, 4);
+        return StaminaUpdateOnTickHelper(p_entity, standardStaminaRecovery);
+    }
+
+    return StaminaUpdateOnTickHelper(p_entity, standardStaminaRecovery);
+}
+
+static mCFunctionHook Hook_AddStaminaPoints;
+GEInt AddStaminaPoints(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEI32 a_iArgs)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+    if (a_iArgs < 0)
+    {
+        gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
+            GetPropertySet<gCDamageReceiver_PS_Ext>(Self.GetGameEntity(), eEPropertySetType_DamageReceiver);
+        if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
+        {
+            GEU32 uTimeStamp = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
+            // Extra stamina punish if all stamina was depleted!
+            if ((GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &Self, &None) + a_iArgs) <= 0)
+            {
+                uTimeStamp += NBConfig::staminaRecoveryDelay;
+            }
+            pSelfDamageReceiver->AccessLastStaminaUsage() = uTimeStamp;
+        }
+
+        // LastStaminaUsageMap[Self.GetGameEntity()->GetID().GetText()] = static_cast<GEInt>(
+        //     Entity::GetWorldEntity().Clock.GetTimeStampInSeconds());
+    }
+    return Hook_AddStaminaPoints.GetOriginalFunction(&AddStaminaPoints)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
+}
+
+GEInt HealthUpdateOnTickHelper(Entity &p_entity, GEInt p_healthValue)
+{
+    gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
+        GetPropertySet<gCDamageReceiver_PS_Ext>(p_entity.GetGameEntity(), eEPropertySetType_DamageReceiver);
+    if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
+    {
+        GEU32 worldTime = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
+        if (p_healthValue > 0
+            && worldTime <= (NBConfig::healthRecoveryDelay + pSelfDamageReceiver->GetLastHealthDamage()))
+            return 0;
+    }
+    return p_healthValue;
+}
+
+static mCFunctionHook Hook_AddHitPoints;
+GEInt GE_STDCALL AddHitPoints(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity,
+                              GEI32 a_iArgs)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+    if (a_iArgs < 0)
+    {
+        auto pSelfDamageReceiver =
+            GetPropertySet<gCDamageReceiver_PS_Ext>(Self.GetGameEntity(), eEPropertySetType_DamageReceiver);
+        if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
+        {
+            pSelfDamageReceiver->SetLastHealthDamage(Entity::GetWorldEntity().Clock.GetTimeStampInSeconds());
+        }
+    }
+    return Hook_AddHitPoints.GetOriginalFunction(&AddHitPoints)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
+}
+
+GEInt UpdateHitPointsOnTick(Entity p_entity)
+{
+    GEInt retVal = 0;
+    gEAIMode aiMode = p_entity.Routine.GetProperty<PSRoutine::PropertyAIMode>();
+    // GEBool aBActive = eCApplication::GetInstance ( ).GetEngineSetup ( ).AlternativeBalancing;
+    if (aiMode == gEAIMode_Dead)
+    {
+        return 0;
+    }
+
+    if (p_entity.NPC.IsBurning())
+        retVal -= 5;
+
+    if (p_entity.NPC.IsPoisoned())
+    {
+        gCDamageReceiver_PS_Ext *damageReceiver = static_cast<gCDamageReceiver_PS_Ext *>(
+            p_entity.GetGameEntity()->GetPropertySet(eEPropertySetType_DamageReceiver));
+        GEU32 poisonDamage = damageReceiver->GetPoisonDamage();
+        if (poisonDamage <= 0)
+            poisonDamage = 5;
+        retVal -= poisonDamage;
+    }
+    if (p_entity.NPC.IsFrozen())
+    {
+        retVal -= 2;
+    }
+
+    if (p_entity.NPC.IsInMagicBarrier())
+        retVal -= 10;
+
+    if (retVal < 0)
+        return HealthUpdateOnTickHelper(p_entity, retVal);
+
+    if (p_entity.IsPlayer() && p_entity.Inventory.IsSkillActive("Perk_MasterGladiator"))
+    {
+        GEInt maxHealth = p_entity.PlayerMemory.GetHitPointsMax();
+        retVal += static_cast<GEInt>(maxHealth * 0.01);
+    }
+    else if (!p_entity.IsPlayer()
+             && p_entity.Party.AccessProperty<PSParty::PropertyPartyMemberType>() != gEPartyMemberType_Summoned
+             && getPowerLevel(p_entity) >= NBConfig::bossLevel)
+    {
+        GEInt maxHealth = p_entity.DamageReceiver.GetProperty<PSDamageReceiver::PropertyHitPointsMax>();
+        retVal += static_cast<GEInt>(maxHealth * 0.01);
+    }
+
+    if (retVal > 0)
+    {
+        if (aiMode == gEAIMode_Combat)
+            retVal = static_cast<GEInt>(retVal * 0.5);
+        if (retVal < 3)
+        {
+            retVal = 3;
+        }
+    }
+
+    gEAniState aniState = p_entity.Routine.GetProperty<PSRoutine::PropertyAniState>();
+    switch (aniState)
+    {
+        case gEAniState_SitThrone:
+        case gEAniState_SitGround:
+        case gEAniState_SitStool:
+        case gEAniState_SitBench:
+        case gEAniState_SleepGround:
+        case gEAniState_SleepBed:     retVal += 5; break;
+        case gEAniState_SitKnockDown:
+        case gEAniState_LieKnockDown: return 0;
+    }
+    return HealthUpdateOnTickHelper(p_entity, retVal);
 }
 
 static mCFunctionHook Hook_OnTick;
@@ -1044,118 +1159,6 @@ GEInt GE_STDCALL GetMaxLevel(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnti
                    + Self.NPC.GetProperty<PSNpc::PropertyLevel>())
                 / 2;
     return level;
-}
-
-GEInt StaminaUpdateOnTickHelper(Entity &p_entity, GEInt p_staminaValue)
-{
-    gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
-        GetPropertySet<gCDamageReceiver_PS_Ext>(p_entity.GetGameEntity(), eEPropertySetType_DamageReceiver);
-    if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
-    {
-        GEU32 worldTime = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
-        if (p_staminaValue > 0
-            && worldTime <= (NBConfig::staminaRecoveryDelay + pSelfDamageReceiver->GetLastStaminaUsage()))
-            return 0;
-    }
-    return p_staminaValue;
-}
-
-static mCFunctionHook Hook_StaminaUpdateOnTick;
-GEInt StaminaUpdateOnTick(Entity p_entity)
-{
-    const GEInt standardStaminaRecovery = NBConfig::staminaRecoveryPerTick;
-
-    if (p_entity.IsPlayer() && p_entity.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction::gEAction_Aim)
-    {
-        if (GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &p_entity, &None, 0) <= 7)
-        {
-            p_entity.Routine.FullStop();
-            p_entity.Routine.SetState("PS_Normal");
-            bCString aniname = p_entity.GetAni(gEAction_AbortAttack, gEPhase::gEPhase_Begin);
-            p_entity.StartPlayAni(aniname, 0, GETrue, 0, GEFalse);
-        }
-        return StaminaUpdateOnTickHelper(p_entity, -7);
-    }
-
-    // For Now Only for player!
-    if (p_entity.IsSprinting() || (p_entity.IsSwimming() && *(BYTE *)RVA_Executable(0x27FD2)))
-    {
-        if (p_entity.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Bloodfly)
-        {
-            return StaminaUpdateOnTickHelper(p_entity, -1);
-        }
-
-        if (eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing)
-        {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Sprinter"))
-                || (p_entity != Entity::GetPlayer() && getPowerLevel(p_entity) >= NBConfig::warriorLevel))
-                return StaminaUpdateOnTickHelper(p_entity, -4);
-            return StaminaUpdateOnTickHelper(p_entity, -8);
-        }
-        if (p_entity.Inventory.IsSkillActive(Template("Perk_Sprinter"))
-            || (p_entity != Entity::GetPlayer() && getPowerLevel(p_entity) >= NBConfig::warriorLevel))
-            return StaminaUpdateOnTickHelper(p_entity, -5);
-        return StaminaUpdateOnTickHelper(p_entity, -10);
-    }
-
-    if (p_entity.IsJumping())
-        return StaminaUpdateOnTickHelper(p_entity, 0);
-
-    if (p_entity.NPC.IsDiseased())
-        return StaminaUpdateOnTickHelper(p_entity, 2);
-
-    // HoldingBlockFlag 0x118ab0
-    if (*(BYTE *)RVA_ScriptGame(0x118ab0) && eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing)
-        return StaminaUpdateOnTickHelper(p_entity, 2);
-    typedef GEU32(GetWeatherAdmin)(void);
-    // Get eCWeatherAdmin *! also available at RVA_ScriptGame(0x11a210)
-    GetWeatherAdmin *getWeatherAdminFunction = (GetWeatherAdmin *)RVA_ScriptGame(0x12e0);
-
-    GEU32 weatherAdmin = getWeatherAdminFunction();
-    // Or Temperatur
-    GEFloat weatherCondition = *(GEFloat *)(weatherAdmin + 0xd0);
-
-    // Maybe Add more complex logic for Npcs aswell bro
-    if (weatherCondition >= 40.0)
-    {
-        if (p_entity.IsPlayer() && !p_entity.Inventory.IsSkillActive(Template("Perk_ResistHeat")))
-            return StaminaUpdateOnTickHelper(p_entity, 4);
-        return StaminaUpdateOnTickHelper(p_entity, standardStaminaRecovery);
-    }
-
-    if (weatherCondition <= -40.0)
-    {
-        if (p_entity.IsPlayer() && !p_entity.Inventory.IsSkillActive(Template("Perk_ResistCold")))
-            return StaminaUpdateOnTickHelper(p_entity, 4);
-        return StaminaUpdateOnTickHelper(p_entity, standardStaminaRecovery);
-    }
-
-    return StaminaUpdateOnTickHelper(p_entity, standardStaminaRecovery);
-}
-
-static mCFunctionHook Hook_AddStaminaPoints;
-GEInt AddStaminaPoints(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEI32 a_iArgs)
-{
-    INIT_SCRIPT_EXT(Self, Other);
-    if (a_iArgs < 0)
-    {
-        gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
-            GetPropertySet<gCDamageReceiver_PS_Ext>(Self.GetGameEntity(), eEPropertySetType_DamageReceiver);
-        if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
-        {
-            GEU32 uTimeStamp = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
-            // Extra stamina punish if all stamina was depleted!
-            if ((GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &Self, &None) + a_iArgs) <= 0)
-            {
-                uTimeStamp += NBConfig::staminaRecoveryDelay;
-            }
-            pSelfDamageReceiver->AccessLastStaminaUsage() = uTimeStamp;
-        }
-
-        // LastStaminaUsageMap[Self.GetGameEntity()->GetID().GetText()] = static_cast<GEInt>(
-        //     Entity::GetWorldEntity().Clock.GetTimeStampInSeconds());
-    }
-    return Hook_AddStaminaPoints.GetOriginalFunction(&AddStaminaPoints)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
 }
 
 static mCFunctionHook Hook_GetAttituteSummons;
@@ -2466,13 +2469,13 @@ void GE_STDCALL OptionsControll_InitControllList(void)
     }
 
     // Manually Set the Text afterwards
-    options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX-gESessionKey_Parry), 0, "Parry");
+    options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX - gESessionKey_Parry), 0, "Parry");
 }
 
 static mCFunctionHook Hook_OptionsControll_UpdateConfig;
-void GE_STDCALL OptionsControll_UpdateConfig(eCConfigFile * a_pConfigFile)
+void GE_STDCALL OptionsControll_UpdateConfig(eCConfigFile *a_pConfigFile)
 {
-    Hook_OptionsControll_UpdateConfig.GetOriginalFunction(&OptionsControll_UpdateConfig)(a_pConfigFile);
+    Hook_OptionsControll_UpdateConfig.GetOriginalFunction (&OptionsControll_UpdateConfig)(a_pConfigFile);
 
     static eCConfigFile config = eCConfigFile();
     if (config.ReadFile(bCString("newbalance.ini")))
@@ -2484,14 +2487,16 @@ void GE_STDCALL OptionsControll_UpdateConfig(eCConfigFile * a_pConfigFile)
         if (pKey1)
         {
             config.SetValue("SessionKey.Parry", "Key1.Type", pKey1->m_eDeviceType);
-            config.SetValue("SessionKey.Parry", "Key1.Offset", pKey1->m_enuKeyboardStateOffset); // In union should be the same value!
+            config.SetValue("SessionKey.Parry", "Key1.Offset",
+                            pKey1->m_enuKeyboardStateOffset); // In union should be the same value!
         }
 
         auto pKey2 = sessionKeys.GetAssignedKey(gESessionKey_Parry, 1);
         if (pKey2)
         {
             config.SetValue("SessionKey.Parry", "Key2.Type", pKey2->m_eDeviceType);
-            config.SetValue("SessionKey.Parry", "Key2.Offset", pKey2->m_enuKeyboardStateOffset); // In union should be the same value!
+            config.SetValue("SessionKey.Parry", "Key2.Offset",
+                            pKey2->m_enuKeyboardStateOffset); // In union should be the same value!
         }
 
         config.WriteFile();
@@ -2501,8 +2506,8 @@ void GE_STDCALL OptionsControll_UpdateConfig(eCConfigFile * a_pConfigFile)
 void HookFunctions()
 {
     Hook_OptionsControll_UpdateConfig
-    .Prepare(RVA_Game(0x93690), &OptionsControll_UpdateConfig, mCBaseHook::mEHookType_ThisCall)
-    .Hook();
+        .Prepare(RVA_Game(0x93690), &OptionsControll_UpdateConfig, mCBaseHook::mEHookType_ThisCall)
+        .Hook();
 
     Hook_OptionsControll_InitControllList
         .Prepare(RVA_Game(0xa8f30), &OptionsControll_InitControllList, mCBaseHook::mEHookType_Mixed, mERegisterType_Edi)
