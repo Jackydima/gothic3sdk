@@ -118,6 +118,8 @@ void LoadSettings()
         NBConfig::warriorLevel = config.GetInt("Script", "WarriorLevelCap", NBConfig::warriorLevel);
         NBConfig::noviceLevel = config.GetInt("Script", "NoviceLevelCap", NBConfig::noviceLevel);
         NBConfig::KnockDownThreshold = config.GetInt("Script", "KnockDownThreshold", NBConfig::KnockDownThreshold);
+        NBConfig::DiseaseNPCDuration = config.GetInt("Script", "DiseaseNPCDuration", NBConfig::DiseaseNPCDuration);
+        NBConfig::DiseasePlayerDuration = config.GetInt("Script", "DiseasePlayerDuration", NBConfig::DiseasePlayerDuration);
     }
 }
 

@@ -94,6 +94,8 @@ extern GEInt forgedBonus;
 extern GEInt wornPercentageMalus;
 
 extern GEInt healthRecoveryDelay;
+extern GEInt DiseaseNPCDuration;
+extern GEInt DiseasePlayerDuration;
 
 //
 //

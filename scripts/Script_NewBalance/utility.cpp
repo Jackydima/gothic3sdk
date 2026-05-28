@@ -245,7 +245,6 @@ GEBool IsInActiveAttack(Entity &p_entity)
     if (p_entity == None || !p_entity.Routine.IsValid())
         return GEFalse;
     gEAction currentAction = p_entity.Routine.GetProperty<PSRoutine::PropertyAction>();
-    eCVisualAnimation_PS *va;
     bCString ptrCurrentMotionDescription;
     switch (currentAction)
     {
@@ -643,7 +642,7 @@ GEInt CanBePoisoned(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entit
     // Human Elite Assassins are resistant to regular poison!
     if (!Victim.IsPlayer() && Victim.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Human
         && Victim.NPC.GetProperty<PSNpc::PropertyPoliticalAlignment>() == gEPoliticalAlignment_Ass
-        && Victim.NPC.GetProperty<PSNpc::PropertyLevelMax>() >= NBConfig::eliteLevel)
+        && static_cast<GEInt>(Victim.NPC.GetProperty<PSNpc::PropertyLevelMax>()) >= NBConfig::eliteLevel)
     {
         return 0;
     }

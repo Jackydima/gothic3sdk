@@ -86,4 +86,6 @@ GEBool useSharpPercentage = GETrue;
 GEInt forgedBonus = 20;
 GEInt wornPercentageMalus = 70;
 GEInt healthRecoveryDelay = 60;
+GEInt DiseaseNPCDuration = 12*1*60; // 12 Minutes Ingame = 1 Minute real time
+GEInt DiseasePlayerDuration = 8*60*60; // 8 Hours Ingame -> Sleeping possible, or wait like 45 minutes
 } // namespace NBConfig

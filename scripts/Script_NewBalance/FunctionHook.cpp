@@ -708,8 +708,24 @@ GEInt GE_STDCALL OnTick(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, E
     // Handle Disease Time now too!
     if (Self.NPC.IsDiseased())
     {
-        // TODO Handle Timer!
-        //Entity::GetWorldEntity().Clock.GetWorldTime();
+        GEU32 worldTime = Entity::GetTimeStampInSeconds();
+        GEU32 endingTime = 0;
+
+        if (Self.IsPlayer())
+        {
+            endingTime =
+                static_cast<GEU32>(NBConfig::DiseasePlayerDuration + Self.NPC.GetProperty<PSNpc::PropertyTimeStampDiseased>());
+        }
+        else
+        {
+            endingTime =
+                static_cast<GEU32>(NBConfig::DiseaseNPCDuration + Self.NPC.GetProperty<PSNpc::PropertyTimeStampDiseased>());
+        }
+
+        if (endingTime <= worldTime)
+        {
+            Self.NPC.EnableStatusEffects(gEStatusEffect_Diseased, GEFalse);
+        }
     }
 
     return Hook_OnTick.GetOriginalFunction(&OnTick)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
@@ -2609,7 +2625,7 @@ void HookFunctions()
 
     static mCFunctionHook Hook_CanBeDiseased;
     Hook_CanBeDiseased.Hook(GetScriptAdminExt().GetScript("CanBeDiseased")->m_funcScript, &CanBeDiseased);
-    
+
     Hook_AddHitPoints.Prepare(RVA_ScriptGame(0x35b50), &AddHitPoints).Hook();
     Hook_OnTick.Prepare(RVA_ScriptGame(0xb0ef0), &OnTick).Hook();
 
