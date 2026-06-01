@@ -817,7 +817,7 @@ void GE_STDCALL StartTransform(Entity *p_targetEntity, GEFloat p_duration, GEBoo
     GEInt healthPointsPercent = GetScriptAdmin().CallScriptFromScript("GetHitPointsPercent", &Self, &None);
 
     /**
-     * �fter TakeOver, The Player Takes over the targetEntity
+     * After TakeOver, The Player Takes over the targetEntity
      * The TargetEntity had no PlayerMemory and after the TakeOver, it gets the PlayerMem
      * with every Attribute of the Player on 100
      * Also the Self Entity (PC_Hero) is no longer the Player in checks
@@ -882,6 +882,8 @@ GEInt GE_STDCALL MagicSleep(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntit
     INIT_SCRIPT_EXT(Self, Other);
 
     gCInventory_PS *inventory = (gCInventory_PS *)Other.Inventory.m_pEngineEntityPropertySet;
+    if (!inventory)
+        return Hook_MagicSleep.GetOriginalFunction(&MagicSleep)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
 
     inventory->UnlinkStackFromSlot(gESlot_RightHand);
     inventory->UnlinkStackFromSlot(gESlot_LeftHand);
@@ -1006,7 +1008,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
             return static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetLevelMax", &Self, &None)
                                       * NBConfig::npcArmorMultiplier);
         }
-        
+
         gCItem_PS *pPSArmor = GetPropertySet<gCItem_PS>(npcArmor.GetGameEntity(), eEPropertySetType_Item);
         if (!pPSArmor)
         {
@@ -1202,38 +1204,57 @@ GEInt GetAttitudeSummons(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, 
     INIT_SCRIPT_EXT(Self, Other);
     gCScriptAdmin &ScriptAdmin = GetScriptAdmin();
 
-    if (Self.Party.GetPartyLeader() != None && Self.Party.GetPartyLeader() == Other.Party.GetPartyLeader())
+    Entity SelfPartyLeader = Self.Party.GetPartyLeader();
+    Entity OtherPartyLeader = Other.Party.GetPartyLeader();
+
+    if (SelfPartyLeader != None && SelfPartyLeader == OtherPartyLeader)
         return gEAttitude_Friendly;
 
     if (Self.Party.GetProperty<PSParty::PropertyPartyMemberType>() == gEPartyMemberType_Summoned
-        && Self.Party.GetPartyLeader() != Other && Self.Party.GetPartyLeader() != None)
+        && SelfPartyLeader != Other && SelfPartyLeader != None)
     {
-        if (!(Self.Party.GetPartyLeader().NPC.GetCurrentTarget() == Other
-              && Self.Party.GetPartyLeader().NPC.GetProperty<PSNpc::PropertyCombatState>() == 1))
+        if (!(SelfPartyLeader.NPC.GetCurrentTarget() == Other
+              && SelfPartyLeader.NPC.GetProperty<PSNpc::PropertyCombatState>() == 1))
         {
-            Entity selfLeader = Self.Party.GetPartyLeader();
+            Entity selfLeader = SelfPartyLeader;
             GEInt retVal = ScriptAdmin.CallScriptFromScript("GetAttitude", &selfLeader, &Other, a_iArgs);
-            if (retVal != 4)
-                return 2;
+            if (retVal != gEAttitude_Hostile)
+                return gEAttitude_Neutral;
             return retVal;
         }
     }
 
     if (Other.Party.GetProperty<PSParty::PropertyPartyMemberType>() == gEPartyMemberType_Summoned
-        && Other.Party.GetPartyLeader() != Self && Other.Party.GetPartyLeader() != None)
+        && OtherPartyLeader != Self && OtherPartyLeader != None)
     {
-        if (!(Other.Party.GetPartyLeader().NPC.GetCurrentTarget() == Self
-              && Other.Party.GetPartyLeader().NPC.GetProperty<PSNpc::PropertyCombatState>() == 1))
+        if (!(OtherPartyLeader.NPC.GetCurrentTarget() == Self
+              && OtherPartyLeader.NPC.GetProperty<PSNpc::PropertyCombatState>() == 1))
         {
-            Entity otherLeader = Other.Party.GetPartyLeader();
-            GEInt retVal = ScriptAdmin.CallScriptFromScript("GetAttitude", &otherLeader, &Self, a_iArgs);
-            if (retVal != 4)
-                return 2;
+            GEInt retVal = ScriptAdmin.CallScriptFromScript("GetAttitude", &OtherPartyLeader, &Self, a_iArgs);
+            if (retVal != gEAttitude_Hostile)
+                return gEAttitude_Neutral;
             return retVal;
         }
     }
     return Hook_GetAttituteSummons.GetOriginalFunction(&GetAttitudeSummons)(a_pSPU, a_pSelfEntity, a_pOtherEntity,
                                                                             a_iArgs);
+}
+
+static mCFunctionHook Hook_GetAttitudeToPlayer;
+GEInt GetAttitudeToPlayer(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+
+    if (Self.Party.GetProperty<PSParty::PropertyPartyMemberType>() == gEPartyMemberType_Summoned)
+    {
+        Entity SelfPartyLeader = Self.Party.GetPartyLeader();
+        if (SelfPartyLeader.NPC.GetCurrentTarget() != Entity::GetPlayer()
+            || SelfPartyLeader.NPC.GetProperty<PSNpc::PropertyCombatState>() != 1)
+            return gEAttitude_None;
+    }
+
+    return Hook_GetAttitudeToPlayer.GetOriginalFunction(&GetAttitudeSummons)(a_pSPU, a_pSelfEntity, a_pOtherEntity,
+        a_iArgs);
 }
 
 /**
@@ -2711,6 +2732,7 @@ void HookFunctions()
     }
 
     Hook_GetAttituteSummons.Hook(GetScriptAdminExt().GetScript("GetAttitude")->m_funcScript, &GetAttitudeSummons);
+    Hook_GetAttitudeToPlayer.Hook(GetScriptAdminExt().GetScript("GetAttitudeToPlayer")->m_funcScript, &GetAttitudeToPlayer);
 
     static mCFunctionHook Hook_GetQualityBonus;
     static mCFunctionHook Hook_OnPlayerGetDamage;
