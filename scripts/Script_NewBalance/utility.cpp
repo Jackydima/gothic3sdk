@@ -1145,56 +1145,70 @@ GEInt speciesLeftHand(Entity p_entity)
     return -1;
 }
 
-GEInt speciesRightHand(Entity p_entity)
+GEInt speciesRightHand(Entity a_Entity)
 {
-    gESpecies species = p_entity.NPC.GetProperty<PSNpc::PropertySpecies>();
+    gESpecies species = a_Entity.NPC.GetProperty<PSNpc::PropertySpecies>();
+    bCString fistTemplateName = "Fist_";
+    Template rightWeaponTemplate = Template(fistTemplateName + a_Entity.GetName());
+    Entity entityWeaponObject = Entity(rightWeaponTemplate);
+    if (rightWeaponTemplate.IsValid())
+    {
+        GEU32 uItemQuality = entityWeaponObject.Item.GetQuality();
+        return a_Entity.Inventory.AssureItems(rightWeaponTemplate, uItemQuality, 1);
+    }
 
     switch (species)
     {
-        case gESpecies_Zombie:
-        case gESpecies_Varan:
-        case gESpecies_Ripper: return p_entity.Inventory.AssureItems("Fist", gEItemQuality::gEItemQuality_Diseased, 1);
-        case gESpecies_Demon:
-            return p_entity.Inventory.AssureItems("It_2H_DemonSword_01", gEItemQuality::gEItemQuality_Burning, 1);
-        case gESpecies_Goblin:
-            return p_entity.Inventory.AssureItems("It_1H_Club_01", gEItemQuality::gEItemQuality_Worn, 1);
-        case gESpecies_Troll:
-            return p_entity.Inventory.AssureItems("TrollFist", gEItemQuality::gEItemQuality_Diseased, 1);
-        case gESpecies_FireVaran:
-        case gESpecies_FireGolem:
-            return p_entity.Inventory.AssureItems("Fist", gEItemQuality::gEItemQuality_Burning, 1);
-        case gESpecies_Bloodfly:
-        case gESpecies_SwampLurker:
-        case gESpecies_ScorpionKing:
-            return p_entity.Inventory.AssureItems("Fist", gEItemQuality::gEItemQuality_Poisoned, 1);
+        case gESpecies_Troll:  rightWeaponTemplate = Template("TrollFist"); break;
+        case gESpecies_Demon:  rightWeaponTemplate = Template("It_2H_DemonSword_01"); break;
+        case gESpecies_Goblin: return a_Entity.Inventory.AssureItems("It_1H_Club_01", gEItemQuality_Worn, 1); break;
         case gESpecies_Ogre:
-            return p_entity.Inventory.AssureItems("It_Axe_OgreMorningStar_01", gEItemQuality::gEItemQuality_Worn, 1);
-        case gESpecies_IceGolem: return p_entity.Inventory.AssureItems("Fist", gEItemQuality::gEItemQuality_Frozen, 1);
+            return a_Entity.Inventory.AssureItems("It_Axe_OgreMorningStar_01", gEItemQuality_Worn, 1);
+            break;
         case gESpecies_Stalker:
-            return p_entity.Inventory.AssureItems("It_Axe_SpikedClub_01", gEItemQuality::gEItemQuality_Worn, 1);
-        case gESpecies_Dragon: return p_entity.Inventory.AssureItems("It_Spell_Fireball", 0, 1);
-        default:               return p_entity.Inventory.AssureItems("Fist", 0, 1);
+            return a_Entity.Inventory.AssureItems("It_Axe_SpikedClub_01", gEItemQuality_Worn, 1);
+            break;
+
+        case gESpecies_Dragon:       return a_Entity.Inventory.AssureItems("It_Spell_Fireball", 0, 1); break;
+        case gESpecies_Zombie:       rightWeaponTemplate = Template(fistTemplateName + "Zombie"); break;
+        case gESpecies_Golem:        rightWeaponTemplate = Template(fistTemplateName + "Golem"); break;
+        case gESpecies_Minecrawler:  rightWeaponTemplate = Template(fistTemplateName + "Minecrawler"); break;
+        case gESpecies_Scavenger:    rightWeaponTemplate = Template(fistTemplateName + "Scavenger"); break;
+        case gESpecies_Wolf:         rightWeaponTemplate = Template(fistTemplateName + "Wolf"); break;
+        case gESpecies_Boar:         rightWeaponTemplate = Template(fistTemplateName + "Boar"); break;
+        case gESpecies_Sabertooth:   rightWeaponTemplate = Template(fistTemplateName + "Sabertooth"); break;
+        case gESpecies_Shadowbeast:  rightWeaponTemplate = Template(fistTemplateName + "Shadowbeast"); break;
+        case gESpecies_Bison:        rightWeaponTemplate = Template(fistTemplateName + "Bison"); break;
+        case gESpecies_Rhino:        rightWeaponTemplate = Template(fistTemplateName + "Rhino"); break;
+        case gESpecies_Ripper:       rightWeaponTemplate = Template(fistTemplateName + "Ripper"); break;
+        case gESpecies_Lurker:       rightWeaponTemplate = Template(fistTemplateName + "Lurker"); break;
+        case gESpecies_Varan:        rightWeaponTemplate = Template(fistTemplateName + "Varan"); break;
+        case gESpecies_Snapper:      rightWeaponTemplate = Template(fistTemplateName + "Snapper"); break;
+        case gESpecies_Alligator:    rightWeaponTemplate = Template(fistTemplateName + "Alligator"); break;
+        case gESpecies_Trex:         rightWeaponTemplate = Template(fistTemplateName + "Trex"); break;
+        case gESpecies_FireVaran:    rightWeaponTemplate = Template(fistTemplateName + "FireVaran"); break;
+        case gESpecies_Bloodfly:     rightWeaponTemplate = Template(fistTemplateName + "Bloodfly"); break;
+        case gESpecies_Gargoyle:     rightWeaponTemplate = Template(fistTemplateName + "Gargoyle"); break;
+        case gESpecies_SwampLurker:  rightWeaponTemplate = Template(fistTemplateName + "SwampLurker"); break;
+        case gESpecies_FireGolem:    rightWeaponTemplate = Template(fistTemplateName + "FireGolem"); break;
+        case gESpecies_IceGolem:     rightWeaponTemplate = Template(fistTemplateName + "IceGolem"); break;
+        case gESpecies_ScorpionKing: rightWeaponTemplate = Template(fistTemplateName + "ScorpionKing"); break;
+        default:                     break;
     }
 
-    return -1;
+    if (rightWeaponTemplate.IsValid())
+    {
+        entityWeaponObject = Entity(rightWeaponTemplate);
+        GEU32 uItemQuality = entityWeaponObject.Item.GetQuality();
+        return a_Entity.Inventory.AssureItems(rightWeaponTemplate, uItemQuality, 1);
+    }
+
+    return a_Entity.Inventory.AssureItems("Fist", 0, 1);
 }
 
 GEBool IsInRecovery(Entity &p_entity)
 {
-    eCVisualAnimation_PS *va = (eCVisualAnimation_PS *)p_entity.Animation.m_pEngineEntityPropertySet;
-    if ((GEU32)va == 0)
-        return GEFalse;
-
-    bCString *ptrCurrentMotionDescription = (bCString *)(*(GEU32 *)((GEU32)va + 0xE8) + 0x4);
-    // GEInt firstP = ptrCurrentMotionDescription->Find("_", 4);
-    // GEInt secondP = ptrCurrentMotionDescription->Find("_", 12);
-    bCString test = "";
-    ptrCurrentMotionDescription->GetWord(4, "_", test, GETrue, GETrue);
-    if (test.Contains("P0") && ptrCurrentMotionDescription->Contains("Recover"))
-    {
-        return GETrue;
-    }
-    return GEFalse;
+    return p_entity.GetCurrentAniPhase() == gEPhase_Recover;
 }
 
 WarriorType GetWarriorType(Entity &p_entity)

@@ -160,7 +160,6 @@ void AddNewEffect()
 {
     // EffectModulePtr
     DWORD EffectModulePtr = ((DWORD (*)(void))(RVA_Game(0x601f0)))();
-    std::cout << "EffectModule Pointer: " << EffectModulePtr << "\n";
     if (EffectModulePtr == 0)
         return;
     DWORD gCEffectSystemPtr = EffectModulePtr + 0x14;
@@ -173,12 +172,10 @@ void AddNewEffect()
     NewEM.Load("g3-new.efm");
     for (auto iter = NewEM.Begin(); iter != NewEM.End(); iter++)
     {
-        std::cout << "EffectName: " << iter.GetKey() << "\n";
         EffectMap->RemoveAt(iter.GetKey());
         gCEffectCommandSequence *effectCommand = EffectMap->InsertNewAt(iter.GetKey());
         *effectCommand = iter.GetNode()->m_Element;
     }
-    std::cout << "EffectMap Merged " << "\n";
 }
 
 extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
@@ -198,10 +195,6 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
 
     HookFunctions();
     HookCallHooks();
-
-    // Hook_Shoot
-    //     .Prepare ( RVA_ScriptGame ( 0x86450 ) , &Shoot )
-    //     .Hook ( );
 
     static mCFunctionHook Hook_Assesshit;
     Hook_Assesshit.Hook(GetScriptAdminExt().GetScript("AssessHit")->m_funcScript, &AssessHit,
