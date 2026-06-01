@@ -28,6 +28,7 @@ extern GEInt MonsterRageModus;
 extern GEFloat summoningLevelMultiplier;
 
 extern GEBool UseNewDamageCalculation;
+extern GEBool UseNewNPCProtection;
 extern GEBool newSummoning;
 extern GEBool vanishSummons;
 extern GEBool onlyHeavyAttackKnockDown;

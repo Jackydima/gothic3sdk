@@ -713,13 +713,13 @@ GEInt GE_STDCALL OnTick(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, E
 
         if (Self.IsPlayer())
         {
-            endingTime =
-                static_cast<GEU32>(NBConfig::DiseasePlayerDuration + Self.NPC.GetProperty<PSNpc::PropertyTimeStampDiseased>());
+            endingTime = static_cast<GEU32>(NBConfig::DiseasePlayerDuration
+                                            + Self.NPC.GetProperty<PSNpc::PropertyTimeStampDiseased>());
         }
         else
         {
-            endingTime =
-                static_cast<GEU32>(NBConfig::DiseaseNPCDuration + Self.NPC.GetProperty<PSNpc::PropertyTimeStampDiseased>());
+            endingTime = static_cast<GEU32>(NBConfig::DiseaseNPCDuration
+                                            + Self.NPC.GetProperty<PSNpc::PropertyTimeStampDiseased>());
         }
 
         if (endingTime <= worldTime)
@@ -894,7 +894,11 @@ GEInt GE_STDCALL GetProtection(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEn
 {
     INIT_SCRIPT_EXT(Self, Other);
     GEInt protection = GetProtectionHUD(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
-    return static_cast<GEInt>(protection * NBConfig::playerArmorMultiplier);
+
+    if (Self.IsPlayer() && !NBConfig::UseNewDamageCalculation)
+        return static_cast<GEInt>(protection * NBConfig::playerArmorMultiplier);
+
+    return protection;
 }
 
 GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity,
@@ -922,22 +926,153 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
 
     if (!Self.IsPlayer() || Self.NPC.IsTransformed())
     {
-        protection = GetScriptAdmin().CallScriptFromScript("GetLevelMax", a_pSelfEntity, &None);
-        protection = static_cast<GEInt>(protection * NBConfig::npcArmorMultiplier);
-        GEInt stackIndexLeftHand = Self.Inventory.FindStackIndex(gESlot::gESlot_LeftHand);
-        GEInt stackIndexLeftHandBack = Self.Inventory.FindStackIndex(gESlot::gESlot_BackLeft);
-        if (Self.Inventory.GetUseType(stackIndexLeftHand) == gEUseType_Shield
-            || Self.Inventory.GetUseType(stackIndexLeftHandBack) == gEUseType_Shield)
+        if (!NBConfig::UseNewNPCProtection)
         {
-            protection = static_cast<GEInt>(protection * 1.25f);
+            protection = GetScriptAdmin().CallScriptFromScript("GetLevelMax", a_pSelfEntity, &None);
+            protection = static_cast<GEInt>(protection * NBConfig::npcArmorMultiplier);
+            GEInt stackIndexLeftHand = Self.Inventory.FindStackIndex(gESlot::gESlot_LeftHand);
+            GEInt stackIndexLeftHandBack = Self.Inventory.FindStackIndex(gESlot::gESlot_BackLeft);
+            if (Self.Inventory.GetUseType(stackIndexLeftHand) == gEUseType_Shield
+                || Self.Inventory.GetUseType(stackIndexLeftHandBack) == gEUseType_Shield)
+            {
+                protection = static_cast<GEInt>(protection * 1.25f);
+            }
+            return protection;
         }
-        protection = static_cast<GEInt>(protection / NBConfig::playerArmorMultiplier);
+
+        Entity npcArmor = None;
+        auto &ScriptAdmin = GetScriptAdmin();
+
+        if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &Self, &None))
+        {
+            npcArmor = Self.Inventory.GetDefaultItemFromSlot(gESlot_Body);
+        }
+        else
+        {
+            const bCString bodyPrefix = "Body_";
+            bCString entityBodyString = bodyPrefix + Self.GetName();
+
+            Entity monsterBodyEntity = Entity(Template(entityBodyString));
+
+            if (monsterBodyEntity != None)
+            {
+                // If an individual Entity Armor for self was created prioritize it!
+                npcArmor = monsterBodyEntity;
+            }
+            else
+            {
+                bCString bodyName = bodyPrefix;
+                switch (Self.NPC.GetProperty<PSNpc::PropertySpecies>())
+                {
+                    case gESpecies_Skeleton:     bodyName += "Species_Skeleton"; break;
+                    case gESpecies_Zombie:       bodyName += "Species_Zombie"; break;
+                    case gESpecies_Golem:        bodyName += "Species_Golem"; break;
+                    case gESpecies_Demon:        bodyName += "Species_Demon"; break;
+                    case gESpecies_Goblin:       bodyName += "Species_Goblin"; break;
+                    case gESpecies_Troll:        bodyName += "Species_Troll"; break;
+                    case gESpecies_Minecrawler:  bodyName += "Species_Minecrawler"; break;
+                    case gESpecies_Scavenger:    bodyName += "Species_Scavenger"; break;
+                    case gESpecies_Wolf:         bodyName += "Species_Wolf"; break;
+                    case gESpecies_Boar:         bodyName += "Species_Boar"; break;
+                    case gESpecies_Sabertooth:   bodyName += "Species_Sabertooth"; break;
+                    case gESpecies_Shadowbeast:  bodyName += "Species_Shadowbeast"; break;
+                    case gESpecies_Bison:        bodyName += "Species_Bison"; break;
+                    case gESpecies_Rhino:        bodyName += "Species_Rhino"; break;
+                    case gESpecies_Ripper:       bodyName += "Species_Ripper"; break;
+                    case gESpecies_Lurker:       bodyName += "Species_Lurker"; break;
+                    case gESpecies_Varan:        bodyName += "Species_Varan"; break;
+                    case gESpecies_Snapper:      bodyName += "Species_Snapper"; break;
+                    case gESpecies_Alligator:    bodyName += "Species_Alligator"; break;
+                    case gESpecies_Trex:         bodyName += "Species_Trex"; break;
+                    case gESpecies_FireVaran:    bodyName += "Species_FireVaran"; break;
+                    case gESpecies_Bloodfly:     bodyName += "Species_Bloodfly"; break;
+                    case gESpecies_Gargoyle:     bodyName += "Species_Gargoyle"; break;
+                    case gESpecies_SwampLurker:  bodyName += "Species_SwampLurker"; break;
+                    case gESpecies_Ogre:         bodyName += "Species_Ogre"; break;
+                    case gESpecies_FireGolem:    bodyName += "Species_FireGolem"; break;
+                    case gESpecies_IceGolem:     bodyName += "Species_IceGolem"; break;
+                    case gESpecies_ScorpionKing: bodyName += "Species_ScorpionKing"; break;
+                    case gESpecies_Stalker:      bodyName += "Species_Stalker"; break;
+                    case gESpecies_Dragon:       bodyName += "Species_Dragon"; break;
+                    default:                     bodyName = ""; break;
+                }
+                npcArmor = Entity(Template(bodyName));
+            }
+        }
+
+        if (npcArmor == None || !npcArmor.Item.IsValid())
+        {
+            // Backup, if no armor found here!
+            return static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetLevelMax", &Self, &None)
+                                      * NBConfig::npcArmorMultiplier);
+        }
+        
+        gCItem_PS *pPSArmor = GetPropertySet<gCItem_PS>(npcArmor.GetGameEntity(), eEPropertySetType_Item);
+        if (!pPSArmor)
+        {
+            return static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetLevelMax", &Self, &None)
+                                      * NBConfig::npcArmorMultiplier);
+        }
+
+        bCString strProt = "";
+        switch (damageType)
+        {
+            case gEDamageType_Blade:     strProt = "PROT_BLADE"; break;
+            case gEDamageType_Impact:    strProt = "PROT_IMPACT"; break;
+            case gEDamageType_Missile:   strProt = "PROT_MISSILE"; break;
+            case gEDamageType_Fire:      strProt = "PROT_FIRE"; break;
+            case gEDamageType_Ice:       strProt = "PROT_ICE"; break;
+            case gEDamageType_Lightning: strProt = "PROT_LIGHTNING"; break;
+            default:                     strProt = "PROT_BLADE";
+        }
+
+        if (pPSArmor->GetModAttrib1Tag() == strProt)
+        {
+            protection = pPSArmor->GetModAttrib1Value();
+        }
+        else if (pPSArmor->GetModAttrib2Tag() == strProt)
+        {
+            protection = pPSArmor->GetModAttrib2Value();
+        }
+        else if (pPSArmor->GetModAttrib3Tag() == strProt)
+        {
+            protection = pPSArmor->GetModAttrib3Value();
+        }
+        else if (pPSArmor->GetModAttrib4Tag() == strProt)
+        {
+            protection = pPSArmor->GetModAttrib4Value();
+        }
+        else if (pPSArmor->GetModAttrib5Tag() == strProt)
+        {
+            protection = pPSArmor->GetModAttrib5Value();
+        }
+        else if (pPSArmor->GetModAttrib6Tag() == strProt)
+        {
+            protection = pPSArmor->GetModAttrib6Value();
+        }
+
+        if (!ScriptAdmin.CallScriptFromScript("IsHumanoid", &Self, &None))
+        {
+            return protection;
+        }
+
+        GEInt iNPCLevelMax = ScriptAdmin.CallScriptFromScript("GetLevelMax", &Self, &None);
+
+        if (npcArmor.Item.IsRobe() && iNPCLevelMax >= 35)
+        {
+            protection *= 2;
+        }
+
+        if (iNPCLevelMax >= 50 || ScriptAdmin.CallScriptFromScript("IsBoss", &Self, &None))
+        {
+            protection = static_cast<GEInt>(protection * 1.50f);
+        }
         return protection;
     }
     else
     {
         // Maybe Use EAB here
-        eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing;
+        // eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing;
         switch (damageType)
         {
             case gEDamageType_Blade:
@@ -978,7 +1113,12 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
         {
             return protection;
         }
-        gCItem_PS *item = (gCItem_PS *)bodyEntity.Item.m_pEngineEntityPropertySet;
+        gCItem_PS *item = GetPropertySet<gCItem_PS>(bodyEntity.GetGameEntity(), eEPropertySetType_Item);
+        if (!item)
+        {
+            return protection;
+        }
+
         GEInt itemProt = 0;
         if (item->GetModAttrib1Tag() == protectionCheckString)
         {
@@ -1027,135 +1167,6 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
     }
 }
 
-// TODO: Not FINISHED
-/*
-GEInt GE_STDCALL GetProtectionHUDAbsolute ( gCScriptProcessingUnit* a_pSPU , Entity* a_pSelfEntity , Entity*
-a_pOtherEntity , GEI32 a_iArgs ) { INIT_SCRIPT_EXT ( Self , Other ); if ( Self == None ) return 0; GEInt protection = 0;
-    bCString protectionCheckString = "";
-
-    gEDamageType damageType = Other.Damage.GetProperty<PSDamage::PropertyDamageType> ( );
-    if ( Other == None ) {
-        switch ( a_iArgs ) {
-        case 13:
-            damageType = gEDamageType_Lightning;
-            break;
-        case 14:
-            damageType = gEDamageType_Ice;
-            break;
-        case 15:
-            damageType = gEDamageType_Fire;
-            break;
-        case 16:
-            damageType = gEDamageType_Missile;
-            break;
-        case 17:
-            damageType = gEDamageType_Impact;
-            break;
-        default:
-            damageType = gEDamageType_Blade;
-        }
-    }
-
-    if ( !Self.IsPlayer ( ) || Self.NPC.IsTransformed ( ) ) {
-        protection = GetScriptAdmin ( ).CallScriptFromScript ( "GetLevelMax" , a_pSelfEntity , &None );
-        protection *= npcArmorMultiplier;
-        GEInt stackIndexLeftHand = Self.Inventory.FindStackIndex ( gESlot::gESlot_LeftHand );
-        GEInt stackIndexLeftHandBack = Self.Inventory.FindStackIndex ( gESlot::gESlot_BackLeft );
-        if ( Self.Inventory.GetUseType ( stackIndexLeftHand ) == gEUseType_Shield || Self.Inventory.GetUseType (
-stackIndexLeftHandBack ) == gEUseType_Shield ) { protection *= 1.25;
-        }
-        protection /= playerArmorMultiplier;
-    }
-
-    GEBool playerNT = Self.IsPlayer ( ) && !Self.NPC.IsTransformed ( );
-    // Maybe Use EAB here
-    eCApplication::GetInstance ( ).GetEngineSetup ( ).AlternativeBalancing;
-    switch ( damageType ) {
-    case gEDamageType_Blade:
-        if ( playerNT )
-            protection = Self.PlayerMemory.GetProtectionBlades ( );
-        protectionCheckString = "PROT_BLADE";
-        break;
-    case gEDamageType_Impact:
-        if ( playerNT )
-            protection = Self.PlayerMemory.GetProtectionImpact ( );
-        protectionCheckString = "PROT_IMPACT";
-        break;
-    case gEDamageType_Missile:
-        if ( playerNT )
-            protection = Self.PlayerMemory.GetProtectionMissile ( );
-        protectionCheckString = "PROT_MISSILE";
-        break;
-    case gEDamageType_Fire:
-        if ( playerNT )
-            protection = Self.PlayerMemory.GetProtectionFire ( );
-        if ( Self.Inventory.IsSkillActive ( "Perk_ResistHeat" ) ) {
-            protection += elementalPerkBonusResistance;
-        }
-        protectionCheckString = "PROT_FIRE";
-        break;
-    case gEDamageType_Ice:
-        if ( playerNT )
-            protection = Self.PlayerMemory.GetProtectionIce ( );
-        if ( Self.Inventory.IsSkillActive ( "Perk_ResistCold" ) ) {
-            protection += elementalPerkBonusResistance;
-        }
-        protectionCheckString = "PROT_ICE";
-        break;
-    case gEDamageType_Lightning:
-        if ( playerNT )
-            protection = Self.PlayerMemory.GetProtectionLightning ( );
-        protectionCheckString = "PROT_LIGHTNING";
-    }
-    gCItem_PS* item;
-    if ( playerNT ) {
-        GEInt stackIndexBody = Self.Inventory.FindStackIndex ( gESlot_Body );
-        Entity bodyEntity = Self.Inventory.GetTemplateItem ( stackIndexBody );
-        if ( bodyEntity == None ) {
-            return protection;
-        }
-        item = ( gCItem_PS* )bodyEntity.Item.m_pEngineEntityPropertySet;
-    }
-    else {
-        Entity itemTemp = Self.Inventory.GetDefaultItemFromSlot ( gESlot_Body );
-        item = ( gCItem_PS* )itemTemp.Item.m_pEngineEntityPropertySet;
-    }
-    GEInt itemProt = 0;
-    if ( item->GetModAttrib1Tag ( ) == protectionCheckString ) {
-        itemProt = item->GetModAttrib1Value ( );
-    }
-    else if ( item->GetModAttrib2Tag ( ) == protectionCheckString ) {
-        itemProt = item->GetModAttrib2Value ( );
-    }
-    else if ( item->GetModAttrib3Tag ( ) == protectionCheckString ) {
-        itemProt = item->GetModAttrib3Value ( );
-    }
-    else if ( item->GetModAttrib4Tag ( ) == protectionCheckString ) {
-        itemProt = item->GetModAttrib4Value ( );
-    }
-    else if ( item->GetModAttrib5Tag ( ) == protectionCheckString ) {
-        itemProt = item->GetModAttrib5Value ( );
-    }
-    else if ( item->GetModAttrib6Tag ( ) == protectionCheckString ) {
-        itemProt = item->GetModAttrib6Value ( );
-        //Add the Robe Protection twice to the player if Skill is active
-        if ( bodyEntity.Item.IsRobe ( ) && Self.Inventory.IsSkillActive ( "Perk_LightArmor" ) ) {
-            //elemental damage is more effective for robes
-            if ( damageType == gEDamageType_Fire || damageType == gEDamageType_Ice || damageType ==
-gEDamageType_Lightning ) { protection += ( itemProt * 1.5 );
-            }
-            else {
-                protection += itemProt;
-            }
-        }
-        // Add 50% Extra Protection for ONLY the Body Armor now, maybe add helmet aswell
-        else if ( Self.Inventory.IsSkillActive ( "Perk_HeavyArmor" ) ) {
-            protection += ( itemProt * 0.5 );
-        }
-        return protection;
-    }
-}*/
-
 static mCFunctionHook Hook_GetCurrentLevel;
 GEInt GE_STDCALL GetCurrentLevel(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity,
                                  GEI32 a_iArgs)
@@ -1168,6 +1179,7 @@ GEInt GE_STDCALL GetCurrentLevel(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     }
     return GetScriptAdmin().CallScriptFromScript("GetLevelMax", a_pSelfEntity, a_pOtherEntity, a_iArgs);
 }
+
 // TODO:
 static mCFunctionHook Hook_GetMaxLevel;
 GEInt GE_STDCALL GetMaxLevel(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity,
@@ -1191,7 +1203,7 @@ GEInt GetAttitudeSummons(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, 
     gCScriptAdmin &ScriptAdmin = GetScriptAdmin();
 
     if (Self.Party.GetPartyLeader() != None && Self.Party.GetPartyLeader() == Other.Party.GetPartyLeader())
-        return 1;
+        return gEAttitude_Friendly;
 
     if (Self.Party.GetProperty<PSParty::PropertyPartyMemberType>() == gEPartyMemberType_Summoned
         && Self.Party.GetPartyLeader() != Other && Self.Party.GetPartyLeader() != None)

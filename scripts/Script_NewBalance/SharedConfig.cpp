@@ -22,6 +22,7 @@ GEInt MonsterRageModus = 0;
 GEFloat summoningLevelMultiplier = 7.5f;
 
 GEBool UseNewDamageCalculation = GETrue;
+GEBool UseNewNPCProtection = GETrue;
 GEBool newSummoning = GETrue;
 GEBool vanishSummons = GETrue;
 GEBool onlyHeavyAttackKnockDown = GEFalse;
