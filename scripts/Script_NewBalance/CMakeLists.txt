@@ -8,6 +8,8 @@ target_tree_sources(Script_NewBalance
   PRIVATE
     AssessHit.cpp
     AssessHit.h
+    GameScripts.cpp
+    GameScripts.h
     CallHook.cpp
     CodePatch.cpp
     FunctionHook.cpp

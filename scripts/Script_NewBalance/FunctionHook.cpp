@@ -1009,7 +1009,8 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
                                       * NBConfig::npcArmorMultiplier);
         }
 
-        gCItem_PS *pPSArmor = GetPropertySet<gCItem_PS>(npcArmor.GetGameEntity(), eEPropertySetType_Item);
+        //gCItem_PS *pPSArmor = GetPropertySet<gCItem_PS>(npcArmor.GetGameEntity(), eEPropertySetType_Item);
+        gCItem_PS* pPSArmor = reinterpret_cast<gCItem_PS*>(npcArmor.Item.m_pEngineEntityPropertySet);
         if (!pPSArmor)
         {
             return static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetLevelMax", &Self, &None)
@@ -1254,7 +1255,7 @@ GEInt GetAttitudeToPlayer(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity,
     }
 
     return Hook_GetAttitudeToPlayer.GetOriginalFunction(&GetAttitudeSummons)(a_pSPU, a_pSelfEntity, a_pOtherEntity,
-        a_iArgs);
+                                                                             a_iArgs);
 }
 
 /**
@@ -2559,8 +2560,26 @@ void GE_STDCALL OptionsControll_UpdateConfig(eCConfigFile *a_pConfigFile)
     }
 }
 
+static mCFunctionHook Hook_GetStrength;
+DECLARE_SCRIPT(GetStrength)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+    UNREFERENCED_PARAMETER(a_iArgs);
+
+    if (Self.PlayerMemory.IsValid() && !Self.NPC.IsTransformed())
+    {
+        return Self.PlayerMemory.GetStrength();
+    }
+
+    return static_cast<GEInt>(GetScriptAdmin().CallScriptFromScript("GetCurrentLevel", &Self, &None)
+                                  * NBConfig::NPCStrengthMultiplicator
+                              + NBConfig::NPCStrengthAddition);
+}
+
 void HookFunctions()
 {
+    Hook_GetStrength.Hook(GetScriptAdminExt().GetScript("GetStrength")->m_funcScript, &GetStrength);
+
     Hook_OptionsControll_UpdateConfig
         .Prepare(RVA_Game(0x93690), &OptionsControll_UpdateConfig, mCBaseHook::mEHookType_ThisCall)
         .Hook();
@@ -2732,7 +2751,8 @@ void HookFunctions()
     }
 
     Hook_GetAttituteSummons.Hook(GetScriptAdminExt().GetScript("GetAttitude")->m_funcScript, &GetAttitudeSummons);
-    Hook_GetAttitudeToPlayer.Hook(GetScriptAdminExt().GetScript("GetAttitudeToPlayer")->m_funcScript, &GetAttitudeToPlayer);
+    Hook_GetAttitudeToPlayer.Hook(GetScriptAdminExt().GetScript("GetAttitudeToPlayer")->m_funcScript,
+                                  &GetAttitudeToPlayer);
 
     static mCFunctionHook Hook_GetQualityBonus;
     static mCFunctionHook Hook_OnPlayerGetDamage;

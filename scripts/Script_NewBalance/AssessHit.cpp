@@ -358,9 +358,8 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     // Damager is transformed player or NPC
     else if (DamagerOwner.Navigation.IsValid())
     {
-        GEInt iStrength = static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetStrength", &DamagerOwner, &None, 0)
-                                                 * NBConfig::NPCStrengthMultiplicator
-                                             + NBConfig::NPCStrengthCorrection); // STR Bonus Real
+        GEInt iStrength = ScriptAdmin.CallScriptFromScript("GetStrength", &DamagerOwner, &None, 0); // STR Bonus Real
+
         if (iStrength < 10)
             iStrength = 10;
 
@@ -1249,26 +1248,27 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
             // TODO: Remove doubling damage for projectile (Rather Add new more potent Spell)
             if (IsMagicProjectileNB(Damager))
             {
-                FinalDamage *= 2;
-            }
-
-            // PropertyManaUsed depends on cast phase
-            if (Damager.Damage.GetProperty<PSDamage::PropertyManaUsed>())
-            {
-                // Bonus = ( Schaden * Altes Wissen / 100 )
-                GEFloat fIntelligenceModifier = intelligence / 100.0f;
-                iAttributeBonusDamage = static_cast<GEInt>(FinalDamage * fIntelligenceModifier);
+                // PropertyManaUsed depends on cast phase
+                if (Damager.Damage.GetProperty<PSDamage::PropertyManaUsed>())
+                {
+                    // Bonus = ( Schaden * Altes Wissen / 100 )
+                    GEFloat fIntelligenceModifier = intelligence / 100.0f;
+                    iAttributeBonusDamage = static_cast<GEInt>(FinalDamage * fIntelligenceModifier);
+                }
+                else
+                {
+                    iAttributeBonusDamage = FinalDamage;
+                }
             }
             else
             {
-                iAttributeBonusDamage = FinalDamage * 2;
+                // Regular Spells:
+                iAttributeBonusDamage = intelligence / 2;
             }
         }
         // Ranged damage
         if (IsNormalProjectileNB(Damager) == GETrue)
         {
-            // print ( "UseType Left : %d" ,
-            // DamagerOwner.Inventory.GetItemFromSlot(gESlot_LeftHand).Interaction.UseType );
             if (NBConfig::useStrengthForCrossbows
                 && DamagerOwner.Inventory.GetItemFromSlot(gESlot_LeftHand)
                            .Interaction.GetProperty<PSInteraction::PropertyUseType>()
@@ -1377,66 +1377,19 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     // Damager is transformed player or NPC
     else if (DamagerOwner.Navigation.IsValid())
     {
-        GEInt iStrength = static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetStrength", &DamagerOwner, &None, 0)
-                                                 * NBConfig::NPCStrengthMultiplicator
-                                             + NBConfig::NPCStrengthCorrection); // STR Bonus Real
-        if (iStrength < 10)
-            iStrength = 10;
+        GEInt iStrength = ScriptAdmin.CallScriptFromScript("GetStrength", &DamagerOwner, &None, 0); // STR Bonus Real
 
-        if (Damager.GetName() == "Fist" && ScriptAdmin.CallScriptFromScript("IsHumanoid", &DamagerOwner, &None, 0))
+        if (DamagerOwner.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Orc
+            && GetHeldWeaponCategoryNB(DamagerOwner) == gEWeaponCategory_Melee)
         {
-            // Greift ein Mensch oder Ork mit Fäusten an?
-            FinalDamage = static_cast<GEInt>(iStrength / 2);
+            FinalDamage = static_cast<GEInt>(iWeaponDamage * 0.5f * NBConfig::npcWeaponDamageMultiplier + iStrength);
         }
         else
         {
-            if (IsNormalProjectileNB(Damager) || IsMagicProjectileNB(Damager) || IsSpellContainerNB(Damager))
-            {
-                FinalDamage = static_cast<GEInt>(iStrength + FinalDamage * NBConfig::npcWeaponDamageMultiplier);
-            }
-            // Greift ein Ork mit einer Nahkampfwaffe an?
-            else if (DamagerOwner.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Orc)
-            {
-                FinalDamage =
-                    static_cast<GEInt>(iStrength
-                                       + FinalDamage * NBConfig::npcWeaponDamageMultiplier
-                                             / 2.0f); // TODO: Should 2H Weapon in 1H only do half weapon damage?
-            }
-            // Greift ein Mensch mit einer Nahkampfwaffe an?
-            else if (DamagerOwner.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Human)
-            {
-                FinalDamage = static_cast<GEInt>(iStrength + FinalDamage * NBConfig::npcWeaponDamageMultiplier);
-            }
-            else if (DamagerOwner.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Demon
-                     || DamagerOwner.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Ogre)
-            {
-                FinalDamage =
-                    static_cast<GEInt>(iStrength
-                                       + FinalDamage * NBConfig::npcWeaponDamageMultiplier
-                                             / 2.0f); // TODO: Should 2H Weapon in 1H only do half weapon damage?
-            }
-            // MonsterAttack
-            else if (Damager.GetName() == "Fist")
-            {
-                FinalDamage = static_cast<GEInt>(
-                    iStrength * 1.3f
-                    + FinalDamage); // Change and simplify after Adding Unique "Fist"-Weapons for Monsters
-            }
-            else if (FinalDamage == 0)
-            {
-                FinalDamage = iStrength;
-            }
-            else
-            {
-                FinalDamage = static_cast<GEInt>(iStrength + FinalDamage * NBConfig::npcWeaponDamageMultiplier);
-            }
+            FinalDamage = static_cast<GEInt>(iWeaponDamage * NBConfig::npcWeaponDamageMultiplier) + iStrength;
         }
 
-        // Magic Projectiles, casted by NPCs (against NPCs), do double damage (Modified)
-        if (IsMagicProjectileNB(Damager) && !Victim.IsPlayer())
-        {
-            FinalDamage *= 2;
-        }
+        FinalDamage += ScriptAdmin.CallScriptFromScript("GetNPCBonusDamage", &Damager, &Victim, FinalDamage);
     }
 
     if ((Damager.IsItem() && (Damager.Item.GetQuality() & gEItemQuality_Blessed) == gEItemQuality_Blessed
@@ -1454,42 +1407,33 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         }
     }
 
-    // Handelt es sich um einen Powercast? (Player and NPCs)
-    if (Damager.Projectile.IsValid() && IsSpellContainerNB(Damager))
-    {
-        // Powercast
-        if (Damager.Projectile.GetProperty<PSProjectile::PropertyPathStyle>() == gEProjectilePath_Missile)
-        {
-            FinalDamage *= 2;
-        }
-    }
+    println("FinalDamage After all calcs before Prot: %d", FinalDamage);
 
     //
     // Schritt 2: Rüstung
     //
     GEInt FinalDamage2 = 0;
     GEInt iProtection = ScriptAdmin.CallScriptFromScript("GetProtection", &Victim, &Damager, 0);
-    // println ( "Protection Integer %d" , iProtection );
+    println("Protection Integer %d", iProtection);
 
-    // Vulnerabilities
-    switch (DamageTypeEntityTestNB(Victim, Damager))
-    {
-        case VulnerabilityStatus_WEAK:           FinalDamage = static_cast<GEInt>(FinalDamage * 1.6f); break;
-        case VulnerabilityStatus_STRONG:         FinalDamage = static_cast<GEInt>(FinalDamage * 0.5f); break;
-        case VulnerabilityStatus_SLIGHTLYWEAK:   FinalDamage = static_cast<GEInt>(FinalDamage * 1.2f); break;
-        case VulnerabilityStatus_SLIGHTLYSTRONG: FinalDamage = static_cast<GEInt>(FinalDamage * 0.8f); break;
-    }
-    if (iProtection > 90)
-        iProtection = 90;
-    FinalDamage2 = FinalDamage - static_cast<GEInt>(FinalDamage * (iProtection / 100.0f));
+    FinalDamage2 = FinalDamage - iProtection;
 
-    // print ( "Protection After Vulnerabilities %f\n ", fProtection );
-    if (FinalDamage2 < 5)
-        FinalDamage2 = 5;
+    if (FinalDamage2 < 10)
+        FinalDamage2 = 10;
 
     //
     // Schritt 3: Angriffsart
     //
+
+    // Handelt es sich um einen Powercast? (Player and NPCs)
+    if (Damager.Projectile.IsValid() && IsSpellContainerNB(Damager))
+    {
+        // Powercast
+        if (Damager.Projectile.GetProperty<PSProjectile::PropertyPathStyle>() == gEProjectilePath_Missile)
+        {
+            FinalDamage *= Damager.Damage.GetProperty<PSDamage::PropertyDamageManaMultiplier>();
+        }
+    }
 
     switch (DamagerOwner.Routine.GetProperty<PSRoutine::PropertyAction>())
     {
@@ -1594,21 +1538,8 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     {
         if (!Victim.NPC.IsFrozen() && ScriptAdmin.CallScriptFromScript("CanParadeMagic", &Victim, &Damager, 0))
         {
-            GEInt iManaPenalty = -FinalDamage;
-            if (eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing)
-            {
-                GEFloat fPenaltyModifier =
-                    1.0f - ((ScriptAdmin.CallScriptFromScript("GetIntelligence", &Victim, &None, 0) - 200) / 500.0f);
-                if (fPenaltyModifier > 0)
-                {
-                    if (fPenaltyModifier < 1)
-                        iManaPenalty = static_cast<GEInt>(fPenaltyModifier * iManaPenalty);
-                }
-                else
-                {
-                    iManaPenalty = 0;
-                }
-            }
+            GEInt iManaPenalty = -(FinalDamage / 4);
+
             GEInt iManaRemaining = iManaPenalty + ScriptAdmin.CallScriptFromScript("GetManaPoints", &Victim, &None, 0);
             if (iManaRemaining > 0)
                 iManaRemaining = 0;
@@ -1628,7 +1559,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     {
         if (!Victim.NPC.IsFrozen() && ScriptAdmin.CallScriptFromScript("CanParadeMissile", &Victim, &Damager, 0))
         {
-            GEInt iStaminaPenalty = -FinalDamage;
+            GEInt iStaminaPenalty = -(FinalDamage / 2);
             if (Victim == Player && Victim.Inventory.IsSkillActive("Perk_Shield_2"))
                 iStaminaPenalty /= 2;
 
@@ -1726,7 +1657,9 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
             }
         }
         println("StaminaDamageMultiplier: %f", staminaDamageMultiplier);
+
         GEInt FinalDamage3 = static_cast<GEInt>(FinalDamage * staminaDamageMultiplier);
+        
         println("FinalDamage3: %d", FinalDamage3);
 
         // AlternativeAI parade (es werden keine Lebenspunkte angezogen)
@@ -1782,11 +1715,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         if (iStaminaRemaining > 0)
             iStaminaRemaining = 0;
         ScriptAdmin.CallScriptFromScript("AddStaminaPoints", &Victim, &None, FinalDamage3);
-        // Changed back the remaining raw Damage after Def. Reduction and Stamina consumption
-        GEInt healthDamage = iStaminaRemaining * 2;
-        if (FinalDamage != 0)
-            healthDamage = iStaminaRemaining * 2 * FinalDamage2 / FinalDamage;
-        ScriptAdmin.CallScriptFromScript("AddHitPoints", &Victim, &None, healthDamage);
+        ScriptAdmin.CallScriptFromScript("AddHitPoints", &Victim, &None, iStaminaRemaining);
 
         // Wenn der bei der Parade erhaltene Schaden das Opfer nicht unter 0 HP bringt
         if (ScriptAdmin.CallScriptFromScript("GetHitPoints", &Victim, &None, 0) > 0)
@@ -1829,24 +1758,6 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         if (FinalDamage2 >= iVictimHitPoints)
         {
             FinalDamage2 = 0;
-        }
-    }
-
-    // Modify damage in some situations, if AB is activated
-    if (eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing)
-    {
-        // Wenn es sich um einen Arenakampf handelt
-        //  => Schaden = Schaden / 2
-        /*if ((Victim != Player) && (Victim.NPC.GetProperty<PSNpc::PropertyAttackReason>() == gEAttackReason_Arena))
-        {
-        FinalDamage2 /= 2;
-        }*/
-
-        // Wenn der Held bei Schwierigkeitsgrad "hoch" eine Fernkampfwaffe benutzt
-        //  => Schaden = Schaden * 1,2
-        if (Victim != Player && IsNormalProjectileNB(Damager) && Entity::GetCurrentDifficulty() == EDifficulty_Hard)
-        {
-            FinalDamage2 = static_cast<GEInt>(FinalDamage2 * 1.2f);
         }
     }
 
@@ -1941,9 +1852,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         return gEAction_LieKnockDown;
     }
 
-    if (ScriptAdmin.CallScriptFromScript("CanBePoisoned", &Victim, &Damager,
-                                         DamagerOwnerAction == gEAction_PierceAttack
-                                             || DamagerOwnerAction == gEAction_HackAttack))
+    if (ScriptAdmin.CallScriptFromScript("CanBePoisoned", &Victim, &Damager, 0))
     {
         if (pVictimDamageReceiver && pVictimDamageReceiver->IsValid())
         {

@@ -66,7 +66,7 @@ extern GEFloat PowerAttackArmorPen;
 extern GEFloat QuickAttackArmorRes;
 extern GEFloat SpecialAttackArmorPen;
 extern GEFloat NPCStrengthMultiplicator;
-extern GEFloat NPCStrengthCorrection;
+extern GEFloat NPCStrengthAddition;
 extern GEFloat NPCDamageReductionMultiplicator;
 extern GEInt poiseThreshold;
 extern GEFloat npcArenaSpeedMultiplier;

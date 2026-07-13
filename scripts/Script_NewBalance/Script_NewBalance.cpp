@@ -56,8 +56,8 @@ void LoadSettings()
             config.GetFloat("Script", "SpecialAttackArmorPen", NBConfig::SpecialAttackArmorPen);
         NBConfig::NPCStrengthMultiplicator =
             config.GetFloat("Script", "NPCStrengthMultiplicator", NBConfig::NPCStrengthMultiplicator);
-        NBConfig::NPCStrengthCorrection =
-            config.GetFloat("Script", "NPCStrengthCorrection", NBConfig::NPCStrengthCorrection);
+        NBConfig::NPCStrengthAddition =
+            config.GetFloat("Script", "NPCStrengthAddition", NBConfig::NPCStrengthAddition);
         NBConfig::elementalPerkBonusResistance =
             config.GetInt("Script", "ElementalPerkBonusResistance", NBConfig::elementalPerkBonusResistance);
         NBConfig::animationSpeedBonusMid =
