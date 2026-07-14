@@ -8,6 +8,7 @@
 
 #include "config.h"
 
+void LoadSettings();
 GEBool CheckHandUseTypes(gEUseType p_lHand, gEUseType p_rHand, Entity &entity);
 
 extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void);

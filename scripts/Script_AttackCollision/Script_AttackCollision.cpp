@@ -63,7 +63,7 @@ DECLARE_SCRIPT_CALLBACK(OnAI_Attack)
 
     if (SelfEntity.IsPlayer())
     {
-        Entity focusEntity = SelfEntity.Focus.GetFocusEntity(gECombatMode(2), gEDirection_Fwd);
+        Entity focusEntity = SelfEntity.Focus.GetFocusEntity(gECombatMode(2), gEDirection_None);
         if (focusEntity != None)
             SelfEntity.Focus.SetFocusEntity(focusEntity);
     }
@@ -108,6 +108,36 @@ DECLARE_SCRIPT_CALLBACK(OnAI_GetUpAttack)
             Entity rightWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
             rightWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
             rightWeapon.TouchDamage.ClearTriggeredList();
+
+            SelfEntity.Routine.AccessProperty<PSRoutine::PropertyStatePosition>() = 1;
+        }
+    }
+
+    return GETrue;
+}
+
+static mCFunctionHook Hook_OnAI_PierceAttack;
+DECLARE_SCRIPT_CALLBACK(OnAI_PierceAttack)
+{
+    INIT_SCRIPT_CALLBACK()
+
+    if (SelfEntity.Routine.GetProperty<PSRoutine::PropertyStatePosition>() == 0)
+    {
+        if (SelfEntity.Routine.GetStateTime() > ActivePierceAttackStartTime)
+        {
+            gEPose currentPose = SelfEntity.NPC.GetPrimaryPose();
+            if (CheckHandUseTypes(gEUseType_1H, gEUseType_1H, SelfEntity) && currentPose == gEPose_P1)
+            {
+                Entity leftWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_LeftHand);
+                leftWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
+                leftWeapon.TouchDamage.ClearTriggeredList();
+            }
+            else
+            {
+                Entity rightWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
+                rightWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
+                rightWeapon.TouchDamage.ClearTriggeredList();
+            }
 
             SelfEntity.Routine.AccessProperty<PSRoutine::PropertyStatePosition>() = 1;
         }
@@ -167,12 +197,121 @@ DECLARE_SCRIPT_CALLBACK(OnAI_PowerAttack)
     return GETrue;
 }
 
+static mCFunctionHook Hook_OnAI_QuickAttack;
+DECLARE_SCRIPT_CALLBACK(OnAI_QuickAttack)
+{
+    INIT_SCRIPT_CALLBACK()
+
+    if (SelfEntity.IsPlayer())
+    {
+        Entity focusEntity = SelfEntity.Focus.GetFocusEntity(gECombatMode(2), gEDirection_None);
+        if (focusEntity != None)
+            SelfEntity.Focus.SetFocusEntity(focusEntity);
+    }
+
+    if (SelfEntity.Routine.GetProperty<PSRoutine::PropertyStatePosition>() == 0)
+    {
+        if (SelfEntity.Routine.GetStateTime() > ActiveQuickAttackStartTime)
+        {
+            gEPose currentPose = SelfEntity.NPC.GetPrimaryPose();
+            if ((CheckHandUseTypes(gEUseType_1H, gEUseType_1H, SelfEntity)
+                 || CheckHandUseTypes(gEUseType_Torch, gEUseType_1H, SelfEntity))
+                && currentPose == gEPose_P1)
+            {
+                Entity leftWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_LeftHand);
+                leftWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
+                leftWeapon.TouchDamage.ClearTriggeredList();
+            }
+            else
+            {
+                Entity rightWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
+                rightWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
+                rightWeapon.TouchDamage.ClearTriggeredList();
+            }
+
+            SelfEntity.Routine.AccessProperty<PSRoutine::PropertyStatePosition>() = 1;
+        }
+    }
+
+    return GETrue;
+}
+
+static mCFunctionHook Hook_OnAI_SimpleWhirl;
+DECLARE_SCRIPT_CALLBACK(OnAI_SimpleWhirl)
+{
+    INIT_SCRIPT_CALLBACK()
+
+    if (SelfEntity.IsPlayer())
+    {
+        Entity focusEntity = SelfEntity.Focus.GetFocusEntity(gECombatMode(2), gEDirection_None);
+        if (focusEntity != None)
+            SelfEntity.Focus.SetFocusEntity(focusEntity);
+    }
+
+    if (SelfEntity.Routine.GetProperty<PSRoutine::PropertyStatePosition>() == 0)
+    {
+        if (SelfEntity.Routine.GetStateTime() > ActiveSimpleWhirlAttackStartTime)
+        {
+            gEPose currentPose = SelfEntity.NPC.GetPrimaryPose();
+            if (CheckHandUseTypes(gEUseType_1H, gEUseType_1H, SelfEntity) && currentPose == gEPose_P1)
+            {
+                Entity leftWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_LeftHand);
+                leftWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
+                leftWeapon.TouchDamage.ClearTriggeredList();
+            }
+            else
+            {
+                Entity rightWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
+                rightWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
+                rightWeapon.TouchDamage.ClearTriggeredList();
+            }
+
+            SelfEntity.Routine.AccessProperty<PSRoutine::PropertyStatePosition>() = 1;
+        }
+    }
+
+    return GETrue;
+}
+
+static mCFunctionHook Hook_OnAI_WhirlAttack;
+DECLARE_SCRIPT_CALLBACK(OnAI_WhirlAttack)
+{
+    INIT_SCRIPT_CALLBACK()
+
+    if (SelfEntity.Routine.GetProperty<PSRoutine::PropertyStatePosition>() == 0)
+    {
+        if (SelfEntity.Routine.GetStateTime() > ActiveWhirlAttackStartTime)
+        {
+            Entity rightWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
+            rightWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
+            rightWeapon.TouchDamage.ClearTriggeredList();
+
+            SelfEntity.Routine.AccessProperty<PSRoutine::PropertyStatePosition>() = 1;
+        }
+    }
+
+    return GETrue;
+}
+
 extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
 {
     GetScriptAdmin().LoadScriptDLL("Script_Game.dll");
+
+    LoadSettings();
+
     Hook_OnAI_Attack.Hook(GetScriptAdminExt().GetScriptAICallback("OnAI_Attack")->m_funcScriptAICallback, &OnAI_Attack);
-    Hook_OnAI_GetUpAttack.Hook(GetScriptAdminExt().GetScriptAICallback("OnAI_GetUpAttack")->m_funcScriptAICallback, &OnAI_GetUpAttack);
-    Hook_OnAI_PowerAttack.Hook(GetScriptAdminExt().GetScriptAICallback("OnAI_PowerAttack")->m_funcScriptAICallback, &OnAI_PowerAttack);
+    Hook_OnAI_GetUpAttack.Hook(GetScriptAdminExt().GetScriptAICallback("OnAI_GetUpAttack")->m_funcScriptAICallback,
+                               &OnAI_GetUpAttack);
+    Hook_OnAI_PierceAttack.Hook(GetScriptAdminExt().GetScriptAICallback("OnAI_PierceAttack")->m_funcScriptAICallback,
+                                &OnAI_PierceAttack);
+    Hook_OnAI_QuickAttack.Hook(GetScriptAdminExt().GetScriptAICallback("OnAI_QuickAttack")->m_funcScriptAICallback,
+                               &OnAI_QuickAttack);
+    Hook_OnAI_PowerAttack.Hook(GetScriptAdminExt().GetScriptAICallback("OnAI_PowerAttack")->m_funcScriptAICallback,
+                               &OnAI_PowerAttack);
+    Hook_OnAI_SimpleWhirl.Hook(GetScriptAdminExt().GetScriptAICallback("OnAI_SimpleWhirl")->m_funcScriptAICallback,
+                               &OnAI_SimpleWhirl);
+    Hook_OnAI_WhirlAttack.Hook(GetScriptAdminExt().GetScriptAICallback("OnAI_WhirlAttack")->m_funcScriptAICallback,
+                               &OnAI_WhirlAttack);
     return &GetScriptInit();
 }
 
