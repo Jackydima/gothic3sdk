@@ -285,7 +285,7 @@ DECLARE_SCRIPT_CALLBACK(OnAI_WhirlAttack)
             Entity rightWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
             rightWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
             rightWeapon.TouchDamage.ClearTriggeredList();
-
+            rightWeapon.TouchDamage.AccessProperty<PSTouchDamage::PropertyResetOnUntouch>() = GETrue;
             SelfEntity.Routine.AccessProperty<PSRoutine::PropertyStatePosition>() = 1;
         }
     }
