@@ -96,7 +96,8 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeRight)
         // param.m_Self.Routine.SetLocalCallback("OnEvade");
 
         gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
-            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_Evade, "Right_Raise", NBConfig::fEvadeSpeed);
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_EvadeRight, "Raise",
+            NBConfig::fEvadeSpeed);
 
         if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
         {
@@ -106,7 +107,7 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeRight)
     BREAK_BLOCK
     {
         gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
-            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_Evade, "Right_Hit", NBConfig::fEvadeSpeed);
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_EvadeRight, "Hit", NBConfig::fEvadeSpeed);
 
         if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
         {
@@ -116,7 +117,8 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeRight)
     BREAK_BLOCK
     {
         gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
-            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_Evade, "Right_Recover", NBConfig::fEvadeSpeed);
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_EvadeRight, "Recover",
+            NBConfig::fEvadeSpeed);
 
         if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
         {
@@ -155,7 +157,8 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeLeft)
         // param.m_Self.Routine.SetLocalCallback("OnEvade");
 
         gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
-            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_Evade, "Left_Raise", NBConfig::fEvadeSpeed);
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_EvadeLeft, "Raise",
+            NBConfig::fEvadeSpeed);
 
         if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
         {
@@ -165,7 +168,7 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeLeft)
     BREAK_BLOCK
     {
         gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
-            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_Evade, "Left_Hit", NBConfig::fEvadeSpeed);
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_EvadeLeft, "Hit", NBConfig::fEvadeSpeed);
 
         if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
         {
@@ -175,7 +178,8 @@ ME_DEFINE_AND_REGISTER_SCRIPT_AI_FUNCTION(_AI_EvadeLeft)
     BREAK_BLOCK
     {
         gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
-            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_Evade, "Left_Recover", NBConfig::fEvadeSpeed);
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_EvadeLeft, "Recover",
+            NBConfig::fEvadeSpeed);
 
         if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
         {

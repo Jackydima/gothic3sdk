@@ -202,8 +202,10 @@ enum gEAction
     gEAction_QuickUseS = 143,
     // New Balance addition!
     gEAction_Parry = 144,
+    gEAction_EvadeRight = 145,
+    gEAction_EvadeLeft = 146,
     // New Balance addition End!
-    gEAction_Count = 145
+    gEAction_Count = 147
 };
 
 // gCScriptRoutine_PS.AmbientAction

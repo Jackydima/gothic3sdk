@@ -319,71 +319,32 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
 
 void EvadeAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
 {
-    if (a_pArgs->Action != gEAction_Evade)
+    if (a_pArgs->Action != gEAction_Evade && a_pArgs->Action != gEAction_EvadeRight
+        && a_pArgs->Action != gEAction_EvadeLeft)
         return;
 
     eCEntity *Self = a_pSPU->m_Speaker.GetEntity();
     if (!Self)
         return;
 
+    eCVisualAnimation_PS *vA = static_cast<eCVisualAnimation_PS *>(Self->GetPropertySet(eEPropertySetType_Animation));
+    if (!vA)
+        return;
+    auto actor = vA->GetActor();
+    if (!actor->IsValid())
+        return;
+
     bCString aniName;
-    if (a_pArgs->PhaseName.Contains("Right"))
+    actor->GetActorName().GetWord(1, "_", aniName, GETrue, GETrue);
+
+    switch (a_pArgs->Action)
     {
-        if (a_pArgs->PhaseName == "Right_Raise")
-        {
-            aniName = "Hero_EvadeRight_Raise";
-        }
-
-        else if (a_pArgs->PhaseName == "Right_Recover")
-        {
-            aniName = "Hero_EvadeRight_Recover";
-        }
-
-        else
-        {
-            aniName = "Hero_EvadeRight_Hit";
-        }
-
-        // p_SPU->m_DirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
+        case gEAction_EvadeRight: aniName += "_EvadeRight_"; break;
+        case gEAction_EvadeLeft:  aniName += "_EvadeLeft_"; break;
+        default:                  aniName += "_EvadeBack_"; break;
     }
-    else if (a_pArgs->PhaseName.Contains("Left"))
-    {
-        if (a_pArgs->PhaseName == "Left_Raise")
-        {
-            aniName = "Hero_EvadeLeft_Raise";
-        }
 
-        else if (a_pArgs->PhaseName == "Left_Recover")
-        {
-            aniName = "Hero_EvadeLeft_Recover";
-        }
-
-        else
-        {
-            aniName = "Hero_EvadeLeft_Hit";
-        }
-
-        // p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
-    }
-    else
-    {
-        if (a_pArgs->PhaseName == "Raise")
-        {
-            aniName = "Hero_EvadeBack_Raise";
-        }
-
-        else if (a_pArgs->PhaseName == "Recover")
-        {
-            aniName = "Hero_EvadeBack_Recover";
-        }
-
-        else
-        {
-            aniName = "Hero_EvadeBack_Hit";
-        }
-
-        // p_SPU->m_DirectionVec = -Self->GetWorldMatrix().GetZAxis().GetNormalized();
-    }
+    aniName += a_pArgs->PhaseName;
     a_pSPU->m_strAniString.SetText(aniName);
 }
 
@@ -474,7 +435,8 @@ void CombatMoveStartAniString(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a
 
 void EvadeMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCScriptProcessingUnit *a_pSPU)
 {
-    if (a_pArgs->Action != gEAction_Evade)
+    if (a_pArgs->Action != gEAction_Evade && a_pArgs->Action != gEAction_EvadeRight
+        && a_pArgs->Action != gEAction_EvadeLeft)
         return;
 
     eCEntity *Self = a_pSPU->m_Speaker.GetEntity();
@@ -491,16 +453,16 @@ void EvadeMovement(gCScriptProcessingUnit::sAICombatMoveInstr_Args *a_pArgs, gCS
         a_pSPU->m_SelfNavigationPS->SetCurrentAniDirection(gEDirection_Fwd);
     }
 
-    if (!a_pSPU->m_strAniString.Contains("Hit"))
+    if (!a_pArgs->PhaseName.CompareFast("Hit"))
         return;
 
     const GEFloat evadeDistance = NBConfig::fEvadeDistance;
 
-    if (a_pArgs->PhaseName.Contains("Right"))
+    if (a_pArgs->Action == gEAction_EvadeRight)
     {
         a_pSPU->m_DirectionVec = Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }
-    else if (a_pArgs->PhaseName.Contains("Left"))
+    else if (a_pArgs->Action == gEAction_EvadeLeft)
     {
         a_pSPU->m_DirectionVec = -Self->GetWorldMatrix().GetXAxis().GetNormalized();
     }

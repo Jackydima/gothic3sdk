@@ -1009,8 +1009,8 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
                                       * NBConfig::npcArmorMultiplier);
         }
 
-        //gCItem_PS *pPSArmor = GetPropertySet<gCItem_PS>(npcArmor.GetGameEntity(), eEPropertySetType_Item);
-        gCItem_PS* pPSArmor = reinterpret_cast<gCItem_PS*>(npcArmor.Item.m_pEngineEntityPropertySet);
+        // gCItem_PS *pPSArmor = GetPropertySet<gCItem_PS>(npcArmor.GetGameEntity(), eEPropertySetType_Item);
+        gCItem_PS *pPSArmor = reinterpret_cast<gCItem_PS *>(npcArmor.Item.m_pEngineEntityPropertySet);
         if (!pPSArmor)
         {
             return static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetLevelMax", &Self, &None)
@@ -2070,7 +2070,7 @@ DECLARE_SCRIPT(DoLogicalDamageEvade)
 
     if (Victim.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_Evade)
     {
-        auto characterNPC = GetPropertySet<gCNPC_PS>(Victim.GetInstance(), eEPropertySetType_NPC);
+        /*auto characterNPC = GetPropertySet<gCNPC_PS>(Victim.GetInstance(), eEPropertySetType_NPC);
         if (characterNPC)
         {
             println(characterNPC->GetCurrentMovementAni());
@@ -2078,6 +2078,11 @@ DECLARE_SCRIPT(DoLogicalDamageEvade)
             {
                 return GEFalse;
             }
+        }*/
+        // Simpler!
+        if (Victim.GetCurrentAniPhase() == gEPhase_Hit)
+        {
+            return GEFalse;
         }
     }
 
@@ -2576,8 +2581,230 @@ DECLARE_SCRIPT(GetStrength)
                               + NBConfig::NPCStrengthAddition);
 }
 
+static mCFunctionHook Hook_SelectCombatMove;
+DECLARE_SCRIPT(SelectCombatMove)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+    GEInt retVal =
+        Hook_SelectCombatMove.GetOriginalFunction(&SelectCombatMove)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
+
+    gESpecies selfSpecies = Self.NPC.GetProperty<PSNpc::PropertySpecies>();
+    if (selfSpecies != gESpecies_Human && selfSpecies != gESpecies_Orc)
+        return retVal;
+
+    gEAction oldSelfAction = Self.Routine.GetProperty<PSRoutine::PropertyAction>();
+    if (oldSelfAction == gEAction_Evade)
+        return retVal;
+
+    if (retVal == gEAction_Parade || retVal == gEAction_Back || gEAction_TurnLeft || gEAction_TurnRight || gEAction_Left || gEAction_Right)
+    {
+        GEFloat distanceToTarget = Self.GetDistanceTo(Other);
+        if (distanceToTarget
+            <= static_cast<GEFloat>(GetScriptAdmin().CallScriptFromScript("GetAttackRange", &Other, &Self)))
+        {
+            GEInt random = Entity::GetRandomNumber(100);
+            if (random <= 40)
+            {
+                random = Entity::GetRandomNumber(100);
+                if (random < 33)
+                    return gEAction_Evade;
+
+                if (random < 66)
+                    return gEAction_EvadeRight;
+
+                return gEAction_EvadeLeft;
+            }
+        }
+    }
+    return retVal;
+}
+
+static mCFunctionHook Hook_ZS_Attack_Loop;
+DECLARE_SCRIPT_STATE(ZS_Attack_Loop)
+{
+    INIT_SCRIPT_STATE();
+    auto &ScriptAdmin = GetScriptAdmin();
+
+    BREAK_BLOCK
+    {
+        SelfEntity.SetLookAtTarget(None);
+        Entity currentTarget = SelfEntity.NPC.GetCurrentTarget();
+
+        if (SelfEntity.Routine.GetProperty<PSRoutine::PropertyStatePosition>() == 0)
+        {
+            SelfEntity.Routine.AccessProperty<PSRoutine::PropertyStatePosition>() = 1;
+            if (ScriptAdmin.CallScriptFromScript("OnAttack", &SelfEntity, &None))
+            {
+                return GETrue;
+            }
+        }
+        else if (SelfEntity.Routine.GetStateTime() > 1.0f)
+        {
+            SelfEntity.Routine.SetStateTime(0.0f);
+            SelfEntity.Routine.AccessProperty<PSRoutine::PropertyStatePosition>() = 0;
+
+            if (currentTarget == None)
+            {
+                SelfEntity.Routine.FullStop();
+                SelfEntity.Routine.SetState("ZS_Attack_End");
+                return GETrue;
+            }
+        }
+
+        PUSH_STATE_AND_ARGS(_AI_SelectWeapon);
+        args->m_SelfEntity = SelfEntity;
+        args->m_TargetEntity = currentTarget;
+        RUN_SCRIPT_FUNCTION();
+    }
+
+    BREAK_BLOCK
+    {
+        Entity currentTarget = SelfEntity.NPC.GetCurrentTarget();
+
+        gEAction SelectCombatMove =
+            static_cast<gEAction>(ScriptAdmin.CallScriptFromScript("SelectCombatMove", &SelfEntity, &currentTarget));
+
+        gEClass selfClass = SelfEntity.NPC.GetProperty<PSNpc::PropertyClass>();
+        if (selfClass != gEClass_Mage && selfClass != gEClass_Paladin)
+        {
+            GEInt healthPercentage = ScriptAdmin.CallScriptFromScript("GetHitPointsPercent", &SelfEntity, &None);
+            if (healthPercentage < 40)
+            {
+                if (SelfEntity.Inventory.HasItems(Template("It_Potion_Health"), 1))
+                {
+                    gEWeaponCategory targetWepCat = GetHeldWeaponCategoryNB(currentTarget);
+                    if (targetWepCat == gEWeaponCategory_Melee
+                        || !ScriptAdmin.CallScriptFromScript("HasDangerousWeapon", &currentTarget, &None))
+                    {
+                        if (SelfEntity.GetDistanceTo(currentTarget) > 700)
+                        {
+                            SelectCombatMove = gEAction_Heal;
+                        }
+                    }
+                }
+            }
+        }
+        switch (SelectCombatMove)
+        {
+            case gEAction_Attack:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_Attack");
+                return GETrue;
+            case gEAction_PowerAttack:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_PowerAttack");
+                return GETrue;
+            case gEAction_QuickAttack:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_QuickAttack");
+                return GETrue;
+            case gEAction_SimpleWhirl:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_SimpleWhirl");
+                return GETrue;
+            case gEAction_TurnLeft:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_TurnLeft");
+                return GETrue;
+            case gEAction_TurnRight:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_TurnRight");
+                return GETrue;
+            case gEAction_SprintAttack:
+                SelfEntity.Routine.AccessProperty<PSRoutine::PropertyAction>() = gEAction_SprintAttack;
+                if (SelfEntity.GetDistanceTo(currentTarget) <= static_cast<GEFloat>(
+                        GetScriptAdmin().CallScriptFromScript("GetAttackRange", &SelfEntity, &currentTarget)))
+                {
+                    SelfEntity.Routine.StopAIGoto();
+                    SelfEntity.Routine.SetState("ZS_Attack_PowerAttack");
+                    return GETrue;
+                }
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_Sprint");
+                return GETrue;
+            case gEAction_WhirlAttack:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_WhirlAttack");
+                return GETrue;
+            case gEAction_PierceAttack:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_PierceAttack");
+                return GETrue;
+            case gEAction_HackAttack:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_HackAttack");
+                return GETrue;
+            case gEAction_Parade:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_Parade");
+                return GETrue;
+            case gEAction_Shoot:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_Shoot");
+                return GETrue;
+            case gEAction_Cast:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_Cast");
+                return GETrue;
+            case gEAction_Heal:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_DrinkPotion");
+                return GETrue;
+            case gEAction_Wait:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_Wait");
+                return GETrue;
+            case gEAction_JumpBack:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_JumpBack");
+                return GETrue;
+            case gEAction_Fwd:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_Goto");
+                return GETrue;
+            case gEAction_Back:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_GoBack");
+                return GETrue;
+            case gEAction_Left:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_StrafeLeft");
+                return GETrue;
+            case gEAction_Right:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_StrafeRight");
+                return GETrue;
+            case gEAction_Move:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("ZS_Attack_Sprint");
+                return GETrue;
+            case gEAction_Evade:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("NB_EvadeBackward");
+                return GETrue;
+            case gEAction_EvadeRight:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("NB_EvadeRight");
+                return GETrue;
+            case gEAction_EvadeLeft:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("NB_EvadeLeft");
+                return GETrue;
+            default: break;
+        }
+
+        SelfEntity.Routine.AccessProperty<PSRoutine::PropertyAction>() = gEAction_None;
+    }
+    return GETrue;
+}
+
 void HookFunctions()
 {
+    Hook_ZS_Attack_Loop.Hook(GetScriptAdminExt().GetScriptAIState("ZS_Attack_Loop")->m_funcScriptAIState,
+                             &ZS_Attack_Loop);
+
+    Hook_SelectCombatMove.Hook(GetScriptAdminExt().GetScript("SelectCombatMove")->m_funcScript, &SelectCombatMove);
+
     Hook_GetStrength.Hook(GetScriptAdminExt().GetScript("GetStrength")->m_funcScript, &GetStrength);
 
     Hook_OptionsControll_UpdateConfig
@@ -2778,7 +3005,7 @@ void HookFunctions()
     {
         auto Spawned = Entity::Spawn ( Template ( "IceWolf" ) , Pos );
         bCMatrix NewPos;
-        if ( Spawned.FindSpawnPose ( NewPos , Target , true , x + 1 ) )
+        if ( Spawned.FindSpawnPose ( NewPos , Target , GETrue , x + 1 ) )
         {
             Spawned.MoveTo ( NewPos );
             Spawned.Effect.StartEffect ( Spell.Magic.EffectTargetCast , GEFalse );

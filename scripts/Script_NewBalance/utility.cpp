@@ -91,26 +91,37 @@ GEBool IsDoubleClick(Entity &Self)
         {
             auto delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimePoint);
 
-            if (delay > std::chrono::milliseconds(200))
-            {
-                lastKey = gESessionKey_None;
-                state = EButtonState_Reset;
-                break;
-            }
-
             if (justPressed)
             {
+                if (delay > std::chrono::milliseconds(200))
+                {
+                    state = EButtonState_Init;
+                    lastKey = currentKey;
+                    lastTimePoint = now;
+                    break;
+                }
+
                 if (lastKey == currentKey)
                 {
                     lastKey = gESessionKey_None;
                     state = EButtonState_Reset;
+                    lastTimePoint = now;
                     return GETrue;
                 }
 
-                lastKey = gESessionKey_None;
-                state = EButtonState_Reset;
+                lastKey = currentKey;
+                state = EButtonState_Init;
+                lastTimePoint = now;
+                break;
             }
 
+            if (delay > std::chrono::milliseconds(200))
+            {
+                lastKey = gESessionKey_None;
+                state = EButtonState_Reset;
+                lastTimePoint = now;
+                break;
+            }
             break;
         }
     }
