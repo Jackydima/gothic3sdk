@@ -27,19 +27,12 @@ void AddAction(Entity a_Self, gEAction a_Action, gEDirection a_Direction, Entity
     CallAddAction.GetFunction<mFAddAction>()(a_Self, a_Action, a_Direction, a_Target);
 }
 
-enum EButtonState
-{
-    EButtonState_Reset = 0,
-    EButtonState_Init = 1,
-    EButtonState_WaitForRepeat = 2,
-};
 GEBool IsDoubleClick(Entity &Self)
 {
     if (!Self.IsPlayer())
         return GEFalse;
 
     static gESessionKey lastKey = gESessionKey_None;
-    static EButtonState state = EButtonState_Reset;
     static std::chrono::steady_clock::time_point lastTimePoint;
 
     const GEBool pressed = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressed>();
@@ -51,78 +44,36 @@ GEBool IsDoubleClick(Entity &Self)
     const bool justPressed = pressed && !pressedBefore;
     const bool justReleased = !pressed && pressedBefore;
 
-    switch (state)
+    const auto delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimePoint);
+
+    if (delay > std::chrono::milliseconds(200))
     {
-        case EButtonState_Reset:
-            if (justPressed)
-            {
-                lastKey = currentKey;
-                state = EButtonState_Init;
-                lastTimePoint = now;
-            }
-            break;
+        lastKey = gESessionKey_None;
+    }
 
-        case EButtonState_Init:
+    if (justPressed)
+    {
+        if (currentKey == lastKey && lastKey != gESessionKey_None)
         {
-            if (justPressed)
-            {
-                lastKey = currentKey;
-                lastTimePoint = now;
-                break;
-            }
-
-            auto delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimePoint);
-            if (delay > std::chrono::milliseconds(200))
-            {
-                lastKey = gESessionKey_None;
-                state = EButtonState_Reset;
-                break;
-            }
-
-            if (lastKey == currentKey && justReleased)
-            {
-                if (pressedDuration <= 200)
-                {
-                    state = EButtonState_WaitForRepeat;
-                    lastTimePoint = now;
-                }
-                else
-                {
-                    lastKey = gESessionKey_None;
-                    state = EButtonState_Reset;
-                }
-            }
-            break;
+            lastKey = gESessionKey_None;
+            return GETrue;
         }
 
-        case EButtonState_WaitForRepeat:
+        lastKey = currentKey;
+        lastTimePoint = now;
+        return GEFalse;
+    }
+
+    if (justReleased)
+    {
+        if (pressedDuration > 200)
         {
-            auto delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimePoint);
-
-            if (justPressed)
-            {
-                if (delay > std::chrono::milliseconds(200) || lastKey != currentKey)
-                {
-                    state = EButtonState_Init;
-                    lastKey = currentKey;
-                    lastTimePoint = now;
-                    break;
-                }
-
+            if (lastKey == currentKey)
                 lastKey = gESessionKey_None;
-                state = EButtonState_Reset;
-                lastTimePoint = now;
-                return GETrue;
-            }
-
-            if (delay > std::chrono::milliseconds(200))
-            {
-                lastKey = gESessionKey_None;
-                state = EButtonState_Reset;
-                lastTimePoint = now;
-                break;
-            }
-            break;
+        }
+        else
+        {
+            lastTimePoint = now;
         }
     }
 
