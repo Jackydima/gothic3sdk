@@ -2531,7 +2531,9 @@ void GE_STDCALL OptionsControll_InitControllList(void)
     }
 
     // Manually Set the Text afterwards
-    options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX - gESessionKey_Parry), 0, "Parry");
+    eCLocString ParryString = eCLocString("HUD_SessionKey_Parry");
+
+    options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX - gESessionKey_Parry), 0, ParryString.GetString());
 }
 
 static mCFunctionHook Hook_OptionsControll_UpdateConfig;
@@ -2798,8 +2800,24 @@ DECLARE_SCRIPT_STATE(ZS_Attack_Loop)
     return GETrue;
 }
 
+static mCFunctionHook Hook_GetString;
+bCUnicodeString GetString(bCString *p_String1, bCString *p_String2)
+{
+    bCUnicodeString returnValue = Hook_GetString.GetOriginalFunction(&GetString)(p_String1, p_String2);
+    if (returnValue.IsEmpty())
+    {
+        bCString s = p_String1->GetText();
+        returnValue = s.GetText();
+    }
+    return returnValue;
+}
+
 void HookFunctions()
 {
+    Hook_GetString
+        .Prepare(RVA_Engine(0x2a8a90), &GetString, mCBaseHook::mEHookType_ThisCall)
+        .Hook();
+
     Hook_ZS_Attack_Loop.Hook(GetScriptAdminExt().GetScriptAIState("ZS_Attack_Loop")->m_funcScriptAIState,
                              &ZS_Attack_Loop);
 

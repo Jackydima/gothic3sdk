@@ -178,6 +178,14 @@ void AddNewEffect()
     }
 }
 
+void AddNewStringEntries()
+{
+    auto &LocAdmin = eCLocAdmin::GetInstance();
+    // Read the entries and extend loctable entries
+    GEBool success = LocAdmin.Read("Data/Strings/stringtableMod.ini", GETrue);
+    println("<LocAdmin>: Reading New String Entries Status: %s", success? "True" : "False");
+}
+
 extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
 {
     // Ensure that that Script_Game.dll is loaded.
@@ -195,6 +203,7 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
 
     HookFunctions();
     HookCallHooks();
+    AddNewStringEntries();
 
     static mCFunctionHook Hook_Assesshit;
     Hook_Assesshit.Hook(GetScriptAdminExt().GetScript("AssessHit")->m_funcScript, &AssessHit,

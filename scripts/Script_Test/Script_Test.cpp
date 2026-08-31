@@ -257,8 +257,6 @@ bCUnicodeString GetString(bCString *p_String1, bCString *p_String2)
     if (returnValue.IsEmpty())
     {
         bCString s = p_String1->GetText();
-        // Check for Prequels, then remove them
-        s.Delete(0, 3);
         returnValue = s.GetText();
     }
     return returnValue;
