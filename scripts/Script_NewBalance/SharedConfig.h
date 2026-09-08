@@ -29,6 +29,7 @@ extern GEFloat summoningLevelMultiplier;
 
 extern GEBool UseNewDamageCalculation;
 extern GEBool UseNewNPCProtection;
+extern GEBool ZeroStaminaAttack;
 extern GEBool newSummoning;
 extern GEBool vanishSummons;
 extern GEBool onlyHeavyAttackKnockDown;

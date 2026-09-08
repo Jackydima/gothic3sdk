@@ -2598,7 +2598,8 @@ DECLARE_SCRIPT(SelectCombatMove)
     if (oldSelfAction == gEAction_Evade)
         return retVal;
 
-    if (retVal == gEAction_Parade || retVal == gEAction_Back || gEAction_TurnLeft || gEAction_TurnRight || gEAction_Left || gEAction_Right)
+    if (retVal == gEAction_Parade || retVal == gEAction_Back || gEAction_TurnLeft || gEAction_TurnRight || gEAction_Left
+        || gEAction_Right)
     {
         GEFloat distanceToTarget = Self.GetDistanceTo(Other);
         if (distanceToTarget
@@ -2814,9 +2815,7 @@ bCUnicodeString GetString(bCString *p_String1, bCString *p_String2)
 
 void HookFunctions()
 {
-    Hook_GetString
-        .Prepare(RVA_Engine(0x2a8a90), &GetString, mCBaseHook::mEHookType_ThisCall)
-        .Hook();
+    Hook_GetString.Prepare(RVA_Engine(0x2a8a90), &GetString, mCBaseHook::mEHookType_ThisCall).Hook();
 
     Hook_ZS_Attack_Loop.Hook(GetScriptAdminExt().GetScriptAIState("ZS_Attack_Loop")->m_funcScriptAIState,
                              &ZS_Attack_Loop);
@@ -2976,23 +2975,31 @@ void HookFunctions()
             .Prepare(RVA_ScriptGame(0xb0520), &StaminaUpdateOnTick, mCBaseHook::mEHookType_OnlyStack)
             .Hook();
 
-        Hook_PS_Melee_Attack.Hook(GetScriptAdminExt().GetScriptAIState("PS_Melee_Attack")->m_funcScriptAIState,
-                                  &PS_Melee_Attack);
-        Hook_PS_Melee_SimpleWhirl.Hook(
-            GetScriptAdminExt().GetScriptAIState("PS_Melee_SimpleWhirl")->m_funcScriptAIState, &PS_Melee_SimpleWhirl);
-        Hook_PS_Melee_PowerAttack.Hook(
-            GetScriptAdminExt().GetScriptAIState("PS_Melee_PowerAttack")->m_funcScriptAIState, &PS_Melee_PowerAttack);
-        Hook_PS_Melee_QuickAttack.Hook(
-            GetScriptAdminExt().GetScriptAIState("PS_Melee_QuickAttack")->m_funcScriptAIState, &PS_Melee_QuickAttack);
-        Hook_PS_Melee_WhirlAttack.Hook(
-            GetScriptAdminExt().GetScriptAIState("PS_Melee_WhirlAttack")->m_funcScriptAIState, &PS_Melee_WhirlAttack);
-        Hook_PS_Melee_PierceAttack.Hook(
-            GetScriptAdminExt().GetScriptAIState("PS_Melee_PierceAttack")->m_funcScriptAIState, &PS_Melee_PierceAttack);
-        Hook_PS_Melee_HackAttack.Hook(GetScriptAdminExt().GetScriptAIState("PS_Melee_HackAttack")->m_funcScriptAIState,
-                                      &PS_Melee_HackAttack);
-        Hook_PS_Melee_FinishingAttack.Hook(
-            GetScriptAdminExt().GetScriptAIState("PS_Melee_FinishingAttack")->m_funcScriptAIState,
-            &PS_Melee_FinishingAttack);
+        if (!NBConfig::ZeroStaminaAttack)
+        {
+            Hook_PS_Melee_Attack.Hook(GetScriptAdminExt().GetScriptAIState("PS_Melee_Attack")->m_funcScriptAIState,
+                                      &PS_Melee_Attack);
+            Hook_PS_Melee_SimpleWhirl.Hook(
+                GetScriptAdminExt().GetScriptAIState("PS_Melee_SimpleWhirl")->m_funcScriptAIState,
+                &PS_Melee_SimpleWhirl);
+            Hook_PS_Melee_PowerAttack.Hook(
+                GetScriptAdminExt().GetScriptAIState("PS_Melee_PowerAttack")->m_funcScriptAIState,
+                &PS_Melee_PowerAttack);
+            Hook_PS_Melee_QuickAttack.Hook(
+                GetScriptAdminExt().GetScriptAIState("PS_Melee_QuickAttack")->m_funcScriptAIState,
+                &PS_Melee_QuickAttack);
+            Hook_PS_Melee_WhirlAttack.Hook(
+                GetScriptAdminExt().GetScriptAIState("PS_Melee_WhirlAttack")->m_funcScriptAIState,
+                &PS_Melee_WhirlAttack);
+            Hook_PS_Melee_PierceAttack.Hook(
+                GetScriptAdminExt().GetScriptAIState("PS_Melee_PierceAttack")->m_funcScriptAIState,
+                &PS_Melee_PierceAttack);
+            Hook_PS_Melee_HackAttack.Hook(
+                GetScriptAdminExt().GetScriptAIState("PS_Melee_HackAttack")->m_funcScriptAIState, &PS_Melee_HackAttack);
+            Hook_PS_Melee_FinishingAttack.Hook(
+                GetScriptAdminExt().GetScriptAIState("PS_Melee_FinishingAttack")->m_funcScriptAIState,
+                &PS_Melee_FinishingAttack);
+        }
     }
 
     Hook_GetAttituteSummons.Hook(GetScriptAdminExt().GetScript("GetAttitude")->m_funcScript, &GetAttitudeSummons);
