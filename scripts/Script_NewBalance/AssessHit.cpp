@@ -1932,6 +1932,26 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         return gEAction_QuickStumble;
     }
 
+    // Special Zombie Protection
+    if (Victim.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Zombie)
+    {
+        if (Victim.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_PowerAttack
+            && Victim.GetCurrentAniPhase() != gEPhase_Recover
+            && Victim.GetCurrentAniPhase() != gEPhase_Raise
+            //&& DamagerOwnerAction != gEAction_PowerAttack
+            && DamagerOwnerAction != gEAction_HackAttack)
+        {
+            ScriptAdmin.CallScriptFromScript("PipiStumble", &Victim, &None, 0);
+            return gEAction_Stumble;
+        }
+
+        if ((IsNormalProjectileNB(Damager) || IsMagicProjectileNB(Damager)) && !isHeadshot)
+        {
+            ScriptAdmin.CallScriptFromScript("PipiStumble", &Victim, &None, 0);
+            return gEAction_Stumble;
+        }
+    }
+
     // Scream or make HitEffect, but no Stumble also processes logic when you hit someone, like setting up combat mode
     if ((GEInt)HitForce <= gEHitForce_Minimal
         && (GetHeldWeaponCategoryNB(DamagerOwner) == gEWeaponCategory_Ranged || IsInActiveAttack(Victim)))
