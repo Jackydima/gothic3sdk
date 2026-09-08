@@ -147,25 +147,28 @@ void MagicPartyMemberRemover(Entity p_summoner)
 void DoAOEDamage(Entity &p_damager, Entity &p_victim)
 {
     auto entityList = p_damager.GetEntitiesByDistance();
+    Entity Owner = p_damager.GetOwner();
     // print("ListNum: %d\n",entityList.GetCount ( ));
+    Entity currentEntry;
     for (GEInt i = 0; i < entityList.GetCount(); i++)
     {
-        Entity entry = entityList.GetAt(i);
-        // print ( "Entry Name: %s\n",entry.GetName().GetText ( ) );
-        GEFloat distance = p_damager.GetDistanceTo(entry);
+        currentEntry = entityList.GetAt(i);
+        // print ( "Entry Name: %s\n",currentEntry.GetName().GetText ( ) );
+        GEFloat distance = p_damager.GetDistanceTo(currentEntry);
         // print ( "Distance: %f\n" , distance );
         if (distance > 1000)
             break;
-        if (!entry.Navigation.IsValid() || entry.IsDead() || entry.IsDown() || entry == p_damager.GetOwner()
-            || entry.Party.GetPartyLeader() == p_damager.GetOwner() || entry == p_victim)
+        if (!currentEntry.Navigation.IsValid() || currentEntry.IsDead() || currentEntry.IsDown()
+            || currentEntry == Owner || currentEntry.Party.GetPartyLeader() == Owner
+            || Owner.Party.GetPartyLeader() == currentEntry || currentEntry == p_victim)
         {
             continue;
         }
 
         GEInt damageAmount = static_cast<GEInt>(p_damager.Damage.GetProperty<PSDamage::PropertyDamageAmount>()
                                                 * (1 - (distance / 1000)));
-        // print ( "DoDamage !! to %s\n",entry.GetName().GetText() );
-        entry.DoDamage(p_damager, damageAmount, p_damager.Damage.GetProperty<PSDamage::PropertyDamageType>());
+        // print ( "DoDamage !! to %s\n",currentEntry.GetName().GetText() );
+        currentEntry.DoDamage(p_damager, damageAmount, p_damager.Damage.GetProperty<PSDamage::PropertyDamageType>());
     }
 }
 
