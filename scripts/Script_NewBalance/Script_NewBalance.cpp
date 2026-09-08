@@ -18,6 +18,8 @@ void LoadSettings()
     }
     if (config.ReadFile("newbalance.ini"))
     {
+        NBConfig::UseNewDamageCalculation = config.GetBool("Script", "UseNewDamageCalculation", NBConfig::UseNewDamageCalculation);
+        NBConfig::UseNewNPCProtection = config.GetBool("Script", "UseNewNPCProtection", NBConfig::UseNewNPCProtection);
         NBConfig::newSummoning = config.GetBool("Script", "NewSummoning", NBConfig::newSummoning);
         NBConfig::vanishSummons = config.GetBool("Script", "VanishSummons", NBConfig::vanishSummons);
         NBConfig::onlyHeavyAttackKnockDown =

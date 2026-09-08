@@ -32,6 +32,7 @@ void TestAnimationTime();
 void CheckFocusBodyStats();
 
 void TestMatrix();
+void AmmoTest();
 
 void HotKeyTester::Process()
 {
@@ -43,10 +44,11 @@ void HotKeyTester::Process()
 
     if (eCApplication::GetInstance().GetKeyboard().KeyPressed(eCInpShared::eEKeyboardStateOffset_NUM_1))
     {
-        TestMatrix();
+        //TestMatrix();
         if (!num1KeyPressed)
         {
             num1KeyPressed = GETrue;
+            AmmoTest();
         }
     }
     else
@@ -77,6 +79,16 @@ void HotKeyTester::Process()
     {
         num5KeyPressed = GEFalse;
     }
+}
+
+void AmmoTest()
+{
+    Entity Player = Entity::GetPlayer();
+    Entity Ammo = Player.Inventory.GetItemFromSlot(gESlot_Ammo);
+    Entity DefaultAmmo = Player.Inventory.GetDefaultItemFromSlot(gESlot_Ammo);
+
+    std::cout << "Ammo: " << Ammo.GetName() << "\n";
+    std::cout << "DefaultAmmo: " << DefaultAmmo.GetName() << "\n";
 }
 
 void TestMatrix()
