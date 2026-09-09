@@ -147,8 +147,10 @@ void MagicPartyMemberRemover(Entity p_summoner)
 void DoAOEDamage(Entity &p_damager, Entity &p_victim)
 {
     auto entityList = p_damager.GetEntitiesByDistance();
+    auto &ScriptAdmin = GetScriptAdmin();
     Entity Owner = p_damager.GetOwner();
-    // print("ListNum: %d\n",entityList.GetCount ( ));
+    gEAttitude VictimAttitude =
+        static_cast<gEAttitude>(ScriptAdmin.CallScriptFromScript("GetAttitude", &p_victim, &Owner));
     Entity currentEntry;
     for (GEInt i = 0; i < entityList.GetCount(); i++)
     {
@@ -163,6 +165,22 @@ void DoAOEDamage(Entity &p_damager, Entity &p_victim)
             || Owner.Party.GetPartyLeader() == currentEntry || currentEntry == p_victim)
         {
             continue;
+        }
+
+        // If Owner targeted a friendly target, he wants to hit friendly npcs anyways, ignore it for further checks
+        // If Owner targeted a non friendly target, we check if currentEntry in AOE range is friendly to us
+        // and if so, we ignore that Entity (Maybe also check if they are in combat?)
+        if (VictimAttitude != gEAttitude_Friendly && Owner.NPC.GetCurrentTarget() != currentEntry)
+        {
+            if (Owner.IsPlayer()
+                && currentEntry.NPC.GetProperty<PSNpc::PropertyAttitudeToPlayer2>() == gEAttitude_Friendly)
+            {
+                continue;
+            }
+            else if (ScriptAdmin.CallScriptFromScript("GetAttitude", &Owner, &currentEntry) == gEAttitude_Friendly)
+            {
+                continue;
+            }
         }
 
         GEInt damageAmount = static_cast<GEInt>(p_damager.Damage.GetProperty<PSDamage::PropertyDamageAmount>()

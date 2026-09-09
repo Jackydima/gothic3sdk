@@ -1431,7 +1431,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         // Powercast
         if (Damager.Projectile.GetProperty<PSProjectile::PropertyPathStyle>() == gEProjectilePath_Missile)
         {
-            FinalDamage *= Damager.Damage.GetProperty<PSDamage::PropertyDamageManaMultiplier>();
+            FinalDamage = static_cast<GEInt>(FinalDamage * Damager.Damage.GetProperty<PSDamage::PropertyDamageManaMultiplier>());
         }
     }
 
