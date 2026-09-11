@@ -466,8 +466,9 @@ static mCFunctionHook Hook_StaminaUpdateOnTick;
 GEInt StaminaUpdateOnTick(Entity p_entity)
 {
     const GEInt standardStaminaRecovery = NBConfig::staminaRecoveryPerTick;
+    Entity Player = Entity::GetPlayer();
 
-    if (p_entity.IsPlayer() && p_entity.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction::gEAction_Aim)
+    if (p_entity == Player && p_entity.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction::gEAction_Aim)
     {
         if (GetScriptAdmin().CallScriptFromScript("GetStaminaPoints", &p_entity, &None, 0) <= 7)
         {
@@ -480,7 +481,7 @@ GEInt StaminaUpdateOnTick(Entity p_entity)
     }
 
     // For Now Only for player!
-    if (p_entity.IsSprinting() || (p_entity.IsSwimming() && *(BYTE *)RVA_Executable(0x27FD2)))
+    if (p_entity == Player && (p_entity.IsSprinting() || (p_entity.IsSwimming() && *(BYTE *)RVA_Executable(0x27FD2))))
     {
         if (p_entity.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Bloodfly)
         {
@@ -490,12 +491,12 @@ GEInt StaminaUpdateOnTick(Entity p_entity)
         if (eCApplication::GetInstance().GetEngineSetup().AlternativeBalancing)
         {
             if (p_entity.Inventory.IsSkillActive(Template("Perk_Sprinter"))
-                || (p_entity != Entity::GetPlayer() && getPowerLevel(p_entity) >= NBConfig::warriorLevel))
+                || (p_entity != Player && getPowerLevel(p_entity) >= NBConfig::warriorLevel))
                 return StaminaUpdateOnTickHelper(p_entity, -4);
             return StaminaUpdateOnTickHelper(p_entity, -8);
         }
         if (p_entity.Inventory.IsSkillActive(Template("Perk_Sprinter"))
-            || (p_entity != Entity::GetPlayer() && getPowerLevel(p_entity) >= NBConfig::warriorLevel))
+            || (p_entity != Player && getPowerLevel(p_entity) >= NBConfig::warriorLevel))
             return StaminaUpdateOnTickHelper(p_entity, -5);
         return StaminaUpdateOnTickHelper(p_entity, -10);
     }
@@ -520,14 +521,14 @@ GEInt StaminaUpdateOnTick(Entity p_entity)
     // Maybe Add more complex logic for Npcs aswell bro
     if (weatherCondition >= 40.0)
     {
-        if (p_entity.IsPlayer() && !p_entity.Inventory.IsSkillActive(Template("Perk_ResistHeat")))
+        if (p_entity == Player && !p_entity.Inventory.IsSkillActive(Template("Perk_ResistHeat")))
             return StaminaUpdateOnTickHelper(p_entity, 4);
         return StaminaUpdateOnTickHelper(p_entity, standardStaminaRecovery);
     }
 
     if (weatherCondition <= -40.0)
     {
-        if (p_entity.IsPlayer() && !p_entity.Inventory.IsSkillActive(Template("Perk_ResistCold")))
+        if (p_entity == Player && !p_entity.Inventory.IsSkillActive(Template("Perk_ResistCold")))
             return StaminaUpdateOnTickHelper(p_entity, 4);
         return StaminaUpdateOnTickHelper(p_entity, standardStaminaRecovery);
     }
@@ -2692,6 +2693,28 @@ DECLARE_SCRIPT(SelectCombatMove)
         }
     }
 
+    // Reduce the chance of Monster to Jump Back
+    if (retVal == gEAction_JumpBack && Entity::GetRandomNumber(100) < 65)
+    {
+        GEInt Random = Entity::GetRandomNumber(100);
+        if (Random < 10)
+        {
+            return gEAction_PowerAttack;
+        }
+        else if (Random < 60)
+        {
+            return gEAction_Back;
+        }
+        else if (Random < 80)
+        {
+            return gEAction_TurnLeft;
+        }
+        else
+        {
+            return gEAction_TurnRight;
+        }
+    }
+
     // No change
     return retVal;
 }
@@ -2982,6 +3005,38 @@ DECLARE_SCRIPT(GetCombatMoveLength)
     return iLength;
 }
 
+static mCFunctionHook Hook_CanHit;
+GEBool CanHit(GEU32 a_uMinHit)
+{
+    PSNpc *This = Hook_CanHit.GetSelf<PSNpc *>();
+    Entity Self = static_cast<Entity>(This->m_pEngineEntityPropertySet->GetEntity());
+    if (!CanRage(Self))
+    {
+        auto EDifficulty = Entity::GetCurrentDifficulty();
+        GEInt Random = Entity::GetRandomNumber(100);
+        if (EDifficulty == EDifficulty_Hard)
+        {
+            if (Random >= 70)
+            {
+                return GETrue;
+            }
+        }
+        else if (EDifficulty == EDifficulty_Easy)
+        {
+            if (Random >= 95)
+            {
+                return GETrue;
+            }
+        }
+        else if (Random >= 80)
+        {
+            return GETrue;
+        }
+    }
+
+    return Hook_CanHit.GetOriginalFunction(&CanHit)(a_uMinHit);
+}
+
 static mCFunctionHook Hook_GetString;
 bCUnicodeString GetString(bCString *p_String1, bCString *p_String2)
 {
@@ -2999,6 +3054,8 @@ void HookFunctions()
 #ifdef GE_DEBUG
     Hook_GetString.Prepare(RVA_Engine(0x2a8a90), &GetString, mCBaseHook::mEHookType_ThisCall).Hook();
 #endif
+
+    Hook_CanHit.Prepare(RVA_Script(0x0bd00), &CanHit, mCBaseHook::mEHookType_ThisCall).Hook();
 
     Hook_GetCombatMoveLength.Hook(GetScriptAdminExt().GetScript("GetCombatMoveLength")->m_funcScript,
                                   &GetCombatMoveLength);
