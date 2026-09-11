@@ -2734,10 +2734,10 @@ DECLARE_SCRIPT(OnAttack)
 
             if (Entry.NPC.GetProperty<PSNpc::PropertyCombatState>() == 0)
                 continue;
-        
+
             if (Entry.Routine.GetProperty<PSRoutine::PropertyAIMode>() != gEAIMode_Combat)
                 continue;
-            
+
             iActiveAttacker += 1;
         }
 
@@ -2933,6 +2933,55 @@ DECLARE_SCRIPT_STATE(ZS_Attack_Loop)
     return GETrue;
 }
 
+static mCFunctionHook Hook_GetCombatMoveLength;
+DECLARE_SCRIPT(GetCombatMoveLength)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+    gEAction action = static_cast<gEAction>(a_iArgs);
+    GEInt iLength = -1;
+
+    if (Self.GetCurrentAniPhase() != gEPhase_Hit)
+        return iLength;
+
+    GEInt iCombatMoveSkillLevel = GetCombatMoveSkillLevel(Self);
+    GEFloat fRangeMultiplicator = 1.0f;
+    if (iCombatMoveSkillLevel == 0)
+    {
+        fRangeMultiplicator = 0.8f;
+    }
+
+    else if (iCombatMoveSkillLevel == 2)
+    {
+        fRangeMultiplicator = 1.2f;
+    }
+
+    switch (action)
+    {
+        case gEAction_Stumble:
+        case gEAction_StumbleR:
+        case gEAction_StumbleL:
+        case gEAction_QuickStumble:
+        case gEAction_PierceStumble: iLength = 50; break;
+
+        case gEAction_JumpBack:     iLength = static_cast<GEInt>(180.0f * fRangeMultiplicator); break;
+        case gEAction_QuickAttack:
+        case gEAction_QuickAttackR:
+        case gEAction_QuickAttackL: iLength = static_cast<GEInt>(100.0f * fRangeMultiplicator); break;
+
+        case gEAction_Attack:
+        case gEAction_SimpleWhirl:  iLength = static_cast<GEInt>(180.0f * fRangeMultiplicator); break;
+        case gEAction_HackAttack:   iLength = static_cast<GEInt>(240.0f * fRangeMultiplicator); break;
+        case gEAction_PierceAttack: iLength = static_cast<GEInt>(150.0f * fRangeMultiplicator); break;
+        case gEAction_GetUpAttack:  iLength = static_cast<GEInt>(120.0f * fRangeMultiplicator); break;
+        case gEAction_WhirlAttack:  iLength = static_cast<GEInt>(220.0f * fRangeMultiplicator); break;
+        case gEAction_PowerAttack:
+        case gEAction_SprintAttack: iLength = static_cast<GEInt>(240.0f * fRangeMultiplicator); break;
+        default:                    break;
+    }
+
+    return iLength;
+}
+
 static mCFunctionHook Hook_GetString;
 bCUnicodeString GetString(bCString *p_String1, bCString *p_String2)
 {
@@ -2950,6 +2999,9 @@ void HookFunctions()
 #ifdef GE_DEBUG
     Hook_GetString.Prepare(RVA_Engine(0x2a8a90), &GetString, mCBaseHook::mEHookType_ThisCall).Hook();
 #endif
+
+    Hook_GetCombatMoveLength.Hook(GetScriptAdminExt().GetScript("GetCombatMoveLength")->m_funcScript,
+                                  &GetCombatMoveLength);
 
     Hook_ZS_Attack_Loop.Hook(GetScriptAdminExt().GetScriptAIState("ZS_Attack_Loop")->m_funcScriptAIState,
                              &ZS_Attack_Loop);

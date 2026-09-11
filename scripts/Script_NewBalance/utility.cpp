@@ -1324,3 +1324,77 @@ GEBool CanParry(Entity &p_Self)
     }
     return GEFalse;
 }
+
+GEInt GetCombatMoveSkillLevel(Entity &p_self)
+{
+    if (!p_self.IsPlayer() || p_self.NPC.IsTransformed())
+    {
+        GEInt iLevel = p_self.NPC.GetProperty<PSNpc::PropertyLevelMax>();
+
+        if (iLevel >= 40)
+        {
+            return 2;
+        }
+
+        if (iLevel >= 30)
+        {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, p_self))
+    {
+        if (p_self.Inventory.IsSkillActive("Perk_1H1H_2"))
+        {
+            return 2;
+        }
+        if (p_self.Inventory.IsSkillActive("Perk_1H1H_1"))
+        {
+            return 1;
+        }
+        return 0;
+    }
+
+    gEUseType rightHandUseType = p_self.Inventory.GetItemFromSlot(gESlot_RightHand).Interaction.GetUseType();
+    switch (rightHandUseType)
+    {
+        case gEUseType_1H:
+            if (p_self.Inventory.IsSkillActive("Perk_1H_3"))
+            {
+                return 2;
+            }
+            if (p_self.Inventory.IsSkillActive("Perk_1H_2"))
+            {
+                return 1;
+            }
+            break;
+        case gEUseType_2H:
+        case gEUseType_Axe:
+        case gEUseType_Halberd:
+        case gEUseType_Pickaxe:
+            if (p_self.Inventory.IsSkillActive("Perk_Axe_3"))
+            {
+                return 2;
+            }
+            if (p_self.Inventory.IsSkillActive("Perk_Axe_2"))
+            {
+                return 1;
+            }
+            break;
+        case gEUseType_Staff:
+            if (p_self.Inventory.IsSkillActive("Perk_Staff_3"))
+            {
+                return 2;
+            }
+            if (p_self.Inventory.IsSkillActive("Perk_Staff_2"))
+            {
+                return 1;
+            }
+            break;
+        default: break;
+    }
+
+    return 0;
+}

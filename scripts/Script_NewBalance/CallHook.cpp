@@ -112,41 +112,32 @@ void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_tar
 
 // TODO Make config values for each reach!
 static mCCallHook Hook_CombatMoveScale;
-void CombatMoveScale(void *a_pArgs, gCScriptProcessingUnit *a_pSPU, bCVector *a_pVec)
+void CombatMoveScale(void *a_pArgs, gCScriptProcessingUnit *a_pSPU)
 {
     UNREFERENCED_PARAMETER(a_pArgs);
+    if (!a_pSPU)
+        return;
+
     Entity Self = (Entity)a_pSPU->GetSelfEntity();
-    // std::cout << "Name: " << Self.GetName ( ) << "\nRoutine: " << Self.Routine.GetProperty<PSRoutine::PropertyAction>
-    // ( ) << "\n";
-    switch (Self.Routine.GetProperty<PSRoutine::PropertyAction>())
-    {
-        case gEAction_JumpBack:           a_pVec->Scale(0.8f * NBConfig::ATTACK_REACH_MULTIPLIER); break;
-        case gEAction_Stumble:
-        case gEAction_StumbleL:
-        case gEAction_StumbleR:
-        case gEAction_QuickParadeStumble:
-        case gEAction_HeavyParadeStumble:
-        case gEAction_QuickStumble:
-        case gEAction_SitKnockDown:
-        case gEAction_ParadeStumble:
-        case gEAction_ParadeStumbleL:
-        case gEAction_ParadeStumbleR:
-        case gEAction_PierceStumble:      a_pVec->Scale(0.5f); break;
-        case gEAction_LieKnockDown:
-        case gEAction_LieKnockOut:
-        case gEAction_FinishingAttack:    break;
-        case gEAction_HackAttack:
-            if (Self.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Orc)
-                a_pVec->Scale(2.17f * NBConfig::ATTACK_REACH_MULTIPLIER);
-            else
-                a_pVec->Scale(1.2f * NBConfig::ATTACK_REACH_MULTIPLIER);
-            break;
-        case gEAction_QuickAttack:
-        case gEAction_QuickAttackR:
-        case gEAction_QuickAttackL: a_pVec->Scale(0.85f * NBConfig::ATTACK_REACH_MULTIPLIER); break;
-        case gEAction_PowerAttack:  a_pVec->Scale(1.2f * NBConfig::ATTACK_REACH_MULTIPLIER); break;
-        default:                    a_pVec->Scale(NBConfig::ATTACK_REACH_MULTIPLIER);
-    }
+
+    eCVisualAnimation_PS *VA_PS =
+        GetPropertySet<eCVisualAnimation_PS>(Self.GetGameEntity(), eEPropertySetType_Animation);
+
+    if (!VA_PS)
+        return;
+
+    GEFloat iMoveRange = static_cast<GEFloat>(
+        GetScriptAdmin().CallScriptFromScript("GetCombatMoveLength", &Self, &None, a_pSPU->m_InstrAction));
+    if (iMoveRange == -1)
+        return;
+
+    auto actor = VA_PS->GetActor();
+    GEFloat fAniScale = reinterpret_cast<gCScriptProcessingUnit::sAICombatMoveInstr_Args *>(a_pArgs)->AniSpeedScale;
+    GEFloat fMaxTime = static_cast<GEFloat>(actor->GetMaxTime(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst));
+    GEFloat fAnimationTime = fMaxTime / fAniScale;
+    
+    a_pSPU->m_DirectionVec.Normalize(); // Reset Length
+    a_pSPU->m_DirectionVec.Scale(iMoveRange / fAnimationTime * NBConfig::ATTACK_REACH_MULTIPLIER);
 }
 
 /**
@@ -555,11 +546,10 @@ void HookCallHooks()
         .Hook();
 
     Hook_CombatMoveScale
-        .Prepare(RVA_Game(0x16b8a3), &CombatMoveScale, mCBaseHook::mEHookType_Mixed, mERegisterType::mERegisterType_Ecx)
+        .Prepare(RVA_Game(0x16b8a9), &CombatMoveScale, mCBaseHook::mEHookType_Mixed)
         .InsertCall()
         .AddPtrStackArgEbp(0x8)
         .AddPtrStackArgEbp(0xC)
-        .AddRegArg(mERegisterType::mERegisterType_Ecx)
         .RestoreRegister()
         .Hook();
 

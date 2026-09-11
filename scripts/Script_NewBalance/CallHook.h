@@ -9,7 +9,7 @@ void FixDualOneHanded(gCScriptProcessingUnit *p_PSU);
 
 void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_target, PSProjectile *p_projectile);
 
-void CombatMoveScale(void *p_Ptr, gCScriptProcessingUnit *p_PSU, bCVector *vec);
+void CombatMoveScale(void *p_Ptr, gCScriptProcessingUnit *p_PSU);
 
 void PS_Ranged_PowerAim(void *p_Ptr, gCScriptProcessingUnit *p_PSU, void *esp);
 
