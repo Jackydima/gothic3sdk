@@ -942,24 +942,14 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
             return protection;
         }
 
-        Entity npcArmor = None;
         auto &ScriptAdmin = GetScriptAdmin();
-
-        if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &Self, &None))
+        const bCString bodyPrefix = "Body_";
+        Entity npcArmor = Entity(Template(bodyPrefix + Self.GetName()));
+        if (npcArmor == None || !npcArmor.Item.IsValid())
         {
-            npcArmor = Self.Inventory.GetDefaultItemFromSlot(gESlot_Body);
-        }
-        else
-        {
-            const bCString bodyPrefix = "Body_";
-            bCString entityBodyString = bodyPrefix + Self.GetName();
-
-            Entity monsterBodyEntity = Entity(Template(entityBodyString));
-
-            if (monsterBodyEntity != None)
+            if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &Self, &None))
             {
-                // If an individual Entity Armor for self was created prioritize it!
-                npcArmor = monsterBodyEntity;
+                npcArmor = Self.Inventory.GetDefaultItemFromSlot(gESlot_Body);
             }
             else
             {
@@ -2434,7 +2424,7 @@ DECLARE_SCRIPT(OnPlayerGameKeyPressed)
         case gESessionKey_Backward:
         case gESessionKey_StrafeLeft:
         case gESessionKey_StrafeRight:
-        case gESessionKey_Parry:       break;
+        case gESessionKey_Parry:         break;
         default:
             return Hook_OnPlayerGameKeyPressed.GetOriginalFunction(&OnPlayerGameKeyPressed)(a_pSPU, a_pSelfEntity,
                                                                                             a_pOtherEntity, a_iArgs);
@@ -2567,7 +2557,8 @@ void GE_STDCALL OptionsControll_InitControllList(void)
     options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX - gESessionKey_Parry), 0, SessionString.GetString());
 
     SessionString = eCLocString("HUD_SessionKey_AttackCommand");
-    options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX - gESessionKey_AttackCommand), 0, SessionString.GetString());
+    options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX - gESessionKey_AttackCommand), 0,
+                         SessionString.GetString());
 }
 
 static mCFunctionHook Hook_OptionsControll_UpdateConfig;
