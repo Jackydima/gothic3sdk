@@ -987,6 +987,7 @@ enum gESessionKey
     // TODO Jackys Extension END
     // Custom Keys
     gESessionKey_Parry = 48,
+    gESessionKey_AttackCommand = 49,
     // Custom Keys End
     gESessionKey_MAX,
 };

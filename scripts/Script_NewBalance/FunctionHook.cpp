@@ -2430,6 +2430,7 @@ DECLARE_SCRIPT(OnPlayerGameKeyPressed)
     switch (currentKey)
     {
         // All the supported new keys or updates
+        case gESessionKey_AttackCommand:
         case gESessionKey_Backward:
         case gESessionKey_StrafeLeft:
         case gESessionKey_StrafeRight:
@@ -2455,6 +2456,37 @@ DECLARE_SCRIPT(OnPlayerGameKeyPressed)
 
     switch (currentKey)
     {
+        case gESessionKey_AttackCommand:
+            if (justPressed)
+            {
+                Entity CurrentTarget = Self.Focus.GetFocusEntity();
+                auto EntityList = Self.Party.GetMembers(GEFalse);
+                Entity CurrentEntity;
+
+                // If Player focuses no one, not an NPC or a partymember, all Members stop attacking
+                if (CurrentTarget == None || !CurrentTarget.Navigation.IsValid()
+                    || CurrentTarget.Party.GetPartyLeader() == Self)
+                {
+                    for (GEInt i = 0; i < EntityList.GetCount(); i++)
+                    {
+                        CurrentEntity = static_cast<Entity>(EntityList.GetAt(i));
+                        CurrentEntity.Routine.FullStop();
+                        CurrentEntity.Routine.ContinueRoutine();
+                    }
+                    return GETrue;
+                }
+
+                // else All member focus on the target
+                for (GEInt i = 0; i < EntityList.GetCount(); i++)
+                {
+                    CurrentEntity = static_cast<Entity>(EntityList.GetAt(i));
+                    CurrentEntity.Routine.FullStop();
+                    ScriptAdmin.CallScriptFromScript("AssessTarget", &CurrentEntity, &CurrentTarget,
+                                                     static_cast<GEInt>(gEAttackReason_PlayerCommand));
+                }
+                return GETrue;
+            }
+            break;
         case gESessionKey_Backward:
         case gESessionKey_StrafeLeft:
         case gESessionKey_StrafeRight:
@@ -2531,9 +2563,11 @@ void GE_STDCALL OptionsControll_InitControllList(void)
     }
 
     // Manually Set the Text afterwards
-    eCLocString ParryString = eCLocString("HUD_SessionKey_Parry");
+    eCLocString SessionString = eCLocString("HUD_SessionKey_Parry");
+    options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX - gESessionKey_Parry), 0, SessionString.GetString());
 
-    options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX - gESessionKey_Parry), 0, ParryString.GetString());
+    SessionString = eCLocString("HUD_SessionKey_AttackCommand");
+    options->SetItemText(gESessionKey_MAX - 5 - (gESessionKey_MAX - gESessionKey_AttackCommand), 0, SessionString.GetString());
 }
 
 static mCFunctionHook Hook_OptionsControll_UpdateConfig;
@@ -2560,6 +2594,22 @@ void GE_STDCALL OptionsControll_UpdateConfig(eCConfigFile *a_pConfigFile)
         {
             config.SetValue("SessionKey.Parry", "Key2.Type", pKey2->m_eDeviceType);
             config.SetValue("SessionKey.Parry", "Key2.Offset",
+                            pKey2->m_enuKeyboardStateOffset); // In union should be the same value!
+        }
+
+        pKey1 = sessionKeys.GetAssignedKey(gESessionKey_AttackCommand, 0);
+        if (pKey1)
+        {
+            config.SetValue("SessionKey.AttackCommand", "Key1.Type", pKey1->m_eDeviceType);
+            config.SetValue("SessionKey.AttackCommand", "Key1.Offset",
+                            pKey1->m_enuKeyboardStateOffset); // In union should be the same value!
+        }
+
+        pKey2 = sessionKeys.GetAssignedKey(gESessionKey_AttackCommand, 1);
+        if (pKey2)
+        {
+            config.SetValue("SessionKey.AttackCommand", "Key2.Type", pKey2->m_eDeviceType);
+            config.SetValue("SessionKey.AttackCommand", "Key2.Offset",
                             pKey2->m_enuKeyboardStateOffset); // In union should be the same value!
         }
 

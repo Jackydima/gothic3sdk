@@ -142,19 +142,31 @@ void AssignNewKeys()
         Key2.Type=-1
         Key2.Offset=-1*/
 
+        eSSetupEngine::SPhysicalKeys pKeys;
+        mCCaller CallerAssignSingleKey(
+            mCCaller::GetCallerParams(RVA_Game(0x1829d0), mERegisterType::mERegisterType_Ecx));
+        using AssignSingleKey_t = void(GE_STDCALL *)(gESessionKey, bCString, eSSetupEngine::SPhysicalKeys *);
+
+        // Parry 
         bCString keyName = "Parry";
-        static eSSetupEngine::SPhysicalKeys pKeys;
         pKeys.m_iKey1DeviceType = config.GetInt("SessionKey.Parry", "Key1.Type", eEDeviceType_Mouse);
         pKeys.m_iKey1DeviceOffset =
             config.GetInt("SessionKey.Parry", "Key1.Offset", eCInpShared::eEMouseOffset_Button3);
         pKeys.m_iKey2DeviceType = config.GetInt("SessionKey.Parry", "Key2.Type", -1);
         pKeys.m_iKey2DeviceOffset = config.GetInt("SessionKey.Parry", "Key2.Offset", -1);
-
-        mCCaller CallerAssignSingleKey(
-            mCCaller::GetCallerParams(RVA_Game(0x1829d0), mERegisterType::mERegisterType_Ecx));
-        using AssignSingleKey_t = void(GE_STDCALL *)(gESessionKey, bCString, eSSetupEngine::SPhysicalKeys *);
         CallerAssignSingleKey.SetEcx(&sessionKeys);
         CallerAssignSingleKey.GetFunction<AssignSingleKey_t>()(gESessionKey_Parry, keyName, &pKeys);
+
+        // AttackCommand
+        keyName = "AttackCommand";
+        pKeys.m_iKey1DeviceType = config.GetInt("SessionKey.AttackCommand", "Key1.Type", eEDeviceType_KeyBoard);
+        pKeys.m_iKey1DeviceOffset =
+            config.GetInt("SessionKey.AttackCommand", "Key1.Offset", eCInpShared::eEKeyboardStateOffset_COMMA);
+        pKeys.m_iKey2DeviceType = config.GetInt("SessionKey.AttackCommand", "Key2.Type", -1);
+        pKeys.m_iKey2DeviceOffset = config.GetInt("SessionKey.AttackCommand", "Key2.Offset", -1);
+
+        CallerAssignSingleKey.SetEcx(&sessionKeys);
+        CallerAssignSingleKey.GetFunction<AssignSingleKey_t>()(gESessionKey_AttackCommand, keyName, &pKeys);
     }
 }
 
