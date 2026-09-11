@@ -23,6 +23,7 @@ GEFloat summoningLevelMultiplier = 7.5f;
 
 GEBool UseNewDamageCalculation = GETrue;
 GEBool UseNewNPCProtection = GETrue;
+GEBool IgnoreHumanoidBodyProtection = GETrue;
 GEBool ZeroStaminaAttack = GEFalse;
 GEBool newSummoning = GETrue;
 GEBool vanishSummons = GETrue;

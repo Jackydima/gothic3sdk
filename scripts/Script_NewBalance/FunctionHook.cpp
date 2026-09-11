@@ -950,7 +950,10 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
         {
             if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &Self, &None))
             {
-                npcArmor = Self.Inventory.GetDefaultItemFromSlot(gESlot_Body);
+                if (!NBConfig::IgnoreHumanoidBodyProtection)
+                {
+                    npcArmor = Self.Inventory.GetDefaultItemFromSlot(gESlot_Body);
+                }
             }
             else
             {

@@ -20,6 +20,7 @@ void LoadSettings()
     {
         NBConfig::UseNewDamageCalculation = config.GetBool("Script", "UseNewDamageCalculation", NBConfig::UseNewDamageCalculation);
         NBConfig::UseNewNPCProtection = config.GetBool("Script", "UseNewNPCProtection", NBConfig::UseNewNPCProtection);
+        NBConfig::IgnoreHumanoidBodyProtection = config.GetBool("Script", "IgnoreHumanoidBodyProtection", NBConfig::IgnoreHumanoidBodyProtection);
         NBConfig::newSummoning = config.GetBool("Script", "NewSummoning", NBConfig::newSummoning);
         NBConfig::vanishSummons = config.GetBool("Script", "VanishSummons", NBConfig::vanishSummons);
         NBConfig::onlyHeavyAttackKnockDown =
