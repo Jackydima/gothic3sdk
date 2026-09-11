@@ -459,8 +459,8 @@ GEInt IsEvil(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pO
         case gESpecies_IceGolem:
         case gESpecies_ScorpionKing:
             // New Check for Dragon!
-        case gESpecies_Dragon:       return 1;
-        default:                     return 0;
+        case gESpecies_Dragon: return 1;
+        default:               return 0;
     }
     // return 0;
 }
@@ -1286,4 +1286,41 @@ GEInt getLastTimeFromMap(bCString iD, std::map<bCString, GEInt> &map)
     }
 
     return retVal;
+}
+
+GEBool IsAttackAction(gEAction p_Action)
+{
+    switch (p_Action)
+    {
+        case gEAction_Attack:
+        case gEAction_PowerAttack:
+        case gEAction_SprintAttack:
+        case gEAction_QuickAttack:
+        case gEAction_QuickAttackR:
+        case gEAction_QuickAttackL:
+        case gEAction_SimpleWhirl:
+        case gEAction_WhirlAttack:
+        case gEAction_PierceAttack:
+        case gEAction_HackAttack:   return GETrue;
+        default:                    break;
+    }
+
+    return GEFalse;
+}
+
+GEBool CanParry(Entity &p_Self)
+{
+    bCString strSkeletonName;
+    p_Self.Animation.GetSkeletonName(strSkeletonName);
+
+    if ((strSkeletonName == "Hero" || strSkeletonName == "Orc")
+        && !GetScriptAdmin().CallScriptFromScript("IsInFistMode", &p_Self, &None))
+    {
+        // For now player can always parry, npcs only when they are more skilled (LevelMax)
+        if (p_Self.NPC.GetProperty<PSNpc::PropertyLevelMax>() >= 35 || p_Self.IsPlayer())
+        {
+            return GETrue;
+        }
+    }
+    return GEFalse;
 }

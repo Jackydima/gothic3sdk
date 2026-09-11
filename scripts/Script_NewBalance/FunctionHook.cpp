@@ -2075,6 +2075,14 @@ DECLARE_SCRIPT(DoLogicalDamageEvade)
             return GEFalse;
         }
     }
+    // Monster are allowed to evade too now
+    else if (Victim.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_JumpBack)
+    {
+        if (Victim.Routine.GetStateTime() > 0.15f)
+        {
+            return GEFalse;
+        }
+    }
 
     return Hook_DoLogicalDamageEvade.GetOriginalFunction(&DoLogicalDamageEvade)(a_pSPU, a_pSelfEntity, a_pOtherEntity,
                                                                                 a_iArgs);
@@ -2631,36 +2639,115 @@ DECLARE_SCRIPT(SelectCombatMove)
     GEInt retVal =
         Hook_SelectCombatMove.GetOriginalFunction(&SelectCombatMove)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
 
+    auto &ScriptAdmin = GetScriptAdmin();
+    Entity CurrentTarget = Self.NPC.GetCurrentTarget();
+    GEFloat distanceToTarget = Self.GetDistanceTo(CurrentTarget);
+    GEBool TargetAttacking = IsAttackAction(CurrentTarget.Routine.GetProperty<PSRoutine::PropertyAction>())
+                          && CurrentTarget.GetCurrentAniPhase() != gEPhase_Recover;
+    GEBool SelfIRofAttacker = distanceToTarget <= static_cast<GEFloat>(
+                                  ScriptAdmin.CallScriptFromScript("GetAttackRange", &CurrentTarget, &Self));
     gESpecies selfSpecies = Self.NPC.GetProperty<PSNpc::PropertySpecies>();
-    if (selfSpecies != gESpecies_Human && selfSpecies != gESpecies_Orc)
-        return retVal;
-
     gEAction oldSelfAction = Self.Routine.GetProperty<PSRoutine::PropertyAction>();
-    if (oldSelfAction == gEAction_Evade)
-        return retVal;
+    GEInt StaminaPercentage = ScriptAdmin.CallScriptFromScript("GetStaminaPointsPercent", &Self, &None);
 
-    if (retVal == gEAction_Parade || retVal == gEAction_Back || gEAction_TurnLeft || gEAction_TurnRight || gEAction_Left
-        || gEAction_Right)
+    // Low Chance to Parry
+    if (TargetAttacking && SelfIRofAttacker && CanParry(Self) && Entity::GetRandomNumber(100) < 10)
     {
-        GEFloat distanceToTarget = Self.GetDistanceTo(Other);
-        if (distanceToTarget
-            <= static_cast<GEFloat>(GetScriptAdmin().CallScriptFromScript("GetAttackRange", &Other, &Self)))
+        return gEAction_Parry;
+    }
+
+    // Lower Aggro when low on stamina
+    if (Self.NPC.GetProperty<PSNpc::PropertyAttackReason>() != gEAttackReason_Arena && StaminaPercentage < 25
+        && Entity::GetRandomNumber(100) < (40 - StaminaPercentage))
+    {
+        Self.NPC.AccessProperty<PSNpc::PropertyCombatState>() = 0; // Reset CombatState (helpful in groups)
+        return gEAction_Back;
+    }
+
+    // Some Chance to Evade
+    if (oldSelfAction != gEAction_Evade && TargetAttacking && SelfIRofAttacker
+        && (selfSpecies == gESpecies_Human || selfSpecies == gESpecies_Orc))
+    {
+        if (retVal == gEAction_Parade || retVal == gEAction_Back)
         {
-            GEInt random = Entity::GetRandomNumber(100);
-            if (random <= 40)
+            if (Entity::GetRandomNumber(100) < 35)
             {
-                random = Entity::GetRandomNumber(100);
-                if (random < 33)
-                    return gEAction_Evade;
+                return gEAction_Evade;
+            }
+        }
 
-                if (random < 66)
-                    return gEAction_EvadeRight;
-
+        else if (retVal == gEAction_TurnLeft || retVal == gEAction_Left)
+        {
+            if (Entity::GetRandomNumber(100) < 35)
+            {
                 return gEAction_EvadeLeft;
             }
         }
+        else if (retVal == gEAction_TurnRight || retVal == gEAction_Right)
+        {
+            if (Entity::GetRandomNumber(100) < 35)
+            {
+                return gEAction_EvadeRight;
+            }
+        }
     }
+
+    // No change
     return retVal;
+}
+
+static mCFunctionHook Hook_OnAttack;
+DECLARE_SCRIPT(OnAttack)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+    Entity CurrentTarget = Self.NPC.GetCurrentTarget();
+    Entity Player = Entity::GetPlayer();
+
+    // Fix bug of hords of enemies directly attacking an Entity
+    if (Self.NPC.GetProperty<PSNpc::PropertyCombatState>() == 1)
+    {
+        GEInt iMaxAttackers = 2;
+        if (CurrentTarget == Player)
+        {
+            EDifficulty ECurrentDifficulty = Entity::GetCurrentDifficulty();
+            if (ECurrentDifficulty == EDifficulty_Hard)
+            {
+                iMaxAttackers = 3;
+            }
+            else if (ECurrentDifficulty == EDifficulty_Easy)
+            {
+                iMaxAttackers = 1;
+            }
+        }
+
+        auto CurrentTargetAttacker = Entity::GetNPCs();
+        Entity Entry;
+        GEInt iActiveAttacker = 0;
+        for (GEInt i = 0; i < CurrentTargetAttacker.GetCount(); i++)
+        {
+            Entry = CurrentTargetAttacker.GetAt(i);
+            if (Entry == Player)
+                continue;
+
+            if (Entry.NPC.GetCurrentTarget() != CurrentTarget)
+                continue;
+
+            if (Entry.NPC.GetProperty<PSNpc::PropertyCombatState>() == 0)
+                continue;
+        
+            if (Entry.Routine.GetProperty<PSRoutine::PropertyAIMode>() != gEAIMode_Combat)
+                continue;
+            
+            iActiveAttacker += 1;
+        }
+
+        if (iActiveAttacker > iMaxAttackers)
+        {
+            Self.NPC.AccessProperty<PSNpc::PropertyCombatState>() = 0;
+        }
+    }
+
+    return Hook_OnAttack.GetOriginalFunction(&OnAttack)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
 }
 
 static mCFunctionHook Hook_ZS_Attack_Loop;
@@ -2834,6 +2921,10 @@ DECLARE_SCRIPT_STATE(ZS_Attack_Loop)
                 SelfEntity.Routine.StopAIGoto();
                 SelfEntity.Routine.SetState("NB_EvadeLeft");
                 return GETrue;
+            case gEAction_Parry:
+                SelfEntity.Routine.StopAIGoto();
+                SelfEntity.Routine.SetState("NB_Melee_Parry");
+                return GETrue;
             default: break;
         }
 
@@ -2862,6 +2953,8 @@ void HookFunctions()
 
     Hook_ZS_Attack_Loop.Hook(GetScriptAdminExt().GetScriptAIState("ZS_Attack_Loop")->m_funcScriptAIState,
                              &ZS_Attack_Loop);
+
+    Hook_OnAttack.Hook(GetScriptAdminExt().GetScript("OnAttack")->m_funcScript, &OnAttack);
 
     Hook_SelectCombatMove.Hook(GetScriptAdminExt().GetScript("SelectCombatMove")->m_funcScript, &SelectCombatMove);
 
