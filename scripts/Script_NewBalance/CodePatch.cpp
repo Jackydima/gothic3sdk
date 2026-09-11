@@ -46,6 +46,11 @@ void PatchCode()
     DWORD currProt, newProt;
 
     /**
+     * Fix NPC Perception Through Walls
+     */
+    //PatchNOPs((LPVOID)RVA_ScriptGame(0x31650), 0x31665 - 0x31650);
+
+    /**
      * Disable SprintAttack, when Monsters are Enraged
      */
     // MonsterRageModus is alternative or disabled!
