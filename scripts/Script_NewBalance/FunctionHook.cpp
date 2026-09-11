@@ -2856,7 +2856,9 @@ bCUnicodeString GetString(bCString *p_String1, bCString *p_String2)
 
 void HookFunctions()
 {
+#ifdef GE_DEBUG
     Hook_GetString.Prepare(RVA_Engine(0x2a8a90), &GetString, mCBaseHook::mEHookType_ThisCall).Hook();
+#endif
 
     Hook_ZS_Attack_Loop.Hook(GetScriptAdminExt().GetScriptAIState("ZS_Attack_Loop")->m_funcScriptAIState,
                              &ZS_Attack_Loop);
