@@ -106,4 +106,5 @@ WarriorType GetWarriorType(Entity &p_entity);
 GEInt getLastTimeFromMap(bCString iD, std::map<bCString, GEInt> &map);
 GEBool IsAttackAction(gEAction p_Action);
 GEBool CanParry(Entity& p_Self);
-GEInt GetCombatMoveSkillLevel(Entity& p_self);
+GEBool CanParryNormalProjectile(Entity &a_Self);
+GEInt GetCombatSkillLevel(Entity& p_self);

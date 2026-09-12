@@ -2969,7 +2969,7 @@ DECLARE_SCRIPT(GetCombatMoveLength)
     if (Self.GetCurrentAniPhase() != gEPhase_Hit)
         return iLength;
 
-    GEInt iCombatMoveSkillLevel = GetCombatMoveSkillLevel(Self);
+    GEInt iCombatMoveSkillLevel = GetCombatSkillLevel(Self);
     GEFloat fRangeMultiplicator = 1.0f;
     if (iCombatMoveSkillLevel == 0)
     {

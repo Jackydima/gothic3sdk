@@ -12,7 +12,7 @@ void SetParadeMode(Entity a_Entity, GEBool a_bEnabled)
 
 void ClearInputEntry(Entity a_Entity)
 {
-    using mFClearInputEntry = void(GE_STDCALL *)(Entity p_selfEntity);
+    using mFClearInputEntry = void(GE_STDCALL *)(Entity a_selfEntity);
     static mFClearInputEntry s_fClearInputEntry = force_cast<mFClearInputEntry>(RVA_ScriptGame(0x79a0));
 
     return s_fClearInputEntry(a_Entity);
@@ -27,18 +27,19 @@ void AddAction(Entity a_Self, gEAction a_Action, gEDirection a_Direction, Entity
     CallAddAction.GetFunction<mFAddAction>()(a_Self, a_Action, a_Direction, a_Target);
 }
 
-GEBool IsDoubleClick(Entity &Self)
+GEBool IsDoubleClick(Entity &a_Self)
 {
-    if (!Self.IsPlayer())
+    if (!a_Self.IsPlayer())
         return GEFalse;
 
     static gESessionKey lastKey = gESessionKey_None;
     static std::chrono::steady_clock::time_point lastTimePoint;
 
-    const GEBool pressed = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressed>();
-    const GEBool pressedBefore = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressedBefore>();
-    const GEU32 pressedDuration = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyDurationPressedMSecs>();
-    const gESessionKey currentKey = Self.CharacterControl.GetProperty<PSCharacterControl::PropertyPressedKey>();
+    const GEBool pressed = a_Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressed>();
+    const GEBool pressedBefore = a_Self.CharacterControl.GetProperty<PSCharacterControl::PropertyIsPressedBefore>();
+    const GEU32 pressedDuration =
+        a_Self.CharacterControl.GetProperty<PSCharacterControl::PropertyDurationPressedMSecs>();
+    const gESessionKey currentKey = a_Self.CharacterControl.GetProperty<PSCharacterControl::PropertyPressedKey>();
     const auto now = std::chrono::steady_clock::now();
 
     const bool justPressed = pressed && !pressedBefore;
@@ -101,9 +102,9 @@ std::vector<bCString> splitTobCStrings(const std::string str, char delim)
     return result;
 }
 
-void MagicPartyMemberRemover(Entity p_summoner)
+void MagicPartyMemberRemover(Entity a_Summoner)
 {
-    auto partyMembers = p_summoner.Party.GetMembers(GEFalse);
+    auto partyMembers = a_Summoner.Party.GetMembers(GEFalse);
     if (partyMembers.GetCount() == 0)
     {
         return;
@@ -144,25 +145,25 @@ void MagicPartyMemberRemover(Entity p_summoner)
     }
 }
 
-void DoAOEDamage(Entity &p_damager, Entity &p_victim)
+void DoAOEDamage(Entity &a_Damager, Entity &a_Victim)
 {
-    auto entityList = p_damager.GetEntitiesByDistance();
+    auto entityList = a_Damager.GetEntitiesByDistance();
     auto &ScriptAdmin = GetScriptAdmin();
-    Entity Owner = p_damager.GetOwner();
+    Entity Owner = a_Damager.GetOwner();
     gEAttitude VictimAttitude =
-        static_cast<gEAttitude>(ScriptAdmin.CallScriptFromScript("GetAttitude", &p_victim, &Owner));
+        static_cast<gEAttitude>(ScriptAdmin.CallScriptFromScript("GetAttitude", &a_Victim, &Owner));
     Entity currentEntry;
     for (GEInt i = 0; i < entityList.GetCount(); i++)
     {
         currentEntry = entityList.GetAt(i);
         // print ( "Entry Name: %s\n",currentEntry.GetName().GetText ( ) );
-        GEFloat distance = p_damager.GetDistanceTo(currentEntry);
+        GEFloat distance = a_Damager.GetDistanceTo(currentEntry);
         // print ( "Distance: %f\n" , distance );
         if (distance > 1000)
             break;
         if (!currentEntry.Navigation.IsValid() || currentEntry.IsDead() || currentEntry.IsDown()
             || currentEntry == Owner || currentEntry.Party.GetPartyLeader() == Owner
-            || Owner.Party.GetPartyLeader() == currentEntry || currentEntry == p_victim)
+            || Owner.Party.GetPartyLeader() == currentEntry || currentEntry == a_Victim)
         {
             continue;
         }
@@ -183,21 +184,21 @@ void DoAOEDamage(Entity &p_damager, Entity &p_victim)
             }
         }
 
-        GEInt damageAmount = static_cast<GEInt>(p_damager.Damage.GetProperty<PSDamage::PropertyDamageAmount>()
+        GEInt damageAmount = static_cast<GEInt>(a_Damager.Damage.GetProperty<PSDamage::PropertyDamageAmount>()
                                                 * (1 - (distance / 1000)));
         // print ( "DoDamage !! to %s\n",currentEntry.GetName().GetText() );
-        currentEntry.DoDamage(p_damager, damageAmount, p_damager.Damage.GetProperty<PSDamage::PropertyDamageType>());
+        currentEntry.DoDamage(a_Damager, damageAmount, a_Damager.Damage.GetProperty<PSDamage::PropertyDamageType>());
     }
 }
 
-void VanishEntity(Entity &p_entity)
+void VanishEntity(Entity &a_Entity)
 {
-    if (p_entity == None)
+    if (a_Entity == None)
         return;
 
-    EffectSystem::StartEffect("eff_remove_summons", p_entity);
+    EffectSystem::StartEffect("eff_remove_summons", a_Entity);
     // Completely Remove Entity!
-    auto entityInstance = p_entity.GetInstance();
+    auto entityInstance = a_Entity.GetInstance();
     auto selfNPCPtr = GetPropertySet<gCNPC_PS>(entityInstance, eEPropertySetType_NPC);
     if (selfNPCPtr == nullptr)
         return;
@@ -205,9 +206,9 @@ void VanishEntity(Entity &p_entity)
     entityInstance->Enable(GEFalse);
 }
 
-GEBool CanRage(Entity &p_entity)
+GEBool CanRage(Entity &a_Entity)
 {
-    switch (p_entity.NPC.GetProperty<PSNpc::PropertySpecies>())
+    switch (a_Entity.NPC.GetProperty<PSNpc::PropertySpecies>())
     {
         case gESpecies_Human:
         case gESpecies_Skeleton:
@@ -223,11 +224,11 @@ GEBool CanRage(Entity &p_entity)
     return GETrue;
 }
 
-GEBool IsInActiveAttack(Entity &p_entity)
+GEBool IsInActiveAttack(Entity &a_Entity)
 {
-    if (p_entity == None || !p_entity.Routine.IsValid())
+    if (a_Entity == None || !a_Entity.Routine.IsValid())
         return GEFalse;
-    gEAction currentAction = p_entity.Routine.GetProperty<PSRoutine::PropertyAction>();
+    gEAction currentAction = a_Entity.Routine.GetProperty<PSRoutine::PropertyAction>();
     bCString ptrCurrentMotionDescription;
     switch (currentAction)
     {
@@ -238,26 +239,26 @@ GEBool IsInActiveAttack(Entity &p_entity)
         case gEAction_SimpleWhirl:
         case gEAction_WhirlAttack:
         case gEAction_SprintAttack:
-            if (p_entity.GetCurrentAniPhase() == gEPhase_Hit)
+            if (a_Entity.GetCurrentAniPhase() == gEPhase_Hit)
                 return GETrue;
         default: break;
     }
     return GEFalse;
 }
 
-void PartyMonsterSpawn(Entity &p_summoner, Template &p_summonTemplate, GEInt p_int1, GEBool suppressEffect,
+void PartyMonsterSpawn(Entity &a_Summoner, Template &a_SummonTemplate, GEInt a_int1, GEBool a_bSuppressEffect,
                        GEFloat multiplicator)
 {
-    Entity Spell = p_summoner.Interaction.GetSpell();
-    bCMatrix pose = p_summoner.GetPose();
-    Entity Spawn = Entity::Spawn(p_summonTemplate, pose);
+    Entity Spell = a_Summoner.Interaction.GetSpell();
+    bCMatrix pose = a_Summoner.GetPose();
+    Entity Spawn = Entity::Spawn(a_SummonTemplate, pose);
     Spawn.NPC.AccessProperty<PSNpc::PropertyLevelMax>() =
         static_cast<GEInt>(Spawn.NPC.GetProperty<PSNpc::PropertyLevelMax>() * multiplicator);
     Spawn.NPC.AccessProperty<PSNpc::PropertyLevel>() =
         static_cast<GEInt>(Spawn.NPC.GetProperty<PSNpc::PropertyLevel>() * multiplicator);
     bCMatrix newPose;
-    Spawn.Interaction.SetOwner(p_summoner);
-    if (!Spawn.FindSpawnPose(newPose, p_summoner, GETrue, static_cast<GEU16>(p_int1)))
+    Spawn.Interaction.SetOwner(a_Summoner);
+    if (!Spawn.FindSpawnPose(newPose, a_Summoner, GETrue, static_cast<GEU16>(a_int1)))
     {
         Spawn.Kill();
         print("Did not find SpawnPose in PartyMonsterSpawn!\n");
@@ -265,17 +266,17 @@ void PartyMonsterSpawn(Entity &p_summoner, Template &p_summonTemplate, GEInt p_i
     }
     Spawn.MoveTo(newPose);
 
-    if (suppressEffect == GEFalse)
+    if (a_bSuppressEffect == GEFalse)
     {
         bCString effectString = Spell.Magic.GetProperty<PSMagic::PropertyEffectTargetCast>();
         EffectSystem::StartEffect(effectString, Spawn);
     }
 
-    p_summoner.Party.Add(Spawn);
+    a_Summoner.Party.Add(Spawn);
     Spawn.Party.AccessProperty<PSParty::PropertyWaiting>() = GEFalse;
     Spawn.Party.AccessProperty<PSParty::PropertyPartyMemberType>() = gEPartyMemberType_Summoned;
     Spawn.Dialog.AccessProperty<PSDialog::PropertyPartyEnabled>() = GEFalse;
-    if (p_summoner.IsPlayer())
+    if (a_Summoner.IsPlayer())
     {
         Spawn.Dialog.AccessProperty<PSDialog::PropertyPartyEnabled>() = GETrue;
         Spawn.Routine.FullStop();
@@ -283,9 +284,9 @@ void PartyMonsterSpawn(Entity &p_summoner, Template &p_summonTemplate, GEInt p_i
     }
     else
     {
-        gEPoliticalAlignment pA = p_summoner.NPC.GetProperty<PSNpc::PropertyPoliticalAlignment>();
+        gEPoliticalAlignment pA = a_Summoner.NPC.GetProperty<PSNpc::PropertyPoliticalAlignment>();
         Spawn.NPC.AccessProperty<PSNpc::PropertyPoliticalAlignment>() = pA;
-        Entity enclave = p_summoner.NPC.GetEnclave();
+        Entity enclave = a_Summoner.NPC.GetEnclave();
         Spawn.NPC.SetEnclave(enclave);
 
         Entity Player = Entity::GetPlayer();
@@ -293,7 +294,7 @@ void PartyMonsterSpawn(Entity &p_summoner, Template &p_summonTemplate, GEInt p_i
         {
             if (Player.GetDistanceTo(Spawn) <= 2000.0f)
             {
-                gEAttackReason aR = p_summoner.NPC.GetProperty<PSNpc::PropertyAttackReason>();
+                gEAttackReason aR = a_Summoner.NPC.GetProperty<PSNpc::PropertyAttackReason>();
                 GetScriptAdmin().CallScriptFromScript("AssessTarget", &Spawn, &Player, aR);
                 return;
             }
@@ -312,27 +313,27 @@ gEWeaponCategory GetHeldWeaponCategoryNB(Entity const &a_Entity)
     return s_fGetHeldWeaponCategory(a_Entity);
 }
 
-GEInt getPowerLevel(Entity &p_entity)
+GEInt getPowerLevel(Entity &a_Entity)
 {
     Entity player = Entity::GetPlayer();
-    GEInt level = static_cast<GEInt>(p_entity.NPC.GetProperty<PSNpc::PropertyLevel>()
+    GEInt level = static_cast<GEInt>(a_Entity.NPC.GetProperty<PSNpc::PropertyLevel>()
                                      + player.NPC.GetProperty<PSNpc::PropertyLevel>());
-    if (level > static_cast<GEInt>(p_entity.NPC.GetProperty<PSNpc::PropertyLevelMax>()))
-        level = static_cast<GEInt>(p_entity.NPC.GetProperty<PSNpc::PropertyLevelMax>());
+    if (level > static_cast<GEInt>(a_Entity.NPC.GetProperty<PSNpc::PropertyLevelMax>()))
+        level = static_cast<GEInt>(a_Entity.NPC.GetProperty<PSNpc::PropertyLevelMax>());
     if (NBConfig::useAlwaysMaxLevel)
-        level = static_cast<GEInt>(p_entity.NPC.GetProperty<PSNpc::PropertyLevelMax>());
+        level = static_cast<GEInt>(a_Entity.NPC.GetProperty<PSNpc::PropertyLevelMax>());
     return level;
 }
 
-Template getProjectile(Entity &p_entity, gEUseType p_rangedWeaponType)
+Template getProjectile(Entity &a_Entity, gEUseType a_RangedWeaponType)
 {
-    GEInt powerLevel = getPowerLevel(p_entity);
-    gEPoliticalAlignment alignment = p_entity.NPC.GetProperty<PSNpc::PropertyPoliticalAlignment>();
-    gESpecies targetSpecies = p_entity.NPC.GetCurrentTarget().NPC.GetProperty<PSNpc::PropertySpecies>();
+    GEInt powerLevel = getPowerLevel(a_Entity);
+    gEPoliticalAlignment alignment = a_Entity.NPC.GetProperty<PSNpc::PropertyPoliticalAlignment>();
+    gESpecies targetSpecies = a_Entity.NPC.GetCurrentTarget().NPC.GetProperty<PSNpc::PropertySpecies>();
     GEInt random = Entity::GetRandomNumber(100);
     Template projectile = Template("Arrow");
 
-    if (p_rangedWeaponType == gEUseType_CrossBow)
+    if (a_RangedWeaponType == gEUseType_CrossBow)
     {
         if (powerLevel >= NBConfig::warriorLevel)
         {
@@ -344,9 +345,9 @@ Template getProjectile(Entity &p_entity, gEUseType p_rangedWeaponType)
         }
         return Template("Bolt");
     }
-    else if (p_rangedWeaponType == gEUseType_Bow)
+    else if (a_RangedWeaponType == gEUseType_Bow)
     {
-        if (p_entity.GetName() == "Jorn")
+        if (a_Entity.GetName() == "Jorn")
         { // And add after quest!
             projectile = Template("ExplosiveArrow");
         }
@@ -394,11 +395,11 @@ Template getProjectile(Entity &p_entity, gEUseType p_rangedWeaponType)
     return projectile;
 }
 
-GEInt getHyperArmorPoints(Entity &p_entity, gEAction p_Action)
+GEInt getHyperArmorPoints(Entity &a_Entity, gEAction a_Action)
 {
-    if (p_Action != gEAction_PowerAttack && p_Action != gEAction_SprintAttack && p_Action != gEAction_HackAttack)
+    if (a_Action != gEAction_PowerAttack && a_Action != gEAction_SprintAttack && a_Action != gEAction_HackAttack)
         return 0;
-    switch (p_entity.NPC.GetProperty<PSNpc::PropertySpecies>())
+    switch (a_Entity.NPC.GetProperty<PSNpc::PropertySpecies>())
     {
         case gESpecies_Demon:
         case gESpecies_Ogre:         return 3;
@@ -415,18 +416,18 @@ GEInt getHyperArmorPoints(Entity &p_entity, gEAction p_Action)
     }
 }
 
-GEBool isBigMonster(Entity &p_monster)
+GEBool isBigMonster(Entity &a_Monster)
 {
     gCScriptAdmin &ScriptAdmin = GetScriptAdmin();
-    if (p_monster == None)
+    if (a_Monster == None)
     {
         return GEFalse;
     }
-    if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &p_monster, &None, 0))
+    if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &a_Monster, &None, 0))
     {
         return GEFalse;
     }
-    switch (p_monster.NPC.GetProperty<PSNpc::PropertySpecies>())
+    switch (a_Monster.NPC.GetProperty<PSNpc::PropertySpecies>())
     {
         case gESpecies_Demon:
         case gESpecies_Ogre:
@@ -446,11 +447,11 @@ GEBool isBigMonster(Entity &p_monster)
 
 GEInt IsEvil(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs)
 {
-    INIT_SCRIPT_EXT(Self, Other);
+    INIT_SCRIPT_EXT(a_Self, Other);
     UNREFERENCED_PARAMETER(a_iArgs);
-    if (GetScriptAdmin().CallScriptFromScript("IsUndead", &Self, &None, 0))
+    if (GetScriptAdmin().CallScriptFromScript("IsUndead", &a_Self, &None, 0))
         return 1;
-    switch (Self.NPC.GetProperty<PSNpc::PropertySpecies>())
+    switch (a_Self.NPC.GetProperty<PSNpc::PropertySpecies>())
     {
         case gESpecies_Golem:
         case gESpecies_Demon:
@@ -467,11 +468,11 @@ GEInt IsEvil(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pO
 
 GEInt CanBurn(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs)
 {
-    INIT_SCRIPT_EXT(p_victim, p_damager);
+    INIT_SCRIPT_EXT(Victim, a_Damager);
     UNREFERENCED_PARAMETER(a_iArgs);
-    if (p_damager == None)
+    if (a_Damager == None)
         return GEFalse;
-    gESpecies victimSpecies = p_victim.NPC.GetProperty<PSNpc::PropertySpecies>();
+    gESpecies victimSpecies = Victim.NPC.GetProperty<PSNpc::PropertySpecies>();
     switch (victimSpecies)
     {
         case gESpecies_Golem:
@@ -482,22 +483,22 @@ GEInt CanBurn(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_p
         case gESpecies_Dragon:    return GEFalse;
     }
     GEInt random = Entity::GetRandomNumber(100);
-    gEDamageType damageType = p_damager.Damage.GetProperty<PSDamage::PropertyDamageType>();
-    GEU32 itemQuality = p_damager.Item.GetQuality();
-    Entity DamagerOwner = p_damager.Interaction.GetOwner();
-    if (DamagerOwner == None && p_damager.Navigation.IsValid())
+    gEDamageType damageType = a_Damager.Damage.GetProperty<PSDamage::PropertyDamageType>();
+    GEU32 itemQuality = a_Damager.Item.GetQuality();
+    Entity DamagerOwner = a_Damager.Interaction.GetOwner();
+    if (DamagerOwner == None && a_Damager.Navigation.IsValid())
     {
-        DamagerOwner = p_damager;
+        DamagerOwner = a_Damager;
     }
-    if ((p_victim == Entity::GetPlayer() && p_victim.Inventory.IsSkillActive(Template("Perk_ResistHeat")))
-        || (p_victim != Entity::GetPlayer() && getPowerLevel(p_victim) >= NBConfig::eliteLevel))
+    if ((Victim == Entity::GetPlayer() && Victim.Inventory.IsSkillActive(Template("Perk_ResistHeat")))
+        || (Victim != Entity::GetPlayer() && getPowerLevel(Victim) >= NBConfig::eliteLevel))
         random = static_cast<GEInt>(random * 2);
     // Special Resistance :O
     if (random >= 100)
     {
         return GEFalse;
     }
-    if (!p_damager.Projectile.IsValid())
+    if (!a_Damager.Projectile.IsValid())
     {
         if (damageType != gEDamageType_None)
         {
@@ -518,11 +519,11 @@ GEInt CanBurn(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_p
     else
     {
         if (damageType == gEDamageType_Fire
-            && p_damager.Projectile.GetProperty<PSProjectile::PropertyPathStyle>()
+            && a_Damager.Projectile.GetProperty<PSProjectile::PropertyPathStyle>()
                    == gEProjectilePath::gEProjectilePath_Missile)
             return GETrue;
         if (((BYTE)itemQuality & gEItemQuality_Burning) == gEItemQuality_Burning
-            && p_damager.Damage.GetProperty<PSDamage::PropertyDamageHitMultiplier>() >= 0.5f) // Bow Tension...
+            && a_Damager.Damage.GetProperty<PSDamage::PropertyDamageHitMultiplier>() >= 0.5f) // Bow Tension...
             return GETrue;
     }
     return GEFalse;
@@ -530,16 +531,15 @@ GEInt CanBurn(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_p
 
 GEInt CanFreeze(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs)
 {
-    INIT_SCRIPT_EXT(p_victim, p_damager);
+    INIT_SCRIPT_EXT(Victim, a_Damager);
     UNREFERENCED_PARAMETER(a_iArgs);
-    if (p_damager == None)
+    if (a_Damager == None)
         return GEFalse;
-    if (p_victim == None)
+    if (Victim == None)
         return GEFalse;
-    if (p_damager.GetName() == "Mis_IceBlock"
-        && p_victim.NPC.GetProperty<PSNpc::PropertySpecies>() != gESpecies_IceGolem)
+    if (a_Damager.GetName() == "Mis_IceBlock" && Victim.NPC.GetProperty<PSNpc::PropertySpecies>() != gESpecies_IceGolem)
         return GETrue;
-    gESpecies victimSpecies = p_victim.NPC.GetProperty<PSNpc::PropertySpecies>();
+    gESpecies victimSpecies = Victim.NPC.GetProperty<PSNpc::PropertySpecies>();
     switch (victimSpecies)
     {
         case gESpecies_Golem:
@@ -550,15 +550,15 @@ GEInt CanFreeze(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a
         case gESpecies_Dragon:    return GEFalse;
     }
     GEInt random = Entity::GetRandomNumber(100);
-    Entity DamagerOwner = p_damager.Interaction.GetOwner();
-    gEDamageType damageType = p_damager.Damage.GetProperty<PSDamage::PropertyDamageType>();
-    GEU32 itemQuality = p_damager.Item.GetQuality();
-    if (DamagerOwner == None && p_damager.Navigation.IsValid())
+    Entity DamagerOwner = a_Damager.Interaction.GetOwner();
+    gEDamageType damageType = a_Damager.Damage.GetProperty<PSDamage::PropertyDamageType>();
+    GEU32 itemQuality = a_Damager.Item.GetQuality();
+    if (DamagerOwner == None && a_Damager.Navigation.IsValid())
     {
-        DamagerOwner = p_damager;
+        DamagerOwner = a_Damager;
     }
-    if ((p_victim == Entity::GetPlayer() && p_victim.Inventory.IsSkillActive(Template("Perk_ResistCold")))
-        || (p_victim != Entity::GetPlayer() && getPowerLevel(p_victim) >= NBConfig::eliteLevel))
+    if ((Victim == Entity::GetPlayer() && Victim.Inventory.IsSkillActive(Template("Perk_ResistCold")))
+        || (Victim != Entity::GetPlayer() && getPowerLevel(Victim) >= NBConfig::eliteLevel))
         random = static_cast<GEInt>(random * 2.0);
     // Special Resistance :O
     if (random >= 100)
@@ -566,7 +566,7 @@ GEInt CanFreeze(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a
         return GEFalse;
     }
 
-    if (!p_damager.Projectile.IsValid())
+    if (!a_Damager.Projectile.IsValid())
     {
         if (damageType != gEDamageType_None)
         {
@@ -587,11 +587,11 @@ GEInt CanFreeze(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a
     else
     {
         if (damageType == gEDamageType_Ice
-            && p_damager.Projectile.GetProperty<PSProjectile::PropertyPathStyle>()
+            && a_Damager.Projectile.GetProperty<PSProjectile::PropertyPathStyle>()
                    == gEProjectilePath::gEProjectilePath_Missile)
             return GETrue;
         if (((BYTE)itemQuality & gEItemQuality_Frozen) == gEItemQuality_Frozen
-            && p_damager.Damage.GetProperty<PSDamage::PropertyDamageHitMultiplier>() >= 0.5f) // Bow Tension...
+            && a_Damager.Damage.GetProperty<PSDamage::PropertyDamageHitMultiplier>() >= 0.5f) // Bow Tension...
             return GETrue;
     }
     return GEFalse;
@@ -599,7 +599,7 @@ GEInt CanFreeze(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a
 
 GEInt CanBePoisoned(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs)
 {
-    INIT_SCRIPT_EXT(Victim, Damager);
+    INIT_SCRIPT_EXT(Victim, a_Damager);
     UNREFERENCED_PARAMETER(a_iArgs);
 
     if (GetScriptAdmin().CallScriptFromScript("IsEvil", &Victim, &None, 0))
@@ -607,12 +607,12 @@ GEInt CanBePoisoned(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entit
         return 0;
     }
 
-    if (Damager.Magic.IsValid())
+    if (a_Damager.Magic.IsValid())
     {
         return 1;
     }
 
-    if (!Damager.IsItem() || !(Damager.Item.GetQuality() & gEItemQuality_Poisoned))
+    if (!a_Damager.IsItem() || !(a_Damager.Item.GetQuality() & gEItemQuality_Poisoned))
     {
         return 0;
     }
@@ -630,7 +630,7 @@ GEInt CanBePoisoned(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entit
         return 0;
     }
 
-    Entity DamagerOwner = Damager.Interaction.GetOwner();
+    Entity DamagerOwner = a_Damager.Interaction.GetOwner();
     if (DamagerOwner == None)
         return 0;
 
@@ -673,7 +673,7 @@ GEInt CanBePoisoned(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entit
 
 GEInt CanBeDiseased(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entity *a_pOtherEntity, GEU32 a_iArgs)
 {
-    INIT_SCRIPT_EXT(Victim, Damager);
+    INIT_SCRIPT_EXT(Victim, a_Damager);
     UNREFERENCED_PARAMETER(a_iArgs);
 
     if (GetScriptAdmin().CallScriptFromScript("IsEvil", &Victim, &None, 0))
@@ -681,12 +681,12 @@ GEInt CanBeDiseased(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entit
         return 0;
     }
 
-    if (Damager.Magic.IsValid())
+    if (a_Damager.Magic.IsValid())
     {
         return 1;
     }
 
-    if (!Damager.IsItem() || !(Damager.Item.GetQuality() & gEItemQuality_Diseased))
+    if (!a_Damager.IsItem() || !(a_Damager.Item.GetQuality() & gEItemQuality_Diseased))
     {
         return 0;
     }
@@ -703,7 +703,7 @@ GEInt CanBeDiseased(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entit
         return 0;
     }
 
-    Entity DamagerOwner = Damager.Interaction.GetOwner();
+    Entity DamagerOwner = a_Damager.Interaction.GetOwner();
     if (DamagerOwner == None)
         return 0;
 
@@ -736,33 +736,33 @@ GEInt CanBeDiseased(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, Entit
     return 0;
 }
 
-GEBool IsNormalProjectileNB(Entity &p_damager)
+GEBool IsNormalProjectileNB(Entity &a_Damager)
 {
-    return p_damager.Projectile.IsValid() && p_damager.Interaction.GetSpell() == None;
+    return a_Damager.Projectile.IsValid() && a_Damager.Interaction.GetSpell() == None;
 }
 
-GEBool IsSpellContainerNB(Entity &p_damager)
+GEBool IsSpellContainerNB(Entity &a_Damager)
 {
-    return p_damager.Interaction.GetSpell() != None;
+    return a_Damager.Interaction.GetSpell() != None;
 }
 
-GEBool IsMagicProjectileNB(Entity &p_damager)
+GEBool IsMagicProjectileNB(Entity &a_Damager)
 {
-    return p_damager.Projectile.IsValid() && p_damager.Interaction.GetSpell() != None;
+    return a_Damager.Projectile.IsValid() && a_Damager.Interaction.GetSpell() != None;
 }
 
-GEBool CheckHandUseTypesNB(gEUseType p_lHand, gEUseType p_rHand, Entity &entity)
+GEBool CheckHandUseTypesNB(gEUseType a_lHand, gEUseType a_rHand, Entity &a_Entity)
 {
-    return (entity.Inventory.GetItemFromSlot(gESlot_LeftHand).Interaction.GetUseType() == p_lHand
-            && entity.Inventory.GetItemFromSlot(gESlot_RightHand).Interaction.GetUseType() == p_rHand);
+    return (a_Entity.Inventory.GetItemFromSlot(gESlot_LeftHand).Interaction.GetUseType() == a_lHand
+            && a_Entity.Inventory.GetItemFromSlot(gESlot_RightHand).Interaction.GetUseType() == a_rHand);
 }
 
 // TODO: Adjusted Skill level, maybe change back :)
-GEInt GetSkillLevelsNB(Entity &p_entity)
+GEInt GetSkillLevelsNB(Entity &a_Entity)
 {
-    if (p_entity != Entity::GetPlayer())
+    if (a_Entity != Entity::GetPlayer())
     {
-        GEInt npcLevel = getPowerLevel(p_entity);
+        GEInt npcLevel = getPowerLevel(a_Entity);
         if (npcLevel <= NBConfig::noviceLevel) // 20
             return 0;
         if (npcLevel <= NBConfig::warriorLevel) // 30
@@ -778,65 +778,65 @@ GEInt GetSkillLevelsNB(Entity &p_entity)
     }
 
     GEInt level = 0;
-    GEInt playerRightHandStack = p_entity.Inventory.FindStackIndex(gESlot_RightHand);
-    gEUseType playerUseType = p_entity.Inventory.GetUseType(playerRightHandStack);
+    GEInt playerRightHandStack = a_Entity.Inventory.FindStackIndex(gESlot_RightHand);
+    gEUseType playerUseType = a_Entity.Inventory.GetUseType(playerRightHandStack);
 
     switch (playerUseType)
     {
         case gEUseType_1H:
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_3")))
                 level = 2;
-            else if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_2")))
+            else if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_2")))
                 level = 1;
-            if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, p_entity)
-                && p_entity.Inventory.IsSkillActive(Template("Perk_1H1H_2")))
+            if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, a_Entity)
+                && a_Entity.Inventory.IsSkillActive(Template("Perk_1H1H_2")))
                 level += 1;
             break;
         case gEUseType_2H:
         case gEUseType_Axe:
         case gEUseType_Halberd:
         case gEUseType_Pickaxe:
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Axe_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Axe_3")))
                 level = 2;
-            else if (p_entity.Inventory.IsSkillActive(Template("Perk_Axe_2")))
+            else if (a_Entity.Inventory.IsSkillActive(Template("Perk_Axe_2")))
                 level = 1;
             break;
         case gEUseType_Staff:
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Staff_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Staff_3")))
                 level = 2;
-            else if (p_entity.Inventory.IsSkillActive(Template("Perk_Staff_2")))
+            else if (a_Entity.Inventory.IsSkillActive(Template("Perk_Staff_2")))
                 level = 1;
             break;
         case gEUseType_Cast:
-            GEInt playerInt = p_entity.PlayerMemory.GetIntelligence();
+            GEInt playerInt = a_Entity.PlayerMemory.GetIntelligence();
             if (playerInt > 199)
                 level = 2;
             else if (playerInt > 99)
                 level = 1;
             break;
     }
-    if (GetScriptAdmin().CallScriptFromScript("GetStrength", &p_entity, &None, 0) >= 250)
+    if (GetScriptAdmin().CallScriptFromScript("GetStrength", &a_Entity, &None, 0) >= 250)
     {
         level += 1;
     }
     // TODO: Find other stats to use for these Skill Types
-    if (p_entity.NPC.GetProperty<PSNpc::PropertyLevel>() >= 35) // TODO: Add configValue for that
+    if (a_Entity.NPC.GetProperty<PSNpc::PropertyLevel>() >= 35) // TODO: Add configValue for that
         level += 1;
-    if (p_entity.NPC.GetProperty<PSNpc::PropertyLevel>() >= 60)
+    if (a_Entity.NPC.GetProperty<PSNpc::PropertyLevel>() >= 60)
         level += 1;
     return level; // or level
 }
 
-GEInt GetActionWeaponLevelNB(Entity &p_damager, gEAction p_action)
+GEInt GetActionWeaponLevelNB(Entity &a_Damager, gEAction a_Action)
 {
     GEInt level = 0;
-    gEUseType damagerWeaponType = p_damager.Inventory.GetUseType(p_damager.Inventory.FindStackIndex(gESlot_RightHand));
-    switch (p_action)
+    gEUseType damagerWeaponType = a_Damager.Inventory.GetUseType(a_Damager.Inventory.FindStackIndex(gESlot_RightHand));
+    switch (a_Action)
     {
         case gEAction_Attack:
             if (damagerWeaponType == gEUseType_2H || damagerWeaponType == gEUseType_Axe
                 || (damagerWeaponType == gEUseType_Fist
-                    && !GetScriptAdmin().CallScriptFromScript("IsHumanoid", &p_damager, &None)))
+                    && !GetScriptAdmin().CallScriptFromScript("IsHumanoid", &a_Damager, &None)))
             {
                 level = 2;
                 break;
@@ -849,9 +849,9 @@ GEInt GetActionWeaponLevelNB(Entity &p_damager, gEAction p_action)
         case gEAction_PierceAttack: level = 3; break;
         case gEAction_PowerAttack:
         case gEAction_SprintAttack:
-            if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, p_damager))
+            if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, a_Damager))
             {
-                level = 3 - (GEU32)p_damager.Routine.GetProperty<PSRoutine::PropertyStatePosition>();
+                level = 3 - (GEU32)a_Damager.Routine.GetProperty<PSRoutine::PropertyStatePosition>();
                 break;
             }
             level = 4;
@@ -861,26 +861,26 @@ GEInt GetActionWeaponLevelNB(Entity &p_damager, gEAction p_action)
         case gEAction_QuickAttackR:
         case gEAction_QuickAttackL: level = 0; break;
     }
-    return level + GetSkillLevelsNB(p_damager);
+    return level + GetSkillLevelsNB(a_Damager);
 }
 
-GEInt GetShieldLevelBonusNB(Entity &p_entity)
+GEInt GetShieldLevelBonusNB(Entity &a_Entity)
 {
-    GEInt level = GetSkillLevelsNB(p_entity);
-    GEInt stackIndex = p_entity.Inventory.FindStackIndex(gESlot::gESlot_LeftHand);
-    gEUseType useType = p_entity.Inventory.GetUseType(stackIndex);
+    GEInt level = GetSkillLevelsNB(a_Entity);
+    GEInt stackIndex = a_Entity.Inventory.FindStackIndex(gESlot::gESlot_LeftHand);
+    gEUseType useType = a_Entity.Inventory.GetUseType(stackIndex);
 
     if (useType == gEUseType_Shield)
     {
-        if (p_entity == Entity::GetPlayer())
+        if (a_Entity == Entity::GetPlayer())
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Shield_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Shield_2")))
                 level += 1;
         }
-        else if (getPowerLevel(p_entity) >= NBConfig::eliteLevel)
+        else if (getPowerLevel(a_Entity) >= NBConfig::eliteLevel)
             level += 1;
     }
-    if (p_entity.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction::gEAction_GetUpParade)
+    if (a_Entity.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction::gEAction_GetUpParade)
     {
         level += 2;
     }
@@ -888,12 +888,12 @@ GEInt GetShieldLevelBonusNB(Entity &p_entity)
 }
 
 // return an Enum of vulnaribility
-VulnerabilityStatus DamageTypeEntityTestNB(Entity &p_victim, Entity &p_damager)
+VulnerabilityStatus DamageTypeEntityTestNB(Entity &a_Victim, Entity &a_Damager)
 { // 0: Immunity, 1: Regular Damage, 2: Double Damage 3 Half Damage
-    if (p_victim == None || p_damager == None)
+    if (a_Victim == None || a_Damager == None)
         return VulnerabilityStatus::VulnerabilityStatus_IMMUNE;
-    gEDamageType damageType = p_damager.Damage.GetProperty<PSDamage::PropertyDamageType>();
-    gESpecies victimSpecies = p_victim.NPC.GetProperty<PSNpc::PropertySpecies>();
+    gEDamageType damageType = a_Damager.Damage.GetProperty<PSDamage::PropertyDamageType>();
+    gESpecies victimSpecies = a_Victim.NPC.GetProperty<PSNpc::PropertySpecies>();
     switch (damageType)
     {
         case gEDamageType_None: break;
@@ -913,7 +913,7 @@ VulnerabilityStatus DamageTypeEntityTestNB(Entity &p_victim, Entity &p_damager)
                 case gESpecies_Skeleton:
                 case gESpecies_IceGolem:
                 case gESpecies_Troll:
-                    if (p_damager.GetName().Contains("Fire", 0) || p_damager.GetName().Contains("Explosive", 0))
+                    if (a_Damager.GetName().Contains("Fire", 0) || a_Damager.GetName().Contains("Explosive", 0))
                         return VulnerabilityStatus_REGULAR;
                     if (victimSpecies == gESpecies_Troll)
                     {
@@ -930,25 +930,25 @@ VulnerabilityStatus DamageTypeEntityTestNB(Entity &p_victim, Entity &p_damager)
                 case gESpecies_FireVaran:
                 case gESpecies_FireGolem:
                 case gESpecies_Dragon:
-                    if (p_victim.GetName().Contains("Ice"))
+                    if (a_Victim.GetName().Contains("Ice"))
                     {
                         return VulnerabilityStatus_WEAK;
                     }
-                    if (IsSpellContainerNB(p_damager))
+                    if (IsSpellContainerNB(a_Damager))
                         return VulnerabilityStatus_IMMUNE;
                     return VulnerabilityStatus_STRONG;
                 case gESpecies_IceGolem:
                 case gESpecies_Zombie:   return VulnerabilityStatus_WEAK;
                 case gESpecies_Demon:    return VulnerabilityStatus_STRONG;
                 default:
-                    if (p_victim.NPC.GetProperty<PSNpc::PropertyClass>() == gEClass_Mage)
+                    if (a_Victim.NPC.GetProperty<PSNpc::PropertyClass>() == gEClass_Mage)
                         return VulnerabilityStatus_SLIGHTLYSTRONG;
                     return VulnerabilityStatus_REGULAR;
             }
         case gEDamageType_Ice:
-            if (p_victim.NPC.HasStatusEffects(gEStatusEffect::gEStatusEffect_Frozen))
+            if (a_Victim.NPC.HasStatusEffects(gEStatusEffect::gEStatusEffect_Frozen))
             {
-                if (IsSpellContainerNB(p_damager))
+                if (IsSpellContainerNB(a_Damager))
                     return VulnerabilityStatus_IMMUNE;
                 return VulnerabilityStatus_STRONG;
             }
@@ -958,35 +958,35 @@ VulnerabilityStatus DamageTypeEntityTestNB(Entity &p_victim, Entity &p_damager)
                 case gESpecies_Zombie:
                 case gESpecies_Skeleton:  return VulnerabilityStatus_STRONG;
                 case gESpecies_IceGolem:
-                    if (IsSpellContainerNB(p_damager))
+                    if (IsSpellContainerNB(a_Damager))
                         return VulnerabilityStatus_IMMUNE;
                     return VulnerabilityStatus_STRONG;
                 case gESpecies_Dragon:
-                    if (p_victim.GetName().Contains("Fire"))
+                    if (a_Victim.GetName().Contains("Fire"))
                     {
-                        if (IsSpellContainerNB(p_damager))
+                        if (IsSpellContainerNB(a_Damager))
                             return VulnerabilityStatus_WEAK;
                         return VulnerabilityStatus_STRONG;
                     }
-                    if (p_victim.GetName().Contains("Ice"))
+                    if (a_Victim.GetName().Contains("Ice"))
                     {
-                        if (IsSpellContainerNB(p_damager))
+                        if (IsSpellContainerNB(a_Damager))
                             return VulnerabilityStatus_IMMUNE;
                         return VulnerabilityStatus_STRONG;
                     }
                     return VulnerabilityStatus_REGULAR;
 
                 default:
-                    if (p_victim.NPC.GetProperty<PSNpc::PropertyClass>() == gEClass_Mage)
+                    if (a_Victim.NPC.GetProperty<PSNpc::PropertyClass>() == gEClass_Mage)
                         return VulnerabilityStatus_SLIGHTLYSTRONG;
                     return VulnerabilityStatus_REGULAR;
             }
         case gEDamageType_Lightning:
             if (victimSpecies == gESpecies_Golem)
                 return VulnerabilityStatus_WEAK;
-            if (victimSpecies == gESpecies_Dragon && p_victim.GetName().Contains("Stone"))
+            if (victimSpecies == gESpecies_Dragon && a_Victim.GetName().Contains("Stone"))
                 return VulnerabilityStatus_WEAK;
-            if (p_victim.NPC.GetProperty<PSNpc::PropertyClass>() == gEClass_Mage)
+            if (a_Victim.NPC.GetProperty<PSNpc::PropertyClass>() == gEClass_Mage)
                 return VulnerabilityStatus_SLIGHTLYSTRONG;
             return VulnerabilityStatus_REGULAR;
         default: return VulnerabilityStatus_REGULAR;
@@ -995,9 +995,9 @@ VulnerabilityStatus DamageTypeEntityTestNB(Entity &p_victim, Entity &p_damager)
     return VulnerabilityStatus_IMMUNE;
 }
 
-GEInt GetHyperActionBonus(gEAction p_action)
+GEInt GetHyperActionBonus(gEAction a_Action)
 {
-    switch (p_action)
+    switch (a_Action)
     {
         case gEAction_Summon:
         case gEAction_FlameSword: return 4;
@@ -1006,66 +1006,66 @@ GEInt GetHyperActionBonus(gEAction p_action)
     }
 }
 
-GEU32 GetPoisonDamage(Entity &attacker)
+GEU32 GetPoisonDamage(Entity &a_Attacker)
 {
     GEInt poisonDamage = 3;
-    if (attacker.IsPlayer())
+    if (a_Attacker.IsPlayer())
     {
-        GEInt thf = attacker.PlayerMemory.GetTheft();
+        GEInt thf = a_Attacker.PlayerMemory.GetTheft();
         poisonDamage = static_cast<GEInt>(thf * 0.1) + 3;
         return poisonDamage;
     }
 
-    GEInt level = getPowerLevel(attacker);
+    GEInt level = getPowerLevel(a_Attacker);
     poisonDamage = static_cast<GEInt>(level * 0.1) + 3;
     return poisonDamage;
 }
 
-GEInt getWeaponLevelNB(Entity &p_entity)
+GEInt getWeaponLevelNB(Entity &a_Entity)
 {
-    if (p_entity.IsPlayer() && !p_entity.NPC.IsTransformed())
+    if (a_Entity.IsPlayer() && !a_Entity.NPC.IsTransformed())
     {
-        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_2H, p_entity)
-            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Axe, p_entity)
-            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Pickaxe, p_entity)
-            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Halberd, p_entity))
+        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_2H, a_Entity)
+            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Axe, a_Entity)
+            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Pickaxe, a_Entity)
+            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Halberd, a_Entity))
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Axe_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Axe_3")))
                 return 3;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Axe_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Axe_2")))
                 return 2;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Axe_1")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Axe_1")))
                 return 1;
         }
-        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_1H, p_entity))
+        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_1H, a_Entity))
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_3")))
                 return 2;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_2")))
                 return 1;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_1")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_1")))
                 return 0;
         }
-        if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, p_entity))
+        if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, a_Entity))
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_1H_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_1H_2")))
                 return 3;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_1H_1")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_1H_1")))
                 return 2;
         }
-        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Staff, p_entity))
+        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Staff, a_Entity))
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Staff_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Staff_3")))
                 return 3;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Staff_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Staff_2")))
                 return 2;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Staff_1")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Staff_1")))
                 return 1;
         }
         return 0;
     }
     // NPC here
-    GEInt powerLevel = getPowerLevel(p_entity);
+    GEInt powerLevel = getPowerLevel(a_Entity);
     if (powerLevel > NBConfig::eliteLevel)
         return 3;
     if (powerLevel > NBConfig::warriorLevel)
@@ -1075,9 +1075,9 @@ GEInt getWeaponLevelNB(Entity &p_entity)
     return 0;
 }
 
-GEBool IsHoldingTwoHandedWeapon(Entity &entity)
+GEBool IsHoldingTwoHandedWeapon(Entity &a_Entity)
 {
-    gEUseType weaponUseType = entity.Inventory.GetItemFromSlot(gESlot_RightHand).Interaction.GetUseType();
+    gEUseType weaponUseType = a_Entity.Inventory.GetItemFromSlot(gESlot_RightHand).Interaction.GetUseType();
     if (weaponUseType == gEUseType_2H || weaponUseType == gEUseType_Staff || weaponUseType == gEUseType_Axe
         || weaponUseType == gEUseType_Halberd || weaponUseType == gEUseType_Pickaxe)
     {
@@ -1086,12 +1086,12 @@ GEBool IsHoldingTwoHandedWeapon(Entity &entity)
     return GEFalse;
 }
 
-GEBool IsInSameParty(Entity &p_self, Entity &p_other)
+GEBool IsInSameParty(Entity &a_Self, Entity &a_Other)
 {
-    Entity partyLeader = p_self.Party.GetPartyLeader();
+    Entity partyLeader = a_Self.Party.GetPartyLeader();
     if (partyLeader == None)
         return GEFalse;
-    return partyLeader == p_other.Party.GetPartyLeader();
+    return partyLeader == a_Other.Party.GetPartyLeader();
 }
 
 GEBool IsPlayerInCombat()
@@ -1116,13 +1116,13 @@ GEBool IsPlayerInCombat()
     return GEFalse;
 }
 
-GEInt speciesLeftHand(Entity p_entity)
+GEInt speciesLeftHand(Entity a_Entity)
 {
-    gESpecies species = p_entity.NPC.GetProperty<PSNpc::PropertySpecies>();
+    gESpecies species = a_Entity.NPC.GetProperty<PSNpc::PropertySpecies>();
 
     if (species == gESpecies_Troll)
     {
-        GEInt retVal = p_entity.Inventory.AssureItems("TrollFist", gEItemQuality::gEItemQuality_Diseased, 1);
+        GEInt retVal = a_Entity.Inventory.AssureItems("TrollFist", gEItemQuality::gEItemQuality_Diseased, 1);
         return retVal;
     }
     return -1;
@@ -1189,73 +1189,73 @@ GEInt speciesRightHand(Entity a_Entity)
     return a_Entity.Inventory.AssureItems("Fist", 0, 1);
 }
 
-GEBool IsInRecovery(Entity &p_entity)
+GEBool IsInRecovery(Entity &a_Entity)
 {
-    return p_entity.GetCurrentAniPhase() == gEPhase_Recover;
+    return a_Entity.GetCurrentAniPhase() == gEPhase_Recover;
 }
 
-WarriorType GetWarriorType(Entity &p_entity)
+WarriorType GetWarriorType(Entity &a_Entity)
 {
-    if (p_entity.IsPlayer() && !p_entity.NPC.IsTransformed())
+    if (a_Entity.IsPlayer() && !a_Entity.NPC.IsTransformed())
     {
-        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_2H, p_entity)
-            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Axe, p_entity)
-            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Pickaxe, p_entity)
-            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Halberd, p_entity))
+        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_2H, a_Entity)
+            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Axe, a_Entity)
+            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Pickaxe, a_Entity)
+            || CheckHandUseTypesNB(gEUseType_None, gEUseType_Halberd, a_Entity))
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Axe_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Axe_3")))
                 return WarriorType_Elite;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Axe_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Axe_2")))
                 return WarriorType_Warrior;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Axe_1")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Axe_1")))
                 return WarriorType_Novice;
         }
-        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_1H, p_entity))
+        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_1H, a_Entity))
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_3")))
                 return WarriorType_Elite;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_2")))
                 return WarriorType_Warrior;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_1")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_1")))
                 return WarriorType_Novice;
         }
-        if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, p_entity))
+        if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, a_Entity))
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_1H_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_1H_2")))
                 return WarriorType_Elite;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_1H_1H_1")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_1H_1H_1")))
                 return WarriorType_Warrior;
         }
-        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Staff, p_entity))
+        if (CheckHandUseTypesNB(gEUseType_None, gEUseType_Staff, a_Entity))
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Staff_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Staff_3")))
                 return WarriorType_Elite;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Staff_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Staff_2")))
                 return WarriorType_Warrior;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Staff_1")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Staff_1")))
                 return WarriorType_Novice;
         }
-        if (CheckHandUseTypesNB(gEUseType_Bow, gEUseType_Arrow, p_entity))
+        if (CheckHandUseTypesNB(gEUseType_Bow, gEUseType_Arrow, a_Entity))
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Bow_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Bow_3")))
                 return WarriorType_Elite;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Bow_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Bow_2")))
                 return WarriorType_Warrior;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Bow_1")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Bow_1")))
                 return WarriorType_Novice;
         }
-        if (CheckHandUseTypesNB(gEUseType_CrossBow, gEUseType_Bolt, p_entity))
+        if (CheckHandUseTypesNB(gEUseType_CrossBow, gEUseType_Bolt, a_Entity))
         {
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Bow_3")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Bow_3")))
                 return WarriorType_Elite;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Bow_2")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Bow_2")))
                 return WarriorType_Warrior;
-            if (p_entity.Inventory.IsSkillActive(Template("Perk_Bow_1")))
+            if (a_Entity.Inventory.IsSkillActive(Template("Perk_Bow_1")))
                 return WarriorType_Novice;
         }
         return WarriorType_None;
     }
-    GEInt powerLevel = getPowerLevel(p_entity);
+    GEInt powerLevel = getPowerLevel(a_Entity);
     if (powerLevel >= NBConfig::uniqueLevel)
         return WarriorType_Elite;
     if (powerLevel >= NBConfig::warriorLevel)
@@ -1288,9 +1288,9 @@ GEInt getLastTimeFromMap(bCString iD, std::map<bCString, GEInt> &map)
     return retVal;
 }
 
-GEBool IsAttackAction(gEAction p_Action)
+GEBool IsAttackAction(gEAction a_Action)
 {
-    switch (p_Action)
+    switch (a_Action)
     {
         case gEAction_Attack:
         case gEAction_PowerAttack:
@@ -1308,16 +1308,23 @@ GEBool IsAttackAction(gEAction p_Action)
     return GEFalse;
 }
 
-GEBool CanParry(Entity &p_Self)
+GEBool CanParry(Entity &a_Self)
 {
     bCString strSkeletonName;
-    p_Self.Animation.GetSkeletonName(strSkeletonName);
+    a_Self.Animation.GetSkeletonName(strSkeletonName);
 
     if ((strSkeletonName == "Hero" || strSkeletonName == "Orc")
-        && !GetScriptAdmin().CallScriptFromScript("IsInFistMode", &p_Self, &None))
+        && !GetScriptAdmin().CallScriptFromScript("IsInFistMode", &a_Self, &None))
     {
-        // For now player can always parry, npcs only when they are more skilled (LevelMax)
-        if (p_Self.NPC.GetProperty<PSNpc::PropertyLevelMax>() >= 35 || p_Self.IsPlayer())
+        if (a_Self.IsPlayer())
+        {
+            GEInt iSkillLevel = GetCombatSkillLevel(a_Self);
+            if (iSkillLevel >= 1)
+            {
+                return GETrue;
+            }
+        }
+        else if (a_Self.NPC.GetProperty<PSNpc::PropertyLevelMax>() >= 35)
         {
             return GETrue;
         }
@@ -1325,11 +1332,25 @@ GEBool CanParry(Entity &p_Self)
     return GEFalse;
 }
 
-GEInt GetCombatMoveSkillLevel(Entity &p_self)
+GEBool CanParryNormalProjectile(Entity &a_Self)
 {
-    if (!p_self.IsPlayer() || p_self.NPC.IsTransformed())
+    if (!CanParry(a_Self))
+        return GEFalse;
+
+    GEInt iSkillLevel = GetCombatSkillLevel(a_Self);
+    if (iSkillLevel >= 2)
     {
-        GEInt iLevel = p_self.NPC.GetProperty<PSNpc::PropertyLevelMax>();
+        return GETrue;
+    }
+
+    return GEFalse;
+}
+
+GEInt GetCombatSkillLevel(Entity &a_Self)
+{
+    if (!a_Self.IsPlayer() || a_Self.NPC.IsTransformed())
+    {
+        GEInt iLevel = a_Self.NPC.GetProperty<PSNpc::PropertyLevelMax>();
 
         if (iLevel >= 40)
         {
@@ -1344,28 +1365,28 @@ GEInt GetCombatMoveSkillLevel(Entity &p_self)
         return 0;
     }
 
-    if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, p_self))
+    if (CheckHandUseTypesNB(gEUseType_1H, gEUseType_1H, a_Self))
     {
-        if (p_self.Inventory.IsSkillActive("Perk_1H1H_2"))
+        if (a_Self.Inventory.IsSkillActive("Perk_1H1H_2"))
         {
             return 2;
         }
-        if (p_self.Inventory.IsSkillActive("Perk_1H1H_1"))
+        if (a_Self.Inventory.IsSkillActive("Perk_1H1H_1"))
         {
             return 1;
         }
         return 0;
     }
 
-    gEUseType rightHandUseType = p_self.Inventory.GetItemFromSlot(gESlot_RightHand).Interaction.GetUseType();
+    gEUseType rightHandUseType = a_Self.Inventory.GetItemFromSlot(gESlot_RightHand).Interaction.GetUseType();
     switch (rightHandUseType)
     {
         case gEUseType_1H:
-            if (p_self.Inventory.IsSkillActive("Perk_1H_3"))
+            if (a_Self.Inventory.IsSkillActive("Perk_1H_3"))
             {
                 return 2;
             }
-            if (p_self.Inventory.IsSkillActive("Perk_1H_2"))
+            if (a_Self.Inventory.IsSkillActive("Perk_1H_2"))
             {
                 return 1;
             }
@@ -1374,21 +1395,21 @@ GEInt GetCombatMoveSkillLevel(Entity &p_self)
         case gEUseType_Axe:
         case gEUseType_Halberd:
         case gEUseType_Pickaxe:
-            if (p_self.Inventory.IsSkillActive("Perk_Axe_3"))
+            if (a_Self.Inventory.IsSkillActive("Perk_Axe_3"))
             {
                 return 2;
             }
-            if (p_self.Inventory.IsSkillActive("Perk_Axe_2"))
+            if (a_Self.Inventory.IsSkillActive("Perk_Axe_2"))
             {
                 return 1;
             }
             break;
         case gEUseType_Staff:
-            if (p_self.Inventory.IsSkillActive("Perk_Staff_3"))
+            if (a_Self.Inventory.IsSkillActive("Perk_Staff_3"))
             {
                 return 2;
             }
-            if (p_self.Inventory.IsSkillActive("Perk_Staff_2"))
+            if (a_Self.Inventory.IsSkillActive("Perk_Staff_2"))
             {
                 return 1;
             }
