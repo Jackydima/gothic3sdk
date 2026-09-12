@@ -36,6 +36,26 @@ void println(const char *format, Args... args)
 }
 #endif
 
+struct ThreadScriptCallData
+{
+    bCString m_ScriptName;
+    Entity m_Self;
+    Entity m_Other;
+    GEInt m_IntArg;
+
+    ThreadScriptCallData()
+    {
+        m_ScriptName = "";
+        m_Self = None;
+        m_Other = None;
+        m_IntArg = 0;
+    }
+};
+
+void CallThreadScript(bCString a_ScriptName, Entity &a_Self, Entity &a_Other, GEInt a_iArgs = 0);
+DWORD ThreadScript(LPVOID a_Args);
+
+
 enum VulnerabilityStatus
 {
     VulnerabilityStatus_IMMUNE = 0,
@@ -105,6 +125,6 @@ GEInt speciesRightHand(Entity p_entity);
 WarriorType GetWarriorType(Entity &p_entity);
 GEInt getLastTimeFromMap(bCString iD, std::map<bCString, GEInt> &map);
 GEBool IsAttackAction(gEAction p_Action);
-GEBool CanParry(Entity& p_Self);
+GEBool CanParry(Entity &p_Self);
 GEBool CanParryNormalProjectile(Entity &a_Self);
-GEInt GetCombatSkillLevel(Entity& p_self);
+GEInt GetCombatSkillLevel(Entity &p_self);

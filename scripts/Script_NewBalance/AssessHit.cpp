@@ -55,38 +55,42 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     Victim.NPC.SetLastAttacker(Victim.NPC.GetCurrentAttacker());
     Victim.NPC.SetCurrentAttacker(DamagerOwner);
 
+    if (IsNormalProjectileNB(Damager) && Victim.Routine.GetCurrentState() == "NB_Melee_Parry"
+        && Victim.GetCurrentAniPhase() == gEPhase_Hit && CanParryNormalProjectile(Victim))
+    {
+        CallThreadScript("ReflectProjectile", Damager, Victim);
+        return gEAction_None;
+    }
+
     if (!Victim.NPC.IsFrozen() // Frozen Victim cannot parry!, should also never happen with state checks!
         && !Damager.Projectile.IsValid() && !IsSpellContainerNB(Damager) // No projectiles and no spell parry!
         && DamagerOwnerAction != gEAction_GetUpAttack // Parrying GetUpAttack of NPCs is easily exploitable :(
         && ScriptAdmin.CallScriptFromScript("CanParadeMoveOf", &Victim, &DamagerOwner, 0))
     {
         // Parry mechanic!
-        if (Victim.Routine.GetCurrentState() == "NB_Melee_Parry")
+        if (Victim.Routine.GetCurrentState() == "NB_Melee_Parry" && Victim.GetCurrentAniPhase() == gEPhase_Hit)
         {
-            if (Victim.NPC.GetCurrentMovementAni().Contains("Hit"))
+            if (!ScriptAdmin.CallScriptFromScript("IsInFistMode", &Victim, &None, 0))
             {
-                if (!ScriptAdmin.CallScriptFromScript("IsInFistMode", &Victim, &None, 0))
+                if (Damager.CollisionShape.GetPhysicMaterial() != eEShapeMaterial_Metal
+                    || (Victim.Inventory.GetItemFromSlot(gESlot_RightHand).CollisionShape.GetPhysicMaterial()
+                        != eEShapeMaterial_Metal))
                 {
-                    if (Damager.CollisionShape.GetPhysicMaterial() != eEShapeMaterial_Metal
-                        || (Victim.Inventory.GetItemFromSlot(gESlot_RightHand).CollisionShape.GetPhysicMaterial()
-                            != eEShapeMaterial_Metal))
-                    {
-                        EffectSystem::StartEffect("eff_col_weaponhitslevel_metal_wood_01", Victim);
-                    }
-                    else
-                    {
-                        EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
-                    }
+                    EffectSystem::StartEffect("eff_col_weaponhitslevel_metal_wood_01", Victim);
                 }
-
-                if (!Damager.GetName().Contains("Fist"))
+                else
                 {
-                    DamagerOwner.Routine.FullStop();
+                    EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
                 }
-
-                DamagerOwner.Routine.SetTask("NB_ParryStumble");
-                return gEAction_Parade;
             }
+
+            if (!Damager.GetName().Contains("Fist"))
+            {
+                DamagerOwner.Routine.FullStop();
+            }
+
+            DamagerOwner.Routine.SetTask("NB_ParryStumble");
+            return gEAction_Parade;
         }
     }
 
@@ -1073,38 +1077,42 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     Victim.NPC.SetLastAttacker(Victim.NPC.GetCurrentAttacker());
     Victim.NPC.SetCurrentAttacker(DamagerOwner);
 
+    if (IsNormalProjectileNB(Damager) && Victim.Routine.GetCurrentState() == "NB_Melee_Parry"
+        && Victim.GetCurrentAniPhase() == gEPhase_Hit && CanParryNormalProjectile(Victim))
+    {
+        CallThreadScript("ReflectProjectile", Damager, Victim);
+        return gEAction_None;
+    }
+
     if (!Victim.NPC.IsFrozen() // Frozen Victim cannot parry!, should also never happen with state checks!
         && !Damager.Projectile.IsValid() && !IsSpellContainerNB(Damager) // No projectiles and no spell parry!
         && DamagerOwnerAction != gEAction_GetUpAttack // Parrying GetUpAttack of NPCs is easily exploitable :(
         && ScriptAdmin.CallScriptFromScript("CanParadeMoveOf", &Victim, &DamagerOwner, 0))
     {
         // Parry mechanic!
-        if (Victim.Routine.GetCurrentState() == "NB_Melee_Parry")
+        if (Victim.Routine.GetCurrentState() == "NB_Melee_Parry" && Victim.GetCurrentAniPhase() == gEPhase_Hit)
         {
-            if (Victim.NPC.GetCurrentMovementAni().Contains("Hit"))
+            if (!ScriptAdmin.CallScriptFromScript("IsInFistMode", &Victim, &None, 0))
             {
-                if (!ScriptAdmin.CallScriptFromScript("IsInFistMode", &Victim, &None, 0))
+                if (Damager.CollisionShape.GetPhysicMaterial() != eEShapeMaterial_Metal
+                    || (Victim.Inventory.GetItemFromSlot(gESlot_RightHand).CollisionShape.GetPhysicMaterial()
+                        != eEShapeMaterial_Metal))
                 {
-                    if (Damager.CollisionShape.GetPhysicMaterial() != eEShapeMaterial_Metal
-                        || (Victim.Inventory.GetItemFromSlot(gESlot_RightHand).CollisionShape.GetPhysicMaterial()
-                            != eEShapeMaterial_Metal))
-                    {
-                        EffectSystem::StartEffect("eff_col_weaponhitslevel_metal_wood_01", Victim);
-                    }
-                    else
-                    {
-                        EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
-                    }
+                    EffectSystem::StartEffect("eff_col_weaponhitslevel_metal_wood_01", Victim);
                 }
-
-                if (!Damager.GetName().Contains("Fist"))
+                else
                 {
-                    DamagerOwner.Routine.FullStop();
+                    EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
                 }
-
-                DamagerOwner.Routine.SetTask("NB_ParryStumble");
-                return gEAction_Parade;
             }
+
+            if (!Damager.GetName().Contains("Fist"))
+            {
+                DamagerOwner.Routine.FullStop();
+            }
+
+            DamagerOwner.Routine.SetTask("NB_ParryStumble");
+            return gEAction_Parade;
         }
     }
 
@@ -1431,7 +1439,8 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         // Powercast
         if (Damager.Projectile.GetProperty<PSProjectile::PropertyPathStyle>() == gEProjectilePath_Missile)
         {
-            FinalDamage = static_cast<GEInt>(FinalDamage * Damager.Damage.GetProperty<PSDamage::PropertyDamageManaMultiplier>());
+            FinalDamage =
+                static_cast<GEInt>(FinalDamage * Damager.Damage.GetProperty<PSDamage::PropertyDamageManaMultiplier>());
         }
     }
 
@@ -1659,7 +1668,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         println("StaminaDamageMultiplier: %f", staminaDamageMultiplier);
 
         GEInt FinalDamage3 = static_cast<GEInt>(FinalDamage * staminaDamageMultiplier);
-        
+
         println("FinalDamage3: %d", FinalDamage3);
 
         // AlternativeAI parade (es werden keine Lebenspunkte angezogen)

@@ -1,5 +1,30 @@
 #include "utility.h"
 
+void CallThreadScript(bCString a_ScriptName, Entity &a_Self, Entity &a_Other, GEInt a_iArgs)
+{
+    ThreadScriptCallData *data = new ThreadScriptCallData();
+    data->m_ScriptName = a_ScriptName;
+    data->m_Self = a_Self;
+    data->m_Other = a_Other;
+    data->m_IntArg = a_iArgs;
+
+    CreateThread(NULL, NULL, &ThreadScript, data, NULL, NULL);
+}
+
+DWORD ThreadScript(LPVOID a_Args)
+{
+    ThreadScriptCallData *arguments = static_cast<ThreadScriptCallData *>(a_Args);
+    bCString ScriptName = arguments->m_ScriptName;
+    Entity Self = arguments->m_Self;
+    Entity Other = arguments->m_Other;
+    GEInt IntArg = arguments->m_IntArg;
+    GetScriptAdmin().CallScriptFromScript(ScriptName, &Self, &Other, IntArg);
+
+    delete a_Args;
+    return 0;
+}
+
+
 const uintptr_t *ActionBufferObject = reinterpret_cast<uintptr_t *>(RVA_ScriptGame(0x118b40));
 
 void SetParadeMode(Entity a_Entity, GEBool a_bEnabled)
@@ -1419,3 +1444,4 @@ GEInt GetCombatSkillLevel(Entity &a_Self)
 
     return 0;
 }
+
