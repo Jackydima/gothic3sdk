@@ -6,6 +6,9 @@ project(
   DESCRIPTION "Gothic 3 SDK"
   LANGUAGES CXX C)
 
+
+set(SCRIPT_OUTPUT_DIR "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Gothic 3\\scripts") # .dll output directory
+
 option(G3SDK_BINDING_ONLY "Use the binding only version of the library (no util and thirdparty)." OFF)
 option(G3SDK_USE_STDCALL "Use the same calling convention as Gothic 3 by default. Avoids unpleasant surprises, as otherwise one has to be extremly careful to provide proper calling convetions when hooking into Gothic 3. However, under certain circumstances, such as using external (pre-compiled) libraries, it may be advantageous to not default to stdcall." ON)
 

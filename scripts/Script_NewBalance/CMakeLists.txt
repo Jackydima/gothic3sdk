@@ -4,6 +4,14 @@ target_link_libraries(Script_NewBalance PRIVATE g3sdk::SDK)
 
 target_gothic_script_options(Script_NewBalance)
 
+add_custom_command(TARGET Script_NewBalance POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:Script_NewBalance>"
+            "${SCRIPT_OUTPUT_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_PDB_FILE:Script_NewBalance>"
+            "${SCRIPT_OUTPUT_DIR}")
+
 target_tree_sources(Script_NewBalance
   PRIVATE
     AssessHit.cpp
