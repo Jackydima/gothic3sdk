@@ -458,10 +458,18 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     // Vulnerabilities
     switch (DamageTypeEntityTestNB(Victim, Damager))
     {
-        case VulnerabilityStatus_WEAK:           FinalDamage = static_cast<GEInt>(FinalDamage * 1.6f); break;
-        case VulnerabilityStatus_STRONG:         FinalDamage = static_cast<GEInt>(FinalDamage * 0.5f); break;
-        case VulnerabilityStatus_SLIGHTLYWEAK:   FinalDamage = static_cast<GEInt>(FinalDamage * 1.2f); break;
-        case VulnerabilityStatus_SLIGHTLYSTRONG: FinalDamage = static_cast<GEInt>(FinalDamage * 0.8f); break;
+        case VulnerabilityStatus_WEAK:
+            FinalDamage = static_cast<GEInt>(FinalDamage * NBConfig::VulnerabilityWeak);
+            break;
+        case VulnerabilityStatus_STRONG:
+            FinalDamage = static_cast<GEInt>(FinalDamage * NBConfig::VulnerabilityStrong);
+            break;
+        case VulnerabilityStatus_SLIGHTLYWEAK:
+            FinalDamage = static_cast<GEInt>(FinalDamage * NBConfig::VulnerabilitySlightlyWeak);
+            break;
+        case VulnerabilityStatus_SLIGHTLYSTRONG:
+            FinalDamage = static_cast<GEInt>(FinalDamage * NBConfig::VulnerabilitySlightlyStrong);
+            break;
     }
     if (iProtection > 90)
         iProtection = 90;
@@ -510,6 +518,13 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
                                               + FinalDamage * NBConfig::SpecialAttackArmorPen)
                          * 2;
             break;
+    }
+
+    // Add new Piercing Armor Penetration
+    if (Damager.Damage.GetProperty<PSDamage::PropertyDamageType>() == gEDamageType_Missile)
+    {
+        FinalDamage2 = static_cast<GEInt>(FinalDamage2 * (1.0f - NBConfig::MissileAttackArmorPen)
+                                          + FinalDamage * NBConfig::MissileAttackArmorPen);
     }
 
     if (Victim.Routine.GetCurrentState() == "NB_ParryStumble")

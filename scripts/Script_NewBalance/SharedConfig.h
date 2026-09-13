@@ -63,6 +63,12 @@ extern GEFloat fEvadeDistance;
 extern GEFloat fEvadeSpeed;
 extern GEFloat fParrySpeed;
 
+extern GEFloat MissileAttackArmorPen;
+extern GEFloat VulnerabilityWeak;
+extern GEFloat VulnerabilitySlightlyWeak;
+extern GEFloat VulnerabilityStrong;
+extern GEFloat VulnerabilitySlightlyStrong;
+
 extern GEFloat PerfectBlockDamageMult;
 extern GEFloat PowerAttackArmorPen;
 extern GEFloat QuickAttackArmorRes;

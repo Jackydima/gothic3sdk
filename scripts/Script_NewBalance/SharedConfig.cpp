@@ -53,9 +53,15 @@ GEBool bEnableEvadeWithJump = GETrue;
 GEBool bEnableParry = GETrue;
 std::vector<bCString> AOENames = {};
 
-GEFloat fEvadeDistance = 250.0f;
+GEFloat fEvadeDistance = 220.0f;
 GEFloat fEvadeSpeed = 1.0f;
 GEFloat fParrySpeed = 1.0f;
+
+GEFloat MissileAttackArmorPen = 0.0f;
+GEFloat VulnerabilityWeak = 1.6f;
+GEFloat VulnerabilitySlightlyWeak = 1.2f;
+GEFloat VulnerabilityStrong = 0.5f;
+GEFloat VulnerabilitySlightlyStrong = 0.8f;
 
 GEFloat PerfectBlockDamageMult = 1.5f;
 GEFloat PowerAttackArmorPen = 0.1f;

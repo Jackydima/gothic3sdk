@@ -18,9 +18,22 @@ void LoadSettings()
     }
     if (config.ReadFile("newbalance.ini"))
     {
-        NBConfig::UseNewDamageCalculation = config.GetBool("Script", "UseNewDamageCalculation", NBConfig::UseNewDamageCalculation);
+        // Heavy Req
+        NBConfig::MissileAttackArmorPen =
+            config.GetFloat("Script", "MissileAttackArmorPen", NBConfig::MissileAttackArmorPen);
+        NBConfig::VulnerabilityWeak = config.GetFloat("Script", "VulnerabilityWeak", NBConfig::VulnerabilityWeak);
+        NBConfig::VulnerabilitySlightlyWeak =
+            config.GetFloat("Script", "VulnerabilitySlightlyWeak", NBConfig::VulnerabilitySlightlyWeak);
+        NBConfig::VulnerabilityStrong = config.GetFloat("Script", "VulnerabilityStrong", NBConfig::VulnerabilityStrong);
+        NBConfig::VulnerabilitySlightlyStrong =
+            config.GetFloat("Script", "VulnerabilitySlightlyStrong", NBConfig::VulnerabilitySlightlyStrong);
+        // Heavy Req
+        
+        NBConfig::UseNewDamageCalculation =
+            config.GetBool("Script", "UseNewDamageCalculation", NBConfig::UseNewDamageCalculation);
         NBConfig::UseNewNPCProtection = config.GetBool("Script", "UseNewNPCProtection", NBConfig::UseNewNPCProtection);
-        NBConfig::IgnoreHumanoidBodyProtection = config.GetBool("Script", "IgnoreHumanoidBodyProtection", NBConfig::IgnoreHumanoidBodyProtection);
+        NBConfig::IgnoreHumanoidBodyProtection =
+            config.GetBool("Script", "IgnoreHumanoidBodyProtection", NBConfig::IgnoreHumanoidBodyProtection);
         NBConfig::newSummoning = config.GetBool("Script", "NewSummoning", NBConfig::newSummoning);
         NBConfig::vanishSummons = config.GetBool("Script", "VanishSummons", NBConfig::vanishSummons);
         NBConfig::onlyHeavyAttackKnockDown =
@@ -59,8 +72,7 @@ void LoadSettings()
             config.GetFloat("Script", "SpecialAttackArmorPen", NBConfig::SpecialAttackArmorPen);
         NBConfig::NPCStrengthMultiplicator =
             config.GetFloat("Script", "NPCStrengthMultiplicator", NBConfig::NPCStrengthMultiplicator);
-        NBConfig::NPCStrengthAddition =
-            config.GetFloat("Script", "NPCStrengthAddition", NBConfig::NPCStrengthAddition);
+        NBConfig::NPCStrengthAddition = config.GetFloat("Script", "NPCStrengthAddition", NBConfig::NPCStrengthAddition);
         NBConfig::elementalPerkBonusResistance =
             config.GetInt("Script", "ElementalPerkBonusResistance", NBConfig::elementalPerkBonusResistance);
         NBConfig::animationSpeedBonusMid =
@@ -89,8 +101,8 @@ void LoadSettings()
             config.GetFloat("Script", "TelekinesisRange", static_cast<GEFloat>(NBConfig::telekinesisRange)));
         NBConfig::shootVelocity = static_cast<GEDouble>(
             config.GetFloat("Script", "ProjectileVelocity", static_cast<GEFloat>(NBConfig::shootVelocity)));
-        NBConfig::ReflectFOV = static_cast<GEFloat>(
-            config.GetFloat("Script", "ReflectFOV", static_cast<GEFloat>(NBConfig::ReflectFOV)));
+        NBConfig::ReflectFOV =
+            static_cast<GEFloat>(config.GetFloat("Script", "ReflectFOV", static_cast<GEFloat>(NBConfig::ReflectFOV)));
         NBConfig::NPC_AIM_INACCURACY = config.GetFloat("Script", "NPCAimInaccuracy", NBConfig::NPC_AIM_INACCURACY);
         NBConfig::ATTACK_REACH_MULTIPLIER =
             config.GetFloat("Script", "AttackReachMultiplier", NBConfig::ATTACK_REACH_MULTIPLIER);
@@ -124,7 +136,8 @@ void LoadSettings()
         NBConfig::noviceLevel = config.GetInt("Script", "NoviceLevelCap", NBConfig::noviceLevel);
         NBConfig::KnockDownThreshold = config.GetInt("Script", "KnockDownThreshold", NBConfig::KnockDownThreshold);
         NBConfig::DiseaseNPCDuration = config.GetInt("Script", "DiseaseNPCDuration", NBConfig::DiseaseNPCDuration);
-        NBConfig::DiseasePlayerDuration = config.GetInt("Script", "DiseasePlayerDuration", NBConfig::DiseasePlayerDuration);
+        NBConfig::DiseasePlayerDuration =
+            config.GetInt("Script", "DiseasePlayerDuration", NBConfig::DiseasePlayerDuration);
     }
 }
 
@@ -150,7 +163,7 @@ void AssignNewKeys()
             mCCaller::GetCallerParams(RVA_Game(0x1829d0), mERegisterType::mERegisterType_Ecx));
         using AssignSingleKey_t = void(GE_STDCALL *)(gESessionKey, bCString, eSSetupEngine::SPhysicalKeys *);
 
-        // Parry 
+        // Parry
         bCString keyName = "Parry";
         pKeys.m_iKey1DeviceType = config.GetInt("SessionKey.Parry", "Key1.Type", eEDeviceType_Mouse);
         pKeys.m_iKey1DeviceOffset =
@@ -200,7 +213,7 @@ void AddNewStringEntries()
     auto &LocAdmin = eCLocAdmin::GetInstance();
     // Read the entries and extend loctable entries
     GEBool success = LocAdmin.Read("Data/Strings/stringtableMod.ini", GETrue);
-    println("<LocAdmin>: Reading New String Entries Status: %s", success? "True" : "False");
+    println("<LocAdmin>: Reading New String Entries Status: %s", success ? "True" : "False");
 }
 
 extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
