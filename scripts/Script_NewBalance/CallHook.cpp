@@ -86,11 +86,11 @@ void Shoot_Velocity(gCScriptProcessingUnit *p_PSU, Entity *p_self, Entity *p_tar
     bCVector targetVec = targetVecPos - projectileItem.GetPosition();
 
     // Absolute Randomness of shots
-    targetVecPos.AccessX() += (Entity::GetRandomNumber(static_cast<GEInt>(200 * NBConfig::NPC_AIM_INACCURACY))
-                               - 100 * NBConfig::NPC_AIM_INACCURACY);
+    targetVecPos.AccessX() += (Entity::GetRandomNumber(static_cast<GEInt>(100 * NBConfig::NPC_AIM_INACCURACY))
+                               - 50 * NBConfig::NPC_AIM_INACCURACY);
     // targetVec.AccessY ( ) += ( Entity::GetRandomNumber ( 50 ) - 25 );
-    targetVecPos.AccessZ() += (Entity::GetRandomNumber(static_cast<GEInt>(200 * NBConfig::NPC_AIM_INACCURACY))
-                               - 100 * NBConfig::NPC_AIM_INACCURACY);
+    targetVecPos.AccessZ() += (Entity::GetRandomNumber(static_cast<GEInt>(100 * NBConfig::NPC_AIM_INACCURACY))
+                               - 50 * NBConfig::NPC_AIM_INACCURACY);
 
     bCVector newTargetDirectionVec =
         (targetVecPos + (p_target->GetGameEntity()->GetLinearVelocity() * time)) - projectileItem.GetPosition();
@@ -135,7 +135,7 @@ void CombatMoveScale(void *a_pArgs, gCScriptProcessingUnit *a_pSPU)
     GEFloat fAniScale = reinterpret_cast<gCScriptProcessingUnit::sAICombatMoveInstr_Args *>(a_pArgs)->AniSpeedScale;
     GEFloat fMaxTime = static_cast<GEFloat>(actor->GetMaxTime(eCWrapper_emfx2Actor::eEMotionType_PrimaryFirst));
     GEFloat fAnimationTime = fMaxTime / fAniScale;
-    
+
     a_pSPU->m_DirectionVec.Normalize(); // Reset Length
     a_pSPU->m_DirectionVec.Scale(iMoveRange / fAnimationTime * NBConfig::ATTACK_REACH_MULTIPLIER);
 }
@@ -545,8 +545,7 @@ void HookCallHooks()
         .RestoreRegister()
         .Hook();
 
-    Hook_CombatMoveScale
-        .Prepare(RVA_Game(0x16b8a9), &CombatMoveScale, mCBaseHook::mEHookType_Mixed)
+    Hook_CombatMoveScale.Prepare(RVA_Game(0x16b8a9), &CombatMoveScale, mCBaseHook::mEHookType_Mixed)
         .InsertCall()
         .AddPtrStackArgEbp(0x8)
         .AddPtrStackArgEbp(0xC)
