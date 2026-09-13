@@ -89,6 +89,8 @@ void LoadSettings()
             config.GetFloat("Script", "TelekinesisRange", static_cast<GEFloat>(NBConfig::telekinesisRange)));
         NBConfig::shootVelocity = static_cast<GEDouble>(
             config.GetFloat("Script", "ProjectileVelocity", static_cast<GEFloat>(NBConfig::shootVelocity)));
+        NBConfig::ReflectFOV = static_cast<GEFloat>(
+            config.GetFloat("Script", "ReflectFOV", static_cast<GEFloat>(NBConfig::ReflectFOV)));
         NBConfig::NPC_AIM_INACCURACY = config.GetFloat("Script", "NPCAimInaccuracy", NBConfig::NPC_AIM_INACCURACY);
         NBConfig::ATTACK_REACH_MULTIPLIER =
             config.GetFloat("Script", "AttackReachMultiplier", NBConfig::ATTACK_REACH_MULTIPLIER);

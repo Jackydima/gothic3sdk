@@ -83,6 +83,7 @@ extern GEInt startDEX;
 extern GEDouble attackRangeAI;
 extern GEDouble telekinesisRange;
 extern GEDouble shootVelocity;
+extern GEFloat ReflectFOV;
 extern GEFloat NPC_AIM_INACCURACY;
 extern GEFloat ATTACK_REACH_MULTIPLIER;
 extern GEInt elementalPerkBonusResistance;

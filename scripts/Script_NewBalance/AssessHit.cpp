@@ -55,7 +55,7 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     Victim.NPC.SetLastAttacker(Victim.NPC.GetCurrentAttacker());
     Victim.NPC.SetCurrentAttacker(DamagerOwner);
 
-    if (IsNormalProjectileNB(Damager) && Victim.Routine.GetCurrentState() == "NB_Melee_Parry"
+    if (IsNormalProjectileNB(Damager) && Victim.IsInFOV(Damager) && Victim.Routine.GetCurrentState() == "NB_Melee_Parry"
         && Victim.GetCurrentAniPhase() == gEPhase_Hit && CanParryNormalProjectile(Victim))
     {
         CallThreadScript("ReflectProjectile", Damager, Victim);
@@ -1077,7 +1077,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     Victim.NPC.SetLastAttacker(Victim.NPC.GetCurrentAttacker());
     Victim.NPC.SetCurrentAttacker(DamagerOwner);
 
-    if (IsNormalProjectileNB(Damager) && Victim.Routine.GetCurrentState() == "NB_Melee_Parry"
+    if (IsNormalProjectileNB(Damager) && Victim.IsInFOV(Damager) && Victim.Routine.GetCurrentState() == "NB_Melee_Parry"
         && Victim.GetCurrentAniPhase() == gEPhase_Hit && CanParryNormalProjectile(Victim))
     {
         CallThreadScript("ReflectProjectile", Damager, Victim);

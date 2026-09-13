@@ -77,6 +77,7 @@ GEInt startDEX = 0;
 GEDouble attackRangeAI = 3000.0;
 GEDouble telekinesisRange = 4000.0;
 GEDouble shootVelocity = 300.0;
+GEFloat ReflectFOV = 5.0f;
 GEFloat NPC_AIM_INACCURACY = 0.40f;
 GEFloat ATTACK_REACH_MULTIPLIER = 1.0f;
 GEInt elementalPerkBonusResistance = 35;
