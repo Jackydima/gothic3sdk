@@ -48,7 +48,24 @@ void HotKeyTester::Process()
         if (!num1KeyPressed)
         {
             num1KeyPressed = GETrue;
-            AmmoTest();
+            Template templateSpawn = Template("Arrow");
+            Entity Player = Entity::GetPlayer();
+            bCMatrix Pose = Player.GetPose();
+            Pose.AccessTranslation().AccessY() += 200.0f;
+            Entity Spawn = Entity::Spawn(templateSpawn, Pose);
+            Spawn.CollisionShape.CreateShape(eECollisionShapeType_Point, eEShapeGroup_Projectile, bCVector(0, 0, 0),
+                                                 bCVector(0, 0, 0));
+            Spawn.EnableCollisionWith(Player, GEFalse);
+            Spawn.EnableCollisionWith(Spawn, GEFalse);
+            Spawn.Interaction.SetOwner(Player);
+            
+            gCProjectile_PS *SpawnProjectile =
+                GetPropertySet<gCProjectile_PS>(Spawn.GetGameEntity(), eEPropertySetType_Projectile);
+
+            Spawn.Projectile.AccessProperty<PSProjectile::PropertyShootVelocity>() = static_cast<GEFloat>(200.0f);
+            Spawn.Projectile.AccessProperty<PSProjectile::PropertyTargetDirection>() = Pose.GetZAxis();
+            Spawn.Projectile.AccessProperty<PSProjectile::PropertyPathStyle>() = gEProjectilePath_Physics;
+            Spawn.Projectile.Shoot();
         }
     }
     else

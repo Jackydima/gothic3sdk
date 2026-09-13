@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <g3sdk/Script.h>
+#include <g3sdk/util/Util.h>
 #include <g3sdk/util/Hook.h>
 #include <g3sdk/util/Logging.h>
 #include <g3sdk/util/Memory.h>
