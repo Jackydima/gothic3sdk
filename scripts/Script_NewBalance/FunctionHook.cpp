@@ -327,7 +327,7 @@ DECLARE_SCRIPT(CanParadeMoveOf)
     gESpecies otherSpecies = Other.NPC.GetProperty<PSNpc::PropertySpecies>();
     gCScriptAdmin &ScriptAdmin = GetScriptAdmin();
 
-    if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Other, &None))
+    if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Other, &None) && otherSpecies != gESpecies_Minecrawler)
     {
         // Human Fists can be blocked always!
         if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &Other, &None))
@@ -363,7 +363,7 @@ DECLARE_SCRIPT(CanParadeMoveOf)
         }
 
         // Humans can not block monster fists with fists!
-        if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Self, &None))
+        if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Self, &None) && otherSpecies != gESpecies_Minecrawler) // Minecrawler can
         {
             return GEFalse;
         }
@@ -373,7 +373,7 @@ DECLARE_SCRIPT(CanParadeMoveOf)
     }
 
     // Fist cannot block weapons!
-    if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Self, &None))
+    if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Self, &None) && Self.NPC.GetProperty<PSNpc::PropertySpecies>() != gESpecies_Minecrawler) // Minecrawler can
     {
         return GEFalse;
     }
