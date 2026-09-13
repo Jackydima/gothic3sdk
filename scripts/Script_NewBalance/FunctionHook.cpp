@@ -363,7 +363,8 @@ DECLARE_SCRIPT(CanParadeMoveOf)
         }
 
         // Humans can not block monster fists with fists!
-        if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Self, &None) && otherSpecies != gESpecies_Minecrawler) // Minecrawler can
+        if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Self, &None)
+            && otherSpecies != gESpecies_Minecrawler) // Minecrawler can
         {
             return GEFalse;
         }
@@ -373,7 +374,8 @@ DECLARE_SCRIPT(CanParadeMoveOf)
     }
 
     // Fist cannot block weapons!
-    if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Self, &None) && Self.NPC.GetProperty<PSNpc::PropertySpecies>() != gESpecies_Minecrawler) // Minecrawler can
+    if (ScriptAdmin.CallScriptFromScript("IsInFistMode", &Self, &None)
+        && Self.NPC.GetProperty<PSNpc::PropertySpecies>() != gESpecies_Minecrawler) // Minecrawler can
     {
         return GEFalse;
     }
@@ -2668,6 +2670,14 @@ DECLARE_SCRIPT(SelectCombatMove)
         return gEAction_Back;
     }
 
+    if (oldSelfAction == gEAction_Evade || oldSelfAction == gEAction_JumpBack)
+    {
+        if (Entity::GetRandomNumber(100) < 50)
+        {
+            return gEAction_Attack;
+        }
+    }
+
     // Some Chance to Evade
     if (oldSelfAction != gEAction_Evade && TargetAttacking && SelfIRofAttacker
         && (selfSpecies == gESpecies_Human || selfSpecies == gESpecies_Orc))
@@ -2987,12 +2997,12 @@ DECLARE_SCRIPT(GetCombatMoveLength)
         case gEAction_StumbleR:
         case gEAction_StumbleL:
         case gEAction_QuickStumble:
-        case gEAction_PierceStumble: iLength = 50; break;
+        case gEAction_PierceStumble: iLength = 100; break;
 
-        case gEAction_JumpBack:     iLength = static_cast<GEInt>(180.0f * fRangeMultiplicator); break;
+        case gEAction_JumpBack:     iLength = static_cast<GEInt>(220.0f * fRangeMultiplicator); break;
         case gEAction_QuickAttack:
         case gEAction_QuickAttackR:
-        case gEAction_QuickAttackL: iLength = static_cast<GEInt>(100.0f * fRangeMultiplicator); break;
+        case gEAction_QuickAttackL: iLength = static_cast<GEInt>(70.0f * fRangeMultiplicator); break;
 
         case gEAction_Attack:
         case gEAction_SimpleWhirl:  iLength = static_cast<GEInt>(180.0f * fRangeMultiplicator); break;
@@ -3008,15 +3018,16 @@ DECLARE_SCRIPT(GetCombatMoveLength)
     return iLength;
 }
 
+/* Sadly it is used by too many important decision making functions, npcs are much more aggressive now
 static mCFunctionHook Hook_CanHit;
 GEBool CanHit(GEU32 a_uMinHit)
 {
     PSNpc *This = Hook_CanHit.GetSelf<PSNpc *>();
     Entity Self = static_cast<Entity>(This->m_pEngineEntityPropertySet->GetEntity());
+    auto EDifficulty = Entity::GetCurrentDifficulty();
+    GEInt Random = Entity::GetRandomNumber(100);
     if (!CanRage(Self))
     {
-        auto EDifficulty = Entity::GetCurrentDifficulty();
-        GEInt Random = Entity::GetRandomNumber(100);
         if (EDifficulty == EDifficulty_Hard)
         {
             if (Random >= 70)
@@ -3036,8 +3047,51 @@ GEBool CanHit(GEU32 a_uMinHit)
             return GETrue;
         }
     }
+    else if (Random >= 90)
+    {
+        return GETrue;
+    }
 
     return Hook_CanHit.GetOriginalFunction(&CanHit)(a_uMinHit);
+}*/
+
+static mCFunctionHook Hook_SetLastHit;
+void SetLastHit()
+{
+    PSNpc *This = Hook_SetLastHit.GetSelf<PSNpc *>();
+    Entity Self = static_cast<Entity>(This->m_pEngineEntityPropertySet->GetEntity());
+    if (Self.IsPlayer())
+        return Hook_SetLastHit.GetOriginalFunction(&SetLastHit)();
+
+    auto EDifficulty = Entity::GetCurrentDifficulty();
+    GEInt Random = Entity::GetRandomNumber(100);
+    if (!CanRage(Self))
+    {
+        if (EDifficulty == EDifficulty_Hard)
+        {
+            if (Random >= 45)
+            {
+                return;
+            }
+        }
+        else if (EDifficulty == EDifficulty_Easy)
+        {
+            if (Random >= 90)
+            {
+                return;
+            }
+        }
+        else if (Random >= 65)
+        {
+            return;
+        }
+    }
+    else if (Random >= 80)
+    {
+        return;
+    }
+
+    return Hook_SetLastHit.GetOriginalFunction(&SetLastHit)();
 }
 
 static mCFunctionHook Hook_GetString;
@@ -3058,7 +3112,9 @@ void HookFunctions()
     Hook_GetString.Prepare(RVA_Engine(0x2a8a90), &GetString, mCBaseHook::mEHookType_ThisCall).Hook();
 #endif
 
-    Hook_CanHit.Prepare(RVA_Script(0x0bd00), &CanHit, mCBaseHook::mEHookType_ThisCall).Hook();
+    // Hook_CanHit.Prepare(RVA_Script(0x0bd00), &CanHit, mCBaseHook::mEHookType_ThisCall).Hook();
+
+    Hook_SetLastHit.Prepare(RVA_Script(0xbc80), &SetLastHit, mCBaseHook::mEHookType_ThisCall).Hook();
 
     Hook_GetCombatMoveLength.Hook(GetScriptAdminExt().GetScript("GetCombatMoveLength")->m_funcScript,
                                   &GetCombatMoveLength);

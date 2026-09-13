@@ -51,6 +51,12 @@ void PatchCode()
     //PatchNOPs((LPVOID)RVA_ScriptGame(0x31650), 0x31665 - 0x31650);
 
     /**
+     * Remove reset of Old Action in AI_SelectWeapon
+     */
+    PatchNOPs((LPVOID)RVA_ScriptGame(0x49669), 0x4967b - 0x49669);
+    
+
+    /**
      * Disable SprintAttack, when Monsters are Enraged
      */
     // MonsterRageModus is alternative or disabled!
