@@ -931,16 +931,31 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
 
     if (!Self.IsPlayer() || Self.NPC.IsTransformed())
     {
-        if (!NBConfig::UseNewNPCProtection)
+        // New Protection System only works well with NewDamageCalculation
+        if (!NBConfig::UseNewNPCProtection || !NBConfig::UseNewDamageCalculation)
         {
             protection = GetScriptAdmin().CallScriptFromScript("GetLevelMax", a_pSelfEntity, &None);
-            protection = static_cast<GEInt>(protection * NBConfig::npcArmorMultiplier);
+            if (NBConfig::UseNewDamageCalculation)
+            {
+                protection = static_cast<GEInt>(protection * NBConfig::npcArmorMultiplierAbsolute);
+                switch (damageType)
+                {
+                    case gEDamageType_Lightning:
+                    case gEDamageType_Ice:
+                    case gEDamageType_Fire:      protection /= 2; break;
+                    default:                     break;
+                }
+            }
+            else
+            {
+                protection = static_cast<GEInt>(protection * NBConfig::npcArmorMultiplier);
+            }
             GEInt stackIndexLeftHand = Self.Inventory.FindStackIndex(gESlot::gESlot_LeftHand);
             GEInt stackIndexLeftHandBack = Self.Inventory.FindStackIndex(gESlot::gESlot_BackLeft);
             if (Self.Inventory.GetUseType(stackIndexLeftHand) == gEUseType_Shield
                 || Self.Inventory.GetUseType(stackIndexLeftHandBack) == gEUseType_Shield)
             {
-                protection = static_cast<GEInt>(protection * 1.25f);
+                protection = static_cast<GEInt>(protection * 1.20f);
             }
             return protection;
         }
@@ -1001,16 +1016,33 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
         if (npcArmor == None || !npcArmor.Item.IsValid())
         {
             // Backup, if no armor found here!
-            return static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetLevelMax", &Self, &None)
-                                      * NBConfig::npcArmorMultiplier);
+            protection = GetScriptAdmin().CallScriptFromScript("GetLevelMax", a_pSelfEntity, &None);
+            protection = static_cast<GEInt>(protection * NBConfig::npcArmorMultiplierAbsolute);
+            switch (damageType)
+            {
+                case gEDamageType_Lightning:
+                case gEDamageType_Ice:
+                case gEDamageType_Fire:      protection /= 2; break;
+                default:                     break;
+            }
+            return protection;
         }
 
         // gCItem_PS *pPSArmor = GetPropertySet<gCItem_PS>(npcArmor.GetGameEntity(), eEPropertySetType_Item);
-        gCItem_PS *pPSArmor = reinterpret_cast<gCItem_PS *>(npcArmor.Item.m_pEngineEntityPropertySet);
+        gCItem_PS *pPSArmor = static_cast<gCItem_PS *>(npcArmor.Item.m_pEngineEntityPropertySet);
         if (!pPSArmor)
         {
-            return static_cast<GEInt>(ScriptAdmin.CallScriptFromScript("GetLevelMax", &Self, &None)
-                                      * NBConfig::npcArmorMultiplier);
+            // Backup, if no armor found here!
+            protection = GetScriptAdmin().CallScriptFromScript("GetLevelMax", a_pSelfEntity, &None);
+            protection = static_cast<GEInt>(protection * NBConfig::npcArmorMultiplierAbsolute);
+            switch (damageType)
+            {
+                case gEDamageType_Lightning:
+                case gEDamageType_Ice:
+                case gEDamageType_Fire:      protection /= 2; break;
+                default:                     break;
+            }
+            return protection;
         }
 
         bCString strProt = "";
@@ -3141,8 +3173,7 @@ void HookFunctions()
 
     // Hook_CanHit.Prepare(RVA_Script(0x0bd00), &CanHit, mCBaseHook::mEHookType_ThisCall).Hook();
 
-    Hook_GetHitPointsMax.Hook(GetScriptAdminExt().GetScript("GetHitPointsMax")->m_funcScript,
-                              &GetHitPointsMax);
+    Hook_GetHitPointsMax.Hook(GetScriptAdminExt().GetScript("GetHitPointsMax")->m_funcScript, &GetHitPointsMax);
 
     Hook_SetLastHit.Prepare(RVA_Script(0xbc80), &SetLastHit, mCBaseHook::mEHookType_ThisCall).Hook();
 

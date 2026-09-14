@@ -44,7 +44,7 @@ void LoadSettings()
         NBConfig::VulnerabilitySlightlyStrong =
             config.GetFloat("Script", "VulnerabilitySlightlyStrong", NBConfig::VulnerabilitySlightlyStrong);
         // Heavy Req
-        
+
         NBConfig::UseNewDamageCalculation =
             config.GetBool("Script", "UseNewDamageCalculation", NBConfig::UseNewDamageCalculation);
         NBConfig::UseNewNPCProtection = config.GetBool("Script", "UseNewNPCProtection", NBConfig::UseNewNPCProtection);
@@ -105,7 +105,9 @@ void LoadSettings()
         NBConfig::staminaRecoveryPerTick =
             config.GetInt("Script", "StaminaRecoveryPerTick", NBConfig::staminaRecoveryPerTick);
         NBConfig::npcArmorMultiplier = static_cast<GEDouble>(
-            config.GetFloat("Script", "NPCProtectionMultiplier", static_cast<GEFloat>(NBConfig::npcArmorMultiplier)));
+            config.GetFloat("Script", "NPCArmorMultiplier", static_cast<GEFloat>(NBConfig::npcArmorMultiplier)));
+        NBConfig::npcArmorMultiplierAbsolute = static_cast<GEDouble>(config.GetFloat(
+            "Script", "NPCArmorMultiplierAbsolute", static_cast<GEFloat>(NBConfig::npcArmorMultiplierAbsolute)));
         NBConfig::playerArmorMultiplier =
             config.GetFloat("Script", "PlayerProtectionMultiplier", NBConfig::playerArmorMultiplier);
         NBConfig::npcWeaponDamageMultiplier =

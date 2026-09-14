@@ -79,6 +79,7 @@ extern GEU32 staminaRecoveryDelay;
 extern GEInt staminaRecoveryPerTick;
 extern GEFloat fMonsterDamageMultiplicator; // Default 0.5
 extern GEDouble npcArmorMultiplier;
+extern GEDouble npcArmorMultiplierAbsolute;
 extern GEFloat playerArmorMultiplier;
 extern GEInt startSTR;
 extern GEInt startDEX;

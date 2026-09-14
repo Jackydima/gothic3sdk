@@ -72,6 +72,7 @@ GEU32 staminaRecoveryDelay = 20;
 GEInt staminaRecoveryPerTick = 25;
 GEFloat fMonsterDamageMultiplicator = 0.5f; // Default 0.5
 GEDouble npcArmorMultiplier = 1.5;
+GEDouble npcArmorMultiplierAbsolute = 2.0;
 GEFloat playerArmorMultiplier = 0.4f;
 GEInt startSTR = 0;
 GEInt startDEX = 0;
