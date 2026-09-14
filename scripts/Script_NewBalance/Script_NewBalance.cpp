@@ -230,7 +230,7 @@ void AddNewStringEntries()
 {
     auto &LocAdmin = eCLocAdmin::GetInstance();
     // Read the entries and extend loctable entries
-    GEBool success = LocAdmin.Read("Data/Strings/stringtableMod.ini", GETrue);
+    GEBool success = LocAdmin.Read("Data/Strings/stringtableAddition.ini", GETrue);
     println("<LocAdmin>: Reading New String Entries Status: %s", success ? "True" : "False");
 }
 
