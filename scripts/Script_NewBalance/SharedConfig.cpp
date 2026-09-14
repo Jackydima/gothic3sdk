@@ -12,9 +12,9 @@ GEInt warriorLevel = 30;
 GEInt noviceLevel = 20;
 
 GEInt KnockDownThreshold = 5;
-GEInt MonsterRageModus = 0;
+GEInt MonsterRageModus = 2;
 
-GEFloat summoningLevelMultiplier = 7.5f;
+GEFloat summoningLevelMultiplier = 5.0f;
 
 GEBool UseNewDamageCalculation = GETrue;
 GEBool UseNewNPCProtection = GETrue;
@@ -35,7 +35,6 @@ GEBool useNewBalanceMeleeScaling = GETrue;
 GEBool adjustXPReceive = GETrue;
 GEBool useStaticBlocks = GEFalse;
 GEBool useStrengthForCrossbows = GEFalse;
-GEBool alternativeProtection = GEFalse;
 GEBool useNewBowMechanics = GETrue;
 GEBool enableNPCSprint = GETrue;
 GEBool zombiesCanSprint = GEFalse;
@@ -49,7 +48,7 @@ GEBool bEnableParry = GETrue;
 std::vector<bCString> AOENames = {};
 
 GEFloat fEvadeDistance = 220.0f;
-GEFloat fEvadeSpeed = 1.0f;
+GEFloat fEvadeSpeed = 1.5f;
 GEFloat fParrySpeed = 1.0f;
 
 GEFloat MissileAttackArmorPen = 0.0f;
@@ -63,12 +62,12 @@ GEFloat PowerAttackArmorPen = 0.1f;
 GEFloat QuickAttackArmorRes = 0.05f;
 GEFloat SpecialAttackArmorPen = 0.115f;
 GEFloat NPCStrengthMultiplicator = 2.25f;
-GEFloat NPCStrengthAddition = 10.0f;
+GEFloat NPCStrengthAddition = 20.0f;
 GEFloat NPCDamageReductionMultiplicator = 0.25f;
-GEInt poiseThreshold = -2;
+GEInt poiseThreshold = -1;
 GEFloat npcArenaSpeedMultiplier = 1.1f;
 GEFloat npcWeaponDamageMultiplier = 1.0f;
-GEU32 staminaRecoveryDelay = 20;
+GEU32 staminaRecoveryDelay = 15;
 GEInt staminaRecoveryPerTick = 25;
 GEFloat fMonsterDamageMultiplicator = 0.5f; // Default 0.5
 GEDouble npcArmorMultiplier = 1.5;
@@ -82,7 +81,7 @@ GEDouble shootVelocity = 300.0;
 GEFloat ReflectFOV = 5.0f;
 GEFloat NPC_AIM_INACCURACY = 0.40f;
 GEFloat ATTACK_REACH_MULTIPLIER = 1.0f;
-GEInt elementalPerkBonusResistance = 35;
+GEInt elementalPerkBonusResistance = 25;
 GEFloat animationSpeedBonusMid = 1.5f;
 GEFloat animationSpeedBonusHigh = 2.0f;
 

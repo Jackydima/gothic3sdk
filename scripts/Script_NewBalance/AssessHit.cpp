@@ -1412,12 +1412,8 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
             FinalDamage = static_cast<GEInt>(iWeaponDamage * NBConfig::npcWeaponDamageMultiplier) + iStrength;
         }
 
-        FinalDamage += ScriptAdmin.CallScriptFromScript("GetNPCBonusDamage", &Damager, &Victim, FinalDamage);
+        FinalDamage += ScriptAdmin.CallScriptFromScript("GetNPCBonusDamage", &Damager, &Victim, iWeaponDamage);
     }
-
-    if ((Damager.IsItem() && (Damager.Item.GetQuality() & gEItemQuality_Blessed) == gEItemQuality_Blessed
-         && ScriptAdmin.CallScriptFromScript("IsEvil", &Victim, NULL, 0)))
-        FinalDamage = static_cast<GEInt>(FinalDamage * 1.2f);
 
     if (!NBConfig::useNewStaminaMechanic)
     {
@@ -1520,9 +1516,13 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         }
         else
         {
-            FinalDamage = static_cast<GEInt>(FinalDamage * NBConfig::fMonsterDamageMultiplicator);
+            FinalDamage2 = static_cast<GEInt>(FinalDamage2 * NBConfig::fMonsterDamageMultiplicator);
         }
     }
+
+    if ((Damager.IsItem() && (Damager.Item.GetQuality() & gEItemQuality_Blessed) == gEItemQuality_Blessed
+         && ScriptAdmin.CallScriptFromScript("IsEvil", &Victim, NULL, 0)))
+        FinalDamage2 = static_cast<GEInt>(FinalDamage2 * 1.2f);
 
     // New Multiplier for NPC vs NPC Damage
     if (!DamagerOwner.IsPlayer() && !Victim.IsPlayer())
@@ -1770,7 +1770,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
 
     // Reduce Damage for unkillable NPCs (obsolete)
     GEInt iVictimHitPoints = ScriptAdmin.CallScriptFromScript("GetHitPoints", &Victim, &None, 0);
-    if (Victim != Player && !ScriptAdmin.CallScriptFromScript("CanBeKilled", &Victim, &None, 0))
+    if (!ScriptAdmin.CallScriptFromScript("CanBeKilled", &Victim, &None, 0))
     {
         if (FinalDamage2 > 30)
         {
