@@ -3094,6 +3094,33 @@ void SetLastHit()
     return Hook_SetLastHit.GetOriginalFunction(&SetLastHit)();
 }
 
+static mCFunctionHook Hook_GetHitPointsMax;
+DECLARE_SCRIPT(GetHitPointsMax)
+{
+    INIT_SCRIPT_EXT(Self, Other);
+    UNREFERENCED_PARAMETER(a_iArgs);
+
+    if (Self.PlayerMemory.IsValid())
+    {
+        return Hook_GetHitPointsMax.GetOriginalFunction(&GetHitPointsMax)(a_pSPU, a_pSelfEntity, a_pOtherEntity,
+                                                                          a_iArgs);
+    }
+
+    if (!Self.DamageReceiver.IsValid())
+    {
+        return Hook_GetHitPointsMax.GetOriginalFunction(&GetHitPointsMax)(a_pSPU, a_pSelfEntity, a_pOtherEntity,
+                                                                          a_iArgs);
+    }
+
+    auto it = NBConfig::NpcHealthMap.find(Self.GetName());
+    if (it != NBConfig::NpcHealthMap.end())
+    {
+        return it->second;
+    }
+
+    return Hook_GetHitPointsMax.GetOriginalFunction(&GetHitPointsMax)(a_pSPU, a_pSelfEntity, a_pOtherEntity, a_iArgs);
+}
+
 static mCFunctionHook Hook_GetString;
 bCUnicodeString GetString(bCString *p_String1, bCString *p_String2)
 {
@@ -3113,6 +3140,9 @@ void HookFunctions()
 #endif
 
     // Hook_CanHit.Prepare(RVA_Script(0x0bd00), &CanHit, mCBaseHook::mEHookType_ThisCall).Hook();
+
+    Hook_GetHitPointsMax.Hook(GetScriptAdminExt().GetScript("GetHitPointsMax")->m_funcScript,
+                              &GetHitPointsMax);
 
     Hook_SetLastHit.Prepare(RVA_Script(0xbc80), &SetLastHit, mCBaseHook::mEHookType_ThisCall).Hook();
 

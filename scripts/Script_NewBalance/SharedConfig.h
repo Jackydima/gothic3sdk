@@ -1,6 +1,7 @@
 #pragma once
 
-#include "vector"
+#include <vector>
+#include <map>
 
 #include <g3sdk/util/Hook.h>
 #include <g3sdk/util/Logging.h>
@@ -8,12 +9,7 @@
 
 namespace NBConfig
 {
-// TODO
-extern GEFloat npcSTRMultiplier;
-extern GEInt npcSTRAddition;
-//
-//
-// Configureable
+extern std::map<bCString, GEInt> NpcHealthMap;
 
 // NPC Level for Powergroup
 extern GEInt bossLevel;

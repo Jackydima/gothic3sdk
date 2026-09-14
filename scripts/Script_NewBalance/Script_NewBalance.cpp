@@ -16,6 +16,22 @@ void LoadSettings()
         NBConfig::fMonsterDamageMultiplicator = config.GetFloat(
             bCString("Game"), bCString("Game.MonsterDamageMultiplicator"), NBConfig::fMonsterDamageMultiplicator);
     }
+
+    if (config.ReadFile("customHealth.ini"))
+    {
+        bTObjArray<eCConfigFile::eSConfigValue> entries;
+        eCConfigFile::eSConfigValue entry;
+        config.GetSectionBlock("Health", entries);
+        for (GEInt i = 0; i < entries.GetCount(); i++)
+        {
+            entry = entries.GetAt(i);
+            if (entry.m_pstrKey)
+            {
+                NBConfig::NpcHealthMap.emplace(*entry.m_pstrKey, config.GetInt("Health", *entry.m_pstrKey));
+            }
+        }
+    }
+
     if (config.ReadFile("newbalance.ini"))
     {
         // Heavy Req

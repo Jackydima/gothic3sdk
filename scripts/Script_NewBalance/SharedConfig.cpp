@@ -1,15 +1,10 @@
 #include "SharedConfig.h"
 
-// TODO
-GEFloat npcSTRMultiplier = 1.5;
-GEInt npcSTRAddition = 15;
-
-//
-//
-// Configureable
-
 namespace NBConfig
 {
+
+std::map<bCString, GEInt> NpcHealthMap = {};
+
 GEInt bossLevel = 65;
 GEInt uniqueLevel = 45;
 GEInt eliteLevel = 35;
