@@ -107,7 +107,7 @@ GEFloat GE_STDCALL GetAnimationSpeedModifier(Entity a_Entity, gEPhase a_Phase)
             return 1.0f;
         case gEAction_Attack:
             if (isHumanInFistMode)
-                return 0.54f;
+                return 0.7f;
             if (CheckHandUseTypesNB(gEUseType_None, gEUseType_1H, a_Entity))
                 return 0.6f * multiPlier;
             if (CheckHandUseTypesNB(gEUseType_Shield, gEUseType_1H, a_Entity))
@@ -127,7 +127,7 @@ GEFloat GE_STDCALL GetAnimationSpeedModifier(Entity a_Entity, gEPhase a_Phase)
             return 1 * multiPlier;
         case gEAction_PowerAttack:
             if (isHumanInFistMode)
-                return 0.6f;
+                return 0.8f;
             if (species == gESpecies_Orc && a_Phase == gEPhase_Raise)
                 return 1.3f * multiPlier; // orcs
             if (a_Phase == gEPhase_Raise)
