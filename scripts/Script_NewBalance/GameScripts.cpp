@@ -77,14 +77,17 @@ ME_DEFINE_AND_REGISTER_SCRIPT(ReflectProjectile)
             GEFloat val1 = random(generator);
             GEFloat val2 = random(generator);
 
+            // Uniform Random Angels
             GEFloat azi = 2.0f * static_cast<GEFloat>(M_PI) * val1;
             GEFloat cos_pol = 1.0f - val2 * (1.0f - cos(max_fov));
             GEFloat sin_pol = static_cast<GEFloat>(sqrt(1.0f - pow(cos_pol, 2)));
 
+            // Rotation Matrix with direction for z, and rotation in x,y plane
             GEFloat x_local = sin_pol * cosf(azi);
             GEFloat y_local = sin_pol * sinf(azi);
             GEFloat z_local = cos_pol;
 
+            // Transform global calculated randomisation to local direction vector 
             bCVector forward = targetDirection;
             bCVector reference =
                 (fabsf(forward.GetY()) < 0.99f) ? bCVector(0.0f, 1.0f, 0.0f) : bCVector(1.0f, 0.0f, 0.0f);
