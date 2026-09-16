@@ -108,6 +108,9 @@ ME_DEFINE_AND_REGISTER_SCRIPT(ReflectProjectile)
         Spawn.CollisionShape.CreateShape(eECollisionShapeType_Point, eEShapeGroup_Projectile, bCVector(0, 0, 0),
                                          bCVector(0, 0, 0));
         Spawn.Projectile.Shoot();
+
+        // Sound Effect
+        EffectSystem::StartEffect("eff_col_wh_01_me_me", Victim);
     }
 
     return GETrue;

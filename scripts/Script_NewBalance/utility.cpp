@@ -1338,7 +1338,8 @@ GEBool CanParry(Entity &a_Self)
     bCString strSkeletonName;
     a_Self.Animation.GetSkeletonName(strSkeletonName);
 
-    if ((strSkeletonName == "Hero" || strSkeletonName == "Orc")
+    // For now only Hero can parry
+    if ((strSkeletonName == "Hero")
         && !GetScriptAdmin().CallScriptFromScript("IsInFistMode", &a_Self, &None))
     {
         if (a_Self.IsPlayer())

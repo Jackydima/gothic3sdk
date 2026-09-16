@@ -963,6 +963,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
         auto &ScriptAdmin = GetScriptAdmin();
         const bCString bodyPrefix = "Body_";
         Entity npcArmor = Entity(Template(bodyPrefix + Self.GetName()));
+        GEBool canBeEnhanced = GEFalse;
         if (npcArmor == None || !npcArmor.Item.IsValid())
         {
             if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &Self, &None))
@@ -970,6 +971,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
                 if (!NBConfig::IgnoreHumanoidBodyProtection)
                 {
                     npcArmor = Self.Inventory.GetDefaultItemFromSlot(gESlot_Body);
+                    canBeEnhanced = GETrue;
                 }
             }
             else
@@ -1082,18 +1084,21 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
             protection = pPSArmor->GetModAttrib6Value();
         }
 
-        if (!ScriptAdmin.CallScriptFromScript("IsHumanoid", &Self, &None))
+        // Only Regular Armor Items can be enhanced, like armor used by player
+        if (!canBeEnhanced)
         {
             return protection;
         }
 
         GEInt iNPCLevelMax = ScriptAdmin.CallScriptFromScript("GetLevelMax", &Self, &None);
 
+        // Perk for NPCs Light Armor
         if (npcArmor.Item.IsRobe() && iNPCLevelMax >= 35)
         {
             protection *= 2;
         }
 
+        // Perk for NPCs Heavy Armor
         if (iNPCLevelMax >= 50 || ScriptAdmin.CallScriptFromScript("IsBoss", &Self, &None))
         {
             protection = static_cast<GEInt>(protection * 1.50f);
@@ -2096,7 +2101,8 @@ DECLARE_SCRIPT(DoLogicalDamageEvade)
 {
     INIT_SCRIPT_EXT(Damager, Victim);
 
-    if (Victim.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_Evade)
+    // Better check for State now, since Action is saved across ZS_Attack now
+    if (Victim.Routine.GetCurrentState().Contains("NB_Evade"))
     {
         /*auto characterNPC = GetPropertySet<gCNPC_PS>(Victim.GetInstance(), eEPropertySetType_NPC);
         if (characterNPC)
@@ -2114,9 +2120,10 @@ DECLARE_SCRIPT(DoLogicalDamageEvade)
         }
     }
     // Monster are allowed to evade too now
-    else if (Victim.Routine.GetProperty<PSRoutine::PropertyAction>() == gEAction_JumpBack)
+    // Better check for State now, since Action is saved across ZS_Attack now
+    else if (Victim.Routine.GetCurrentState().CompareFast("ZS_Attack_JumpBack"))
     {
-        if (Victim.Routine.GetStateTime() > 0.15f)
+        if (Victim.Routine.GetStateTime() > 0.15f && Victim.Routine.GetStateTime() < 1.0f)
         {
             return GEFalse;
         }
@@ -2680,18 +2687,34 @@ DECLARE_SCRIPT(SelectCombatMove)
     auto &ScriptAdmin = GetScriptAdmin();
     Entity CurrentTarget = Self.NPC.GetCurrentTarget();
     GEFloat distanceToTarget = Self.GetDistanceTo(CurrentTarget);
-    GEBool TargetAttacking = IsAttackAction(CurrentTarget.Routine.GetProperty<PSRoutine::PropertyAction>())
-                          && CurrentTarget.GetCurrentAniPhase() != gEPhase_Recover;
+    GEBool TargetAttacking =
+        IsAttackAction(CurrentTarget.Routine.GetProperty<PSRoutine::PropertyAction>())
+        && (CurrentTarget.GetCurrentAniPhase() == gEPhase_Hit || CurrentTarget.GetCurrentAniPhase() == gEPhase_Raise);
     GEBool SelfIRofAttacker = distanceToTarget <= static_cast<GEFloat>(
                                   ScriptAdmin.CallScriptFromScript("GetAttackRange", &CurrentTarget, &Self));
+    GEBool TargetIRofSelf = distanceToTarget <= static_cast<GEFloat>(
+                                ScriptAdmin.CallScriptFromScript("GetAttackRange", &Self, &CurrentTarget));
     gESpecies selfSpecies = Self.NPC.GetProperty<PSNpc::PropertySpecies>();
     gEAction oldSelfAction = Self.Routine.GetProperty<PSRoutine::PropertyAction>();
     GEInt StaminaPercentage = ScriptAdmin.CallScriptFromScript("GetStaminaPointsPercent", &Self, &None);
+    GEInt CurrentLevel = ScriptAdmin.CallScriptFromScript("GetCurrentLevel", &Self, &None);
 
     // Low Chance to Parry
-    if (TargetAttacking && SelfIRofAttacker && CanParry(Self) && Entity::GetRandomNumber(100) < 10)
+    if (TargetAttacking && SelfIRofAttacker && CanParry(Self)
+        && ScriptAdmin.CallScriptFromScript("CanParadeMoveOf", &Self, &CurrentTarget))
     {
-        return gEAction_Parry;
+        if (CurrentLevel < 35)
+        {
+            if (Entity::GetRandomNumber(100) < 8)
+            {
+                return gEAction_Parry;
+            }
+        }
+        // Above 35 Level
+        else if (Entity::GetRandomNumber(100) < 12) // Higher Level NPCs can parry more often
+        {
+            return gEAction_Parry;
+        }
     }
 
     // Lower Aggro when low on stamina
@@ -2699,10 +2722,21 @@ DECLARE_SCRIPT(SelectCombatMove)
         && Entity::GetRandomNumber(100) < (40 - StaminaPercentage))
     {
         Self.NPC.AccessProperty<PSNpc::PropertyCombatState>() = 0; // Reset CombatState (helpful in groups)
+        if (TargetAttacking && SelfIRofAttacker && Entity::GetRandomNumber(100) < 30)
+        {
+            if (selfSpecies == gESpecies_Human || selfSpecies == gESpecies_Orc || selfSpecies == gESpecies_Skeleton)
+            {
+                return gEAction_Evade;
+            }
+            else
+            {
+                return gEAction_JumpBack;
+            }
+        }
         return gEAction_Back;
     }
 
-    if (oldSelfAction == gEAction_Evade || oldSelfAction == gEAction_JumpBack)
+    if ((oldSelfAction == gEAction_Evade || oldSelfAction == gEAction_JumpBack) && TargetIRofSelf)
     {
         if (Entity::GetRandomNumber(100) < 50)
         {
@@ -2712,7 +2746,7 @@ DECLARE_SCRIPT(SelectCombatMove)
 
     // Some Chance to Evade
     if (oldSelfAction != gEAction_Evade && TargetAttacking && SelfIRofAttacker
-        && (selfSpecies == gESpecies_Human || selfSpecies == gESpecies_Orc))
+        && (selfSpecies == gESpecies_Human || selfSpecies == gESpecies_Orc || selfSpecies == gESpecies_Skeleton))
     {
         if (retVal == gEAction_Parade || retVal == gEAction_Back)
         {

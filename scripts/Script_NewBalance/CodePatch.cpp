@@ -53,6 +53,7 @@ void PatchCode()
     /**
      * Remove reset of Old Action in AI_SelectWeapon
      */
+    // Can create some weird bugs in the script logic, when not reset! TODO Check again
     PatchNOPs((LPVOID)RVA_ScriptGame(0x49669), 0x4967b - 0x49669);
     
 
