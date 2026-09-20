@@ -253,7 +253,6 @@ GEBool IsInActiveAttack(Entity &a_Entity)
     if (a_Entity == None || !a_Entity.Routine.IsValid())
         return GEFalse;
     gEAction currentAction = a_Entity.Routine.GetProperty<PSRoutine::PropertyAction>();
-    bCString ptrCurrentMotionDescription;
     switch (currentAction)
     {
         case gEAction_Attack:
