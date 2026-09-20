@@ -250,7 +250,7 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
             }
         }
         // Ranged damage
-        if (IsNormalProjectileNB(Damager) == GETrue)
+        else if (IsNormalProjectileNB(Damager) == GETrue)
         {
             // print ( "UseType Left : %d" ,
             // DamagerOwner.Inventory.GetItemFromSlot(gESlot_LeftHand).Interaction.UseType );
@@ -1290,7 +1290,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
             }
         }
         // Ranged damage
-        if (IsNormalProjectileNB(Damager) == GETrue)
+        else if (IsNormalProjectileNB(Damager) == GETrue)
         {
             if (NBConfig::useStrengthForCrossbows
                 && DamagerOwner.Inventory.GetItemFromSlot(gESlot_LeftHand)
