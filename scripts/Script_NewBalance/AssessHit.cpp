@@ -240,8 +240,8 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
             // PropertyManaUsed depends on cast phase
             if (Damager.Damage.GetProperty<PSDamage::PropertyManaUsed>())
             {
-                // Bonus = ( Schaden * Altes Wissen / 100 )
-                GEFloat fIntelligenceModifier = intelligence / 100.0f;
+                // Bonus = ( Schaden * Altes Wissen / 150 ) For alternative Damage Calculations
+                GEFloat fIntelligenceModifier = intelligence / 150.0f;
                 iAttributeBonusDamage = static_cast<GEInt>(FinalDamage * fIntelligenceModifier);
             }
             else
@@ -1267,15 +1267,13 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         // Magic damage
         if (IsSpellContainerNB(Damager))
         {
-            // Magic projectiles do double damage, !but are capped to 200.
-            // TODO: Remove doubling damage for projectile (Rather Add new more potent Spell)
             if (IsMagicProjectileNB(Damager))
             {
                 // PropertyManaUsed depends on cast phase
                 if (Damager.Damage.GetProperty<PSDamage::PropertyManaUsed>())
                 {
-                    // Bonus = ( Schaden * Altes Wissen / 100 )
-                    GEFloat fIntelligenceModifier = intelligence / 100.0f;
+                    // Bonus = ( Schaden * Altes Wissen / 150 ) For alternative Damage Calculations
+                    GEFloat fIntelligenceModifier = intelligence / 150.0f;
                     iAttributeBonusDamage = static_cast<GEInt>(FinalDamage * fIntelligenceModifier);
                 }
                 else
@@ -1395,7 +1393,9 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         FinalDamage += ScriptAdmin.CallScriptFromScript("GetQualityBonus", &Damager, &Victim, FinalDamage);
         FinalDamage += iAttributeBonusDamage;
         // Adjust GetPlayerSkillDamageBonus
-        FinalDamage += ScriptAdmin.CallScriptFromScript("GetPlayerSkillDamageBonus", &Damager, &Victim, FinalDamage);
+        // In absolute Damage reduction the Skill only doubles the Raw Damage of the Spell (different compared to the
+        // old one with the attribute damage)
+        FinalDamage += ScriptAdmin.CallScriptFromScript("GetPlayerSkillDamageBonus", &Damager, &Victim, iWeaponDamage);
     }
     // Damager is transformed player or NPC
     else if (DamagerOwner.Navigation.IsValid())
@@ -1450,8 +1450,8 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         // Powercast
         if (Damager.Projectile.GetProperty<PSProjectile::PropertyPathStyle>() == gEProjectilePath_Missile)
         {
-            FinalDamage =
-                static_cast<GEInt>(FinalDamage * Damager.Damage.GetProperty<PSDamage::PropertyDamageManaMultiplier>());
+            FinalDamage2 =
+                static_cast<GEInt>(FinalDamage2 * Damager.Damage.GetProperty<PSDamage::PropertyDamageManaMultiplier>());
         }
     }
 
