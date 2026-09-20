@@ -1950,7 +1950,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     // Troll are now more resistant to attacks but are a bit slower now
     if (Victim.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Troll
         && (VictimAction == gEAction_PowerAttack || VictimAction == gEAction_SprintAttack
-            || VictimAction == gEAction_Attack))
+            || (VictimAction == gEAction_Attack && Victim.Routine.GetStateTime() > 0.3f)))
     {
         ScriptAdmin.CallScriptFromScript("PipiStumble", &Victim, &None, 0);
         return gEAction_QuickStumble;

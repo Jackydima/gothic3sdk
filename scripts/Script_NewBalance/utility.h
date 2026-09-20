@@ -131,3 +131,4 @@ GEBool IsAttackAction(gEAction p_Action);
 GEBool CanParry(Entity &p_Self);
 GEBool CanParryNormalProjectile(Entity &a_Self);
 GEInt GetCombatSkillLevel(Entity &p_self);
+GEBool UsesMonsterCombatAI(Entity &a_Self);

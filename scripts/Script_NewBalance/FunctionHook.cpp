@@ -2690,10 +2690,11 @@ DECLARE_SCRIPT(SelectCombatMove)
     GEBool TargetAttacking =
         IsAttackAction(CurrentTarget.Routine.GetProperty<PSRoutine::PropertyAction>())
         && (CurrentTarget.GetCurrentAniPhase() == gEPhase_Hit || CurrentTarget.GetCurrentAniPhase() == gEPhase_Raise);
-    GEBool SelfIRofAttacker = distanceToTarget <= static_cast<GEFloat>(
-                                  ScriptAdmin.CallScriptFromScript("GetAttackRange", &CurrentTarget, &Self));
-    GEBool TargetIRofSelf = distanceToTarget <= static_cast<GEFloat>(
-                                ScriptAdmin.CallScriptFromScript("GetAttackRange", &Self, &CurrentTarget));
+    GEBool SelfIRofAttacker =
+        distanceToTarget <= static_cast<GEFloat>(ScriptAdmin.CallScriptFromScript(
+            "GetAttackRange", &CurrentTarget, &Self, CurrentTarget.Routine.GetProperty<PSRoutine::PropertyAction>()));
+    GEBool TargetIRofSelf = distanceToTarget <= static_cast<GEFloat>(ScriptAdmin.CallScriptFromScript(
+                                "GetAttackRange", &Self, &CurrentTarget, gEAction_Attack));
     gESpecies selfSpecies = Self.NPC.GetProperty<PSNpc::PropertySpecies>();
     gEAction oldSelfAction = Self.Routine.GetProperty<PSRoutine::PropertyAction>();
     GEInt StaminaPercentage = ScriptAdmin.CallScriptFromScript("GetStaminaPointsPercent", &Self, &None);
@@ -2794,6 +2795,32 @@ DECLARE_SCRIPT(SelectCombatMove)
         else
         {
             return gEAction_TurnRight;
+        }
+    }
+
+    // Generally speaking, Quickattack for Monsters seems to be in prio always!
+    if (Self.NPC.GetProperty<PSNpc::PropertySpecies>() == gESpecies_Troll)
+    {
+        // Troll should more rarely use quickattacks now!
+        if (retVal == gEAction_QuickAttack && Entity::GetRandomNumber(100) < 80)
+        {
+            if (Entity::GetRandomNumber(100) < 50)
+            {
+                return gEAction_Attack;
+            }
+            return gEAction_PowerAttack;
+        }
+    }
+    // Also add some more randomization to Attack patterns for other monsters
+    else if (UsesMonsterCombatAI(Self))
+    {
+        if (retVal == gEAction_QuickAttack && Entity::GetRandomNumber(100) < 50)
+        {
+            if (Entity::GetRandomNumber(100) < 70)
+            {
+                return gEAction_Attack;
+            }
+            return gEAction_PowerAttack;
         }
     }
 
@@ -3138,7 +3165,7 @@ void SetLastHit()
     {
         if (EDifficulty == EDifficulty_Hard)
         {
-            if (Random >= 45)
+            if (Random >= 50)
             {
                 return;
             }
@@ -3150,7 +3177,7 @@ void SetLastHit()
                 return;
             }
         }
-        else if (Random >= 65)
+        else if (Random >= 70)
         {
             return;
         }

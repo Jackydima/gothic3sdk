@@ -24,7 +24,6 @@ DWORD ThreadScript(LPVOID a_Args)
     return 0;
 }
 
-
 const uintptr_t *ActionBufferObject = reinterpret_cast<uintptr_t *>(RVA_ScriptGame(0x118b40));
 
 void SetParadeMode(Entity a_Entity, GEBool a_bEnabled)
@@ -1339,8 +1338,7 @@ GEBool CanParry(Entity &a_Self)
     a_Self.Animation.GetSkeletonName(strSkeletonName);
 
     // For now only Hero can parry
-    if ((strSkeletonName == "Hero")
-        && !GetScriptAdmin().CallScriptFromScript("IsInFistMode", &a_Self, &None))
+    if ((strSkeletonName == "Hero") && !GetScriptAdmin().CallScriptFromScript("IsInFistMode", &a_Self, &None))
     {
         if (a_Self.IsPlayer())
         {
@@ -1446,3 +1444,21 @@ GEInt GetCombatSkillLevel(Entity &a_Self)
     return 0;
 }
 
+GEBool UsesMonsterCombatAI(Entity &a_Self)
+{
+    switch (a_Self.NPC.GetProperty<PSNpc::PropertySpecies>())
+    {
+        case gESpecies_Human:
+        case gESpecies_Skeleton:
+        case gESpecies_Demon:
+        case gESpecies_Orc:
+        case gESpecies_Zombie:
+        case gESpecies_Ogre:
+        case gESpecies_ScorpionKing:
+        case gESpecies_Stalker:
+        case gESpecies_Minecrawler:  return GEFalse;
+        default:                     break;
+    }
+
+    return GETrue;
+}
