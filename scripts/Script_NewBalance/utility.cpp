@@ -1147,7 +1147,7 @@ GEInt speciesLeftHand(Entity a_Entity)
 
     if (species == gESpecies_Troll)
     {
-        GEInt retVal = a_Entity.Inventory.AssureItems("TrollFist", gEItemQuality::gEItemQuality_Diseased, 1);
+        GEInt retVal = a_Entity.Inventory.AssureItems("TrollFist", 0, 1);
         return retVal;
     }
     return -1;

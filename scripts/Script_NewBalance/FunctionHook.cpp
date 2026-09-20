@@ -2699,6 +2699,9 @@ DECLARE_SCRIPT(SelectCombatMove)
     GEInt StaminaPercentage = ScriptAdmin.CallScriptFromScript("GetStaminaPointsPercent", &Self, &None);
     GEInt CurrentLevel = ScriptAdmin.CallScriptFromScript("GetCurrentLevel", &Self, &None);
 
+    // Reset Action After SelectCombatMove and Saving OldAction!
+    Self.Routine.AccessProperty<PSRoutine::PropertyAction>() = gEAction_None;
+
     // Low Chance to Parry
     if (TargetAttacking && SelfIRofAttacker && CanParry(Self)
         && ScriptAdmin.CallScriptFromScript("CanParadeMoveOf", &Self, &CurrentTarget))
