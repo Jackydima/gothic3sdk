@@ -1020,6 +1020,13 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
         return gEAction_QuickStumble;
     }
 
+    // New Protection System for AI trying to swap weapons
+    if (VictimAction == gEAction_Hold && !Victim.Routine.GetCurrentState().CompareFast("ZS_Attack_End"))
+    {
+        ScriptAdmin.CallScriptFromScript("PipiStumble", &Victim, &None, 0);
+        return gEAction_Stumble;
+    }
+
     // Scream or make HitEffect, but no Stumble also processes logic when you hit someone, like setting up combat mode
     if ((GEInt)HitForce <= gEHitForce_Minimal
         && (GetHeldWeaponCategoryNB(DamagerOwner) == gEWeaponCategory_Ranged || IsInActiveAttack(Victim)))
@@ -1977,7 +1984,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     }
 
     // New Protection System for AI trying to swap weapons
-    if (VictimAction == gEAction_Hold)
+    if (VictimAction == gEAction_Hold && !Victim.Routine.GetCurrentState().CompareFast("ZS_Attack_End"))
     {
         ScriptAdmin.CallScriptFromScript("PipiStumble", &Victim, &None, 0);
         return gEAction_Stumble;
