@@ -962,7 +962,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
         auto &ScriptAdmin = GetScriptAdmin();
         const bCString bodyPrefix = "BodyConfig_";
         Entity npcArmor = Entity(Template(bodyPrefix + Self.GetName()));
-        //GEBool canBeEnhanced = GEFalse;
+        // GEBool canBeEnhanced = GEFalse;
         GEBool canBeEnhanced = GETrue; // For now always for any bosses and high level npcs
         if (npcArmor == None || !npcArmor.Item.IsValid())
         {
@@ -1741,9 +1741,9 @@ DECLARE_SCRIPT(DropHandItems)
 
     if (Self.IsPlayer())
     {
-        using Func = void(Entity, GEInt, GEInt);
-        Func *func = (Func *)RVA_ScriptGame(0x2e50);
-        func(Entity::GetPlayer(), -1, -1);
+        static mCCaller CallWishedStack(mCCaller::GetCallerParams(RVA_ScriptGame(0x2e50), mERegisterType_None));
+        using WishedStack_f = void(GE_STDCALL *)(GEInt, GEInt, Entity);
+        CallWishedStack.GetFunction<WishedStack_f>()(-1, -1, Self);
     }
     return 1;
 }
