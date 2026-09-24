@@ -258,7 +258,7 @@ GEInt GE_STDCALL MagicPoison(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnti
     if (CanBePoisoned(a_pSPU, &Other, &spell, a_iArgs))
     {
         auto damageReceiver = static_cast<gCDamageReceiver_PS_Ext *>(
-            Other.GetGameEntity()->GetPropertySet(eEPropertySetType_DamageReceiver));
+            static_cast<eCEntity *>(Other)->GetPropertySet(eEPropertySetType_DamageReceiver));
         if (damageReceiver && damageReceiver->IsValid())
         {
             damageReceiver->AccessPoisonDamage() = GetPoisonDamage(Self);
@@ -453,7 +453,7 @@ DECLARE_SCRIPT(CanParadeMoveOf)
 GEInt StaminaUpdateOnTickHelper(Entity &p_entity, GEInt p_staminaValue)
 {
     gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
-        GetPropertySet<gCDamageReceiver_PS_Ext>(p_entity.GetGameEntity(), eEPropertySetType_DamageReceiver);
+        GetPropertySet<gCDamageReceiver_PS_Ext>(static_cast<eCEntity *>(p_entity), eEPropertySetType_DamageReceiver);
     if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
     {
         GEU32 worldTime = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
@@ -545,7 +545,7 @@ GEInt AddStaminaPoints(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, En
     if (a_iArgs < 0)
     {
         gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
-            GetPropertySet<gCDamageReceiver_PS_Ext>(Self.GetGameEntity(), eEPropertySetType_DamageReceiver);
+            GetPropertySet<gCDamageReceiver_PS_Ext>(static_cast<eCEntity *>(Self), eEPropertySetType_DamageReceiver);
         if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
         {
             GEU32 uTimeStamp = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
@@ -566,7 +566,7 @@ GEInt AddStaminaPoints(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEntity, En
 GEInt HealthUpdateOnTickHelper(Entity &p_entity, GEInt p_healthValue)
 {
     gCDamageReceiver_PS_Ext *pSelfDamageReceiver =
-        GetPropertySet<gCDamageReceiver_PS_Ext>(p_entity.GetGameEntity(), eEPropertySetType_DamageReceiver);
+        GetPropertySet<gCDamageReceiver_PS_Ext>(static_cast<eCEntity *>(p_entity), eEPropertySetType_DamageReceiver);
     if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
     {
         GEU32 worldTime = Entity::GetWorldEntity().Clock.GetTimeStampInSeconds();
@@ -585,7 +585,7 @@ GEInt GE_STDCALL AddHitPoints(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelfEnt
     if (a_iArgs < 0)
     {
         auto pSelfDamageReceiver =
-            GetPropertySet<gCDamageReceiver_PS_Ext>(Self.GetGameEntity(), eEPropertySetType_DamageReceiver);
+            GetPropertySet<gCDamageReceiver_PS_Ext>(static_cast<eCEntity *>(Self), eEPropertySetType_DamageReceiver);
         if (pSelfDamageReceiver && pSelfDamageReceiver->IsValid())
         {
             pSelfDamageReceiver->SetLastHealthDamage(Entity::GetWorldEntity().Clock.GetTimeStampInSeconds());
@@ -610,7 +610,7 @@ GEInt UpdateHitPointsOnTick(Entity p_entity)
     if (p_entity.NPC.IsPoisoned())
     {
         gCDamageReceiver_PS_Ext *damageReceiver = static_cast<gCDamageReceiver_PS_Ext *>(
-            p_entity.GetGameEntity()->GetPropertySet(eEPropertySetType_DamageReceiver));
+            static_cast<eCEntity *>(p_entity)->GetPropertySet(eEPropertySetType_DamageReceiver));
         GEU32 poisonDamage = damageReceiver->GetPoisonDamage();
         if (poisonDamage <= 0)
             poisonDamage = 5;
@@ -798,9 +798,8 @@ void GE_STDCALL StartTransform(Entity *p_targetEntity, GEFloat p_duration, GEBoo
     {
         Self.GetGameEntity()->Enable(GEFalse);
         Self.EnableCollision(GEFalse);
-        gCEntity *entity = Self.GetGameEntity();
-        gCDynamicCollisionCircle_PS *dcc =
-            (gCDynamicCollisionCircle_PS *)entity->GetPropertySet(eEPropertySetType_DynamicCollisionCircle);
+        gCDynamicCollisionCircle_PS *dcc = GetPropertySet<gCDynamicCollisionCircle_PS>(
+            static_cast<eCEntity *>(Self), eEPropertySetType_DynamicCollisionCircle);
         if (dcc != 0)
         {
             Self.Navigation.SetDCCEnabled(GEFalse);
@@ -1030,8 +1029,8 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
             return protection;
         }
 
-        // gCItem_PS *pPSArmor = GetPropertySet<gCItem_PS>(npcArmor.GetGameEntity(), eEPropertySetType_Item);
-        gCItem_PS *pPSArmor = static_cast<gCItem_PS *>(npcArmor.Item.m_pEngineEntityPropertySet);
+        gCItem_PS *pPSArmor = GetPropertySet<gCItem_PS>(static_cast<eCEntity *>(npcArmor), eEPropertySetType_Item);
+        // gCItem_PS *pPSArmor = static_cast<gCItem_PS *>(npcArmor.Item.m_pEngineEntityPropertySet);
         if (!pPSArmor)
         {
             // Backup, if no armor found here!
@@ -1149,36 +1148,37 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
         {
             return protection;
         }
-        gCItem_PS *item = GetPropertySet<gCItem_PS>(bodyEntity.GetGameEntity(), eEPropertySetType_Item);
-        if (!item)
+
+        gCItem_PS *item_PS = GetPropertySet<gCItem_PS>(static_cast<eCEntity *>(bodyEntity), eEPropertySetType_Item);
+        if (!item_PS)
         {
             return protection;
         }
 
         GEInt itemProt = 0;
-        if (item->GetModAttrib1Tag() == protectionCheckString)
+        if (item_PS->GetModAttrib1Tag() == protectionCheckString)
         {
-            itemProt = item->GetModAttrib1Value();
+            itemProt = item_PS->GetModAttrib1Value();
         }
-        else if (item->GetModAttrib2Tag() == protectionCheckString)
+        else if (item_PS->GetModAttrib2Tag() == protectionCheckString)
         {
-            itemProt = item->GetModAttrib2Value();
+            itemProt = item_PS->GetModAttrib2Value();
         }
-        else if (item->GetModAttrib3Tag() == protectionCheckString)
+        else if (item_PS->GetModAttrib3Tag() == protectionCheckString)
         {
-            itemProt = item->GetModAttrib3Value();
+            itemProt = item_PS->GetModAttrib3Value();
         }
-        else if (item->GetModAttrib4Tag() == protectionCheckString)
+        else if (item_PS->GetModAttrib4Tag() == protectionCheckString)
         {
-            itemProt = item->GetModAttrib4Value();
+            itemProt = item_PS->GetModAttrib4Value();
         }
-        else if (item->GetModAttrib5Tag() == protectionCheckString)
+        else if (item_PS->GetModAttrib5Tag() == protectionCheckString)
         {
-            itemProt = item->GetModAttrib5Value();
+            itemProt = item_PS->GetModAttrib5Value();
         }
-        else if (item->GetModAttrib6Tag() == protectionCheckString)
+        else if (item_PS->GetModAttrib6Tag() == protectionCheckString)
         {
-            itemProt = item->GetModAttrib6Value();
+            itemProt = item_PS->GetModAttrib6Value();
         }
         // Add the Robe Protection twice to the player if Skill is active
         if (bodyEntity.Item.IsRobe() && Self.Inventory.IsSkillActive("Perk_LightArmor"))
@@ -1197,7 +1197,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
         // Add 50% Extra Protection for ONLY the Body Armor now, maybe add helmet aswell
         else if (Self.Inventory.IsSkillActive("Perk_HeavyArmor"))
         {
-            protection = static_cast<GEInt>(protection + (itemProt * 0.5f));
+            protection = protection + static_cast<GEInt>(itemProt * 0.5f);
         }
         return protection;
     }
@@ -2414,7 +2414,7 @@ DECLARE_SCRIPT_STATE(PS_Melee_Loop)
 
         // Only Hero Animations are working now!
         eCVisualAnimation_PS *selfAnimation =
-            GetPropertySet<eCVisualAnimation_PS>(SelfEntity.GetGameEntity(), eEPropertySetType_Animation);
+            GetPropertySet<eCVisualAnimation_PS>(static_cast<eCEntity *>(SelfEntity), eEPropertySetType_Animation);
         if (!selfAnimation && !selfAnimation->HasActor())
             return result;
 
@@ -2542,7 +2542,7 @@ DECLARE_SCRIPT(OnPlayerGameKeyPressed)
                 break;
 
             eCVisualAnimation_PS *selfAnimation =
-                GetPropertySet<eCVisualAnimation_PS>(Self.GetGameEntity(), eEPropertySetType_Animation);
+                GetPropertySet<eCVisualAnimation_PS>(static_cast<eCEntity *>(Self), eEPropertySetType_Animation);
             if (!selfAnimation && !selfAnimation->HasActor())
                 break;
 

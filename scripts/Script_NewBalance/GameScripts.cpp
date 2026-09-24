@@ -39,7 +39,7 @@ ME_DEFINE_AND_REGISTER_SCRIPT(ReflectProjectile)
     UNREFERENCED_PARAMETER(a_iArgs);
 
     gCProjectile_PS *Projectile_PS =
-        GetPropertySet<gCProjectile_PS>(Damager.GetGameEntity(), eEPropertySetType_Projectile);
+        GetPropertySet<gCProjectile_PS>(static_cast<eCEntity *>(Damager), eEPropertySetType_Projectile);
     if (Projectile_PS)
     {
         Template templateSpawn = Template(Damager.GetTemplate());
@@ -87,7 +87,7 @@ ME_DEFINE_AND_REGISTER_SCRIPT(ReflectProjectile)
             GEFloat y_local = sin_pol * sinf(azi);
             GEFloat z_local = cos_pol;
 
-            // Transform global calculated randomisation to local direction vector 
+            // Transform global calculated randomisation to local direction vector
             bCVector forward = targetDirection;
             bCVector reference =
                 (fabsf(forward.GetY()) < 0.99f) ? bCVector(0.0f, 1.0f, 0.0f) : bCVector(1.0f, 0.0f, 0.0f);

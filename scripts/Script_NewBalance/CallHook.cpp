@@ -121,7 +121,7 @@ void CombatMoveScale(void *a_pArgs, gCScriptProcessingUnit *a_pSPU)
     Entity Self = (Entity)a_pSPU->GetSelfEntity();
 
     eCVisualAnimation_PS *VA_PS =
-        GetPropertySet<eCVisualAnimation_PS>(Self.GetGameEntity(), eEPropertySetType_Animation);
+        GetPropertySet<eCVisualAnimation_PS>(static_cast<eCEntity *>(Self), eEPropertySetType_Animation);
 
     if (!VA_PS)
         return;
@@ -261,7 +261,7 @@ void EvadeMechanic(gCScriptProcessingUnit *a_PSU)
     }
 
     eCVisualAnimation_PS *selfAnimation =
-        GetPropertySet<eCVisualAnimation_PS>(Self.GetGameEntity(), eEPropertySetType_Animation);
+        GetPropertySet<eCVisualAnimation_PS>(static_cast<eCEntity *>(Self), eEPropertySetType_Animation);
     if (!selfAnimation && !selfAnimation->HasActor())
     {
         GEInt retVal = GetScriptAdmin().CallScriptFromScript("OnPlayerJump", &Self, &None);

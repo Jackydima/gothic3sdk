@@ -44,7 +44,7 @@ void HotKeyTester::Process()
 
     if (eCApplication::GetInstance().GetKeyboard().KeyPressed(eCInpShared::eEKeyboardStateOffset_NUM_1))
     {
-        //TestMatrix();
+        // TestMatrix();
         if (!num1KeyPressed)
         {
             num1KeyPressed = GETrue;
@@ -54,13 +54,13 @@ void HotKeyTester::Process()
             Pose.AccessTranslation().AccessY() += 200.0f;
             Entity Spawn = Entity::Spawn(templateSpawn, Pose);
             Spawn.CollisionShape.CreateShape(eECollisionShapeType_Point, eEShapeGroup_Projectile, bCVector(0, 0, 0),
-                                                 bCVector(0, 0, 0));
+                                             bCVector(0, 0, 0));
             Spawn.EnableCollisionWith(Player, GEFalse);
             Spawn.EnableCollisionWith(Spawn, GEFalse);
             Spawn.Interaction.SetOwner(Player);
-            
+
             gCProjectile_PS *SpawnProjectile =
-                GetPropertySet<gCProjectile_PS>(Spawn.GetGameEntity(), eEPropertySetType_Projectile);
+                GetPropertySet<gCProjectile_PS>(static_cast<eCEntity *>(Spawn), eEPropertySetType_Projectile);
 
             Spawn.Projectile.AccessProperty<PSProjectile::PropertyShootVelocity>() = static_cast<GEFloat>(200.0f);
             Spawn.Projectile.AccessProperty<PSProjectile::PropertyTargetDirection>() = Pose.GetZAxis();
@@ -204,8 +204,8 @@ void TestMatrix()
 
     std::cout << "LocalDirectionVec x:= " << LocalPoint.GetX() << "\ty=" << LocalPoint.GetY()
               << "\tz=" << LocalPoint.GetZ() << "\tw= " << LocalPoint.GetW() << "\n";
-    
-    if (LocalPoint.GetZ() <= 0.1f) 
+
+    if (LocalPoint.GetZ() <= 0.1f)
         return;
 
     GEFloat aspectRatio = static_cast<GEFloat>(Right) / Top;

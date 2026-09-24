@@ -584,7 +584,7 @@ gEAction GE_STDCALL AssessHitOld(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
          6. Fernkampf-Angriffe kann man nur mit einem Schild abwehren.
     */
     gCDamageReceiver_PS_Ext *pVictimDamageReceiver =
-        GetPropertySet<gCDamageReceiver_PS_Ext>(Victim.GetGameEntity(), eEPropertySetType_DamageReceiver);
+        GetPropertySet<gCDamageReceiver_PS_Ext>(static_cast<eCEntity *>(Victim), eEPropertySetType_DamageReceiver);
 
     if (Victim == Player)
         Victim.Effect.StopEffect(GETrue);
@@ -1553,7 +1553,7 @@ gEAction GE_STDCALL AssessHitNew(gCScriptProcessingUnit *a_pSPU, Entity *a_pSelf
     6. Fernkampf-Angriffe kann man nur mit einem Schild abwehren.
     */
     gCDamageReceiver_PS_Ext *pVictimDamageReceiver =
-        GetPropertySet<gCDamageReceiver_PS_Ext>(Victim.GetGameEntity(), eEPropertySetType_DamageReceiver);
+        GetPropertySet<gCDamageReceiver_PS_Ext>(static_cast<eCEntity *>(Victim), eEPropertySetType_DamageReceiver);
 
     if (Victim == Player)
         Victim.Effect.StopEffect(GETrue);
