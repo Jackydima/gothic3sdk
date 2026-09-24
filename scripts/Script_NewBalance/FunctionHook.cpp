@@ -960,9 +960,10 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
         }
 
         auto &ScriptAdmin = GetScriptAdmin();
-        const bCString bodyPrefix = "Body_";
+        const bCString bodyPrefix = "BodyConfig_";
         Entity npcArmor = Entity(Template(bodyPrefix + Self.GetName()));
-        GEBool canBeEnhanced = GEFalse;
+        //GEBool canBeEnhanced = GEFalse;
+        GEBool canBeEnhanced = GETrue; // For now always for any bosses and high level npcs
         if (npcArmor == None || !npcArmor.Item.IsValid())
         {
             if (ScriptAdmin.CallScriptFromScript("IsHumanoid", &Self, &None))
@@ -1083,7 +1084,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
             protection = pPSArmor->GetModAttrib6Value();
         }
 
-        // Only Regular Armor Items can be enhanced, like armor used by player
+        // Only Regular Armor Items can be enhanced, like armor used by player (Update for now any "armor item")
         if (!canBeEnhanced)
         {
             return protection;
@@ -1092,7 +1093,7 @@ GEInt GE_STDCALL GetProtectionHUD(gCScriptProcessingUnit *a_pSPU, Entity *a_pSel
         GEInt iNPCLevelMax = ScriptAdmin.CallScriptFromScript("GetLevelMax", &Self, &None);
 
         // Perk for NPCs Light Armor
-        if (npcArmor.Item.IsRobe() && iNPCLevelMax >= 35)
+        if (npcArmor.Item.IsRobe() && iNPCLevelMax >= 40)
         {
             protection *= 2;
         }
