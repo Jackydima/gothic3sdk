@@ -1,4 +1,3 @@
-
 #include <g3sdk/Script.h>
 
 extern GEFloat ActiveAttackStartTime;
@@ -9,3 +8,4 @@ extern GEFloat ActivePowerAttack1H1HStartTime;
 extern GEFloat ActiveQuickAttackStartTime;
 extern GEFloat ActiveSimpleWhirlAttackStartTime;
 extern GEFloat ActiveWhirlAttackStartTime;
+extern GEFloat ActiveWhirlAttackSecondStartTime;

@@ -12,6 +12,23 @@ GEBool CheckHandUseTypes(gEUseType p_lHand, gEUseType p_rHand, Entity &entity)
             && entity.Inventory.GetItemFromSlot(gESlot_RightHand).Interaction.GetUseType() == p_rHand);
 }
 
+void ClearInputEntry(Entity &a_Entity)
+{
+    using mFClearInputEntry = void(GE_STDCALL *)(Entity a_selfEntity);
+    static mFClearInputEntry s_fClearInputEntry = force_cast<mFClearInputEntry>(RVA_ScriptGame(0x79a0));
+
+    return s_fClearInputEntry(a_Entity);
+}
+
+GEFloat GE_STDCALL GetAnimationSpeedModifier(Entity &a_Entity, gEPhase a_Phase, gEAction a_Action)
+{
+    using mFGetAnimationSpeedModifier = GEFloat(GE_STDCALL *)(Entity, gEPhase);
+    static mCCaller Call_GetAnimationSpeedModifier(mCCaller::GetCallerParams(RVA_ScriptGame(0x42a0), mERegisterType_Eax));
+
+    Call_GetAnimationSpeedModifier.SetImmEax(a_Action);
+    return Call_GetAnimationSpeedModifier.GetFunction<mFGetAnimationSpeedModifier>()(a_Entity, a_Phase);
+}
+
 void LoadSettings()
 {
     eCConfigFile config = eCConfigFile();
@@ -32,6 +49,8 @@ void LoadSettings()
             config.GetFloat("Collision", "ActiveSimpleWhirlAttackStartTime", ActiveSimpleWhirlAttackStartTime);
         ActiveWhirlAttackStartTime =
             config.GetFloat("Collision", "ActiveWhirlAttackStartTime", ActiveWhirlAttackStartTime);
+        ActiveWhirlAttackSecondStartTime =
+            config.GetFloat("Collision", "ActiveWhirlAttackSecondStartTime", ActiveWhirlAttackSecondStartTime);
     }
 }
 
@@ -285,10 +304,89 @@ DECLARE_SCRIPT_CALLBACK(OnAI_WhirlAttack)
             Entity rightWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
             rightWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
             rightWeapon.TouchDamage.ClearTriggeredList();
-            rightWeapon.TouchDamage.AccessProperty<PSTouchDamage::PropertyResetOnUntouch>() = GETrue;
+            // rightWeapon.TouchDamage.AccessProperty<PSTouchDamage::PropertyResetOnUntouch>() = GETrue;
             SelfEntity.Routine.AccessProperty<PSRoutine::PropertyStatePosition>() = 1;
         }
     }
+
+    if (SelfEntity.Routine.GetProperty<PSRoutine::PropertyStatePosition>() == 1)
+    {
+        if (SelfEntity.Routine.GetStateTime() > ActiveWhirlAttackSecondStartTime)
+        {
+            Entity rightWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
+            rightWeapon.TouchDamage.ClearTriggeredList();
+            SelfEntity.Routine.AccessProperty<PSRoutine::PropertyStatePosition>() = 2;
+        }
+    }
+
+    return GETrue;
+}
+
+static mCFunctionHook Hook_AI_HackAttack;
+DECLARE_SCRIPT_FUNCTION(_AI_HackAttack)
+{
+    INIT_SCRIPT_STATE();
+    gSArgsFor__AI_HackAttack param = *reinterpret_cast<gSArgsFor__AI_HackAttack *>(
+        a_rRunTimeStack.GetAt(a_rRunTimeStack.GetCount() - 1).m_pArguments);
+
+    BREAK_BLOCK
+    {
+        ClearInputEntry(SelfEntity);
+
+        param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAction>() = gEAction_HackAttack;
+        param.m_Self.Routine.AccessProperty<PSRoutine::PropertyAniState>() = gEAniState_Parade;
+
+        GetScriptAdmin().CallScriptFromScript("AddStaminaPoints", &param.m_Self, &None, -20);
+
+        Entity rightHandWeapon = param.m_Self.Inventory.GetItemFromSlot(gESlot_RightHand);
+        rightHandWeapon.Strip.AccessProperty<PSStrip::PropertyEnabled>() = GETrue;
+
+        gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_HackAttack, "Raise",
+            GetAnimationSpeedModifier(SelfEntity, gEPhase_Hit, gEAction_HackAttack));
+
+        if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
+        {
+            return GEFalse;
+        }
+    }
+
+    BREAK_BLOCK
+    {
+        GetScriptAdmin().CallScriptFromScript("AddStaminaPoints", &param.m_Self, &None, -20);
+
+        Entity rightHandWeapon = param.m_Self.Inventory.GetItemFromSlot(gESlot_RightHand);
+        rightHandWeapon.SetCollisionGroup(eECollisionGroup_Item_Attack);
+        rightHandWeapon.TouchDamage.ClearTriggeredList();
+
+        gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_HackAttack, "Hit",
+            GetAnimationSpeedModifier(SelfEntity, gEPhase_Hit, gEAction_HackAttack));
+
+        if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
+        {
+            return GEFalse;
+        }
+    }
+
+    BREAK_BLOCK
+    { 
+        Entity rightHandWeapon = SelfEntity.Inventory.GetItemFromSlot(gESlot_RightHand);
+        rightHandWeapon.Strip.AccessProperty<PSStrip::PropertyEnabled>() = GEFalse;
+        rightHandWeapon.SetCollisionGroup(eECollisionGroup_Item_Equipped);
+
+        gCScriptProcessingUnit::sAICombatMoveInstr_Args combatMoveInstrArgs(
+            param.m_Self.GetInstance(), param.m_Other.GetInstance(), gEAction_HackAttack, "Recover",
+            GetAnimationSpeedModifier(SelfEntity, gEPhase_Hit, gEAction_HackAttack));
+
+        if (!gCScriptProcessingUnit::sAICombatMoveInstr(&combatMoveInstrArgs, a_pSPU, GEFalse))
+        {
+            return GEFalse;
+        }
+    }
+
+    BREAK_BLOCK
+    {}
 
     return GETrue;
 }
@@ -312,6 +410,9 @@ extern "C" __declspec(dllexport) gSScriptInit const *GE_STDCALL ScriptInit(void)
                                &OnAI_SimpleWhirl);
     Hook_OnAI_WhirlAttack.Hook(GetScriptAdminExt().GetScriptAICallback("OnAI_WhirlAttack")->m_funcScriptAICallback,
                                &OnAI_WhirlAttack);
+
+    Hook_AI_HackAttack.Hook(GetScriptAdminExt().GetScriptAIFunction("_AI_HackAttack")->m_funcScriptAIFunction,
+                            &_AI_HackAttack);
     return &GetScriptInit();
 }
 
