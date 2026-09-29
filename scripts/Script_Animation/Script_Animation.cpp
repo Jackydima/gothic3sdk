@@ -21,8 +21,9 @@ static void PatchByte(LPVOID addr, BYTE byte)
 // CUSTOMIZED SECION
 //
 
-static bTObjArray<bCString> weaponStringList;
-
+// GLOBALS
+static GEInt NPCMasterLevel = 40;
+static GEInt NPCWarriorLevel = 30;
 
 //
 // CUSTOMIZED SECION
@@ -77,41 +78,14 @@ void LoadConfig()
     // CUSTOMIZED SECION
     //
 
-
     bTObjArray<eCConfigFile::eSConfigValue> weaponList;
     bTObjArray<eCConfigFile::eSConfigValue> scriptList;
     
     eCConfigFile config = eCConfigFile();
-    if (config.ReadFile(bCString("rapierAnimation.ini")))
+    if (config.ReadFile(bCString("staffLevelAnimation.ini")))
     {
-        config.GetSectionBlock("RapierEntities", weaponList);
-        config.GetSectionBlock("LoadedScripts", scriptList);
-    }
-
-    println("List of weapons:");
-    eCConfigFile::eSConfigValue entry;
-
-    for (GEInt i = 0; i < weaponList.GetCount(); i++)
-    {
-        entry = weaponList.AccessAt(i);
-        println("Entry Key: %s,\tEntry Value: %s", entry.m_pstrKey->GetText(), entry.m_pstrValue->GetText());
-        if (*entry.m_pstrValue == "1")
-        {
-            weaponStringList.Add(entry.m_pstrKey->GetText());
-        }
-    }
-
-    println("List of previous scripts:");
-    for (GEInt i = 0; i < scriptList.GetCount(); i++)
-    {
-        entry = scriptList.AccessAt(i);
-        println("Entry Key: %s,\tEntry Value: %s", entry.m_pstrKey->GetText(), entry.m_pstrValue->GetText());
-
-        if (*entry.m_pstrValue == "1")
-        {
-            // Load all scripts before any Hooks!
-            GetScriptAdminExt().LoadScriptDLL(*entry.m_pstrKey);
-        }
+        config.GetInt("NPC", "NPC.MasterLevel", NPCMasterLevel);
+        config.GetInt("NPC", "NPC.NPCWarriorLevel", NPCWarriorLevel);
     }
 
     //
@@ -121,28 +95,33 @@ void LoadConfig()
 
 void CustomizeAniString(Entity& p_entity, bCString& p_aniString)
 {
-    const bCString none1H = "_None_1H_";
-    if (!p_aniString.Contains(none1H) || !p_aniString.Contains("Hero_"))
+    const bCString staff = "_Staff_";
+    if (!p_aniString.Contains(staff) || !p_aniString.Contains("Hero_"))
     {
         return;
     }
 
-    Entity rightWeaponEntity = p_entity.Inventory.GetItemFromSlot(gESlot_RightHand);
-
-    if (rightWeaponEntity == None 
-        || rightWeaponEntity.Interaction.GetProperty<PSInteraction::PropertyUseType>() != gEUseType_1H)
+    if (p_entity.IsPlayer())
     {
-        return;
-    }
-
-    bCString weaponEntry;
-    for (GEInt i = 0; i < weaponStringList.GetCount(); i++)
-    {
-        weaponEntry = weaponStringList.AccessAt(i);
-        if (weaponEntry == rightWeaponEntity.GetName())
+        if (p_entity.Inventory.HasLearnedSkill("Perk_Staff_3"))
         {
-            p_aniString.Replace(none1H, "_None_Rapier_");
-            return;
+            p_aniString.Replace(staff, "_StaffMaster_");
+        }
+        else if (p_entity.Inventory.HasLearnedSkill("Perk_Staff_2"))
+        {
+            p_aniString.Replace(staff, "_StaffWarrior_");
+        }
+    }
+    else
+    {
+        GEInt currentLevel = GetScriptAdmin().CallScriptFromScript("GetCurrentLevel", &p_entity, &None, 0);
+        if (currentLevel >= NPCMasterLevel)
+        {
+            p_aniString.Replace(staff, "_StaffMaster_");
+        }
+        else if (currentLevel >= NPCWarriorLevel)
+        {
+            p_aniString.Replace(staff, "_StaffWarrior_");
         }
     }
 }
