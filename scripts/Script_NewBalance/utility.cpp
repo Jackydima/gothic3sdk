@@ -1336,8 +1336,11 @@ GEBool CanParry(Entity &a_Self)
     bCString strSkeletonName;
     a_Self.Animation.GetSkeletonName(strSkeletonName);
 
-    // For now only Hero can parry
-    if ((strSkeletonName == "Hero") && !GetScriptAdmin().CallScriptFromScript("IsInFistMode", &a_Self, &None))
+    gESpecies selfSpecies = a_Self.NPC.GetProperty<PSNpc::PropertySpecies>();
+    if (selfSpecies != gESpecies_Human && selfSpecies != gESpecies_Skeleton && selfSpecies != gESpecies_Orc)
+        return GEFalse;
+
+    if (!GetScriptAdmin().CallScriptFromScript("IsInFistMode", &a_Self, &None))
     {
         if (a_Self.IsPlayer())
         {
