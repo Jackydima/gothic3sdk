@@ -96,6 +96,12 @@ void LoadConfig()
 void CustomizeAniString(Entity& p_entity, bCString& p_aniString)
 {
     const bCString staff = "_Staff_";
+    Entity rightHand = p_entity.Inventory.GetItemFromSlot(gESlot_LeftHand);
+    if (rightHand != None && rightHand.Interaction.GetUseType() == gEUseType_Staff)
+    {
+        return;
+    }
+
     if (!p_aniString.Contains(staff) || !p_aniString.Contains("Hero_"))
     {
         return;

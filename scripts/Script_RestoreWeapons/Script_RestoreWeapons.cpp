@@ -23,6 +23,8 @@ void LoadSettings()
     }
 }
 
+// G3_HUD_Icon_Category_Misc.tga 
+
 /*GEInt ModifyQuality(gEItemQuality desiredQualityAddition, GEInt inventoryIndex, Entity &p_entity)
 {
     gEItemCategory category = p_entity.Inventory.GetCategory(inventoryIndex);

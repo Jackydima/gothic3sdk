@@ -44,28 +44,10 @@ void HotKeyTester::Process()
 
     if (eCApplication::GetInstance().GetKeyboard().KeyPressed(eCInpShared::eEKeyboardStateOffset_NUM_1))
     {
-        // TestMatrix();
+        TestMatrix();
         if (!num1KeyPressed)
         {
             num1KeyPressed = GETrue;
-            Template templateSpawn = Template("Arrow");
-            Entity Player = Entity::GetPlayer();
-            bCMatrix Pose = Player.GetPose();
-            Pose.AccessTranslation().AccessY() += 200.0f;
-            Entity Spawn = Entity::Spawn(templateSpawn, Pose);
-            Spawn.CollisionShape.CreateShape(eECollisionShapeType_Point, eEShapeGroup_Projectile, bCVector(0, 0, 0),
-                                             bCVector(0, 0, 0));
-            Spawn.EnableCollisionWith(Player, GEFalse);
-            Spawn.EnableCollisionWith(Spawn, GEFalse);
-            Spawn.Interaction.SetOwner(Player);
-
-            gCProjectile_PS *SpawnProjectile =
-                GetPropertySet<gCProjectile_PS>(static_cast<eCEntity *>(Spawn), eEPropertySetType_Projectile);
-
-            Spawn.Projectile.AccessProperty<PSProjectile::PropertyShootVelocity>() = static_cast<GEFloat>(200.0f);
-            Spawn.Projectile.AccessProperty<PSProjectile::PropertyTargetDirection>() = Pose.GetZAxis();
-            Spawn.Projectile.AccessProperty<PSProjectile::PropertyPathStyle>() = gEProjectilePath_Physics;
-            Spawn.Projectile.Shoot();
         }
     }
     else
@@ -78,6 +60,32 @@ void HotKeyTester::Process()
         if (!num3KeyPressed)
         {
             num3KeyPressed = GETrue;
+
+            auto SA = FindModule<eCSceneAdmin>();
+            if (!SA)
+                return;
+
+            Entity temp;
+            GEInt iLevelMax;
+            GEInt iLevel;
+            Entity entity;
+            bCPropertyID id;
+            for (auto it = SA->m_mapEntities.Begin(); it != SA->m_mapEntities.End(); it++)
+            {
+                if (!*it)
+                    continue;
+                
+                entity = Entity(*it);
+                if (!entity.NPC.IsValid())
+                    continue;
+
+                temp = Entity(entity.GetTemplate());
+                iLevelMax = temp.NPC.GetProperty<PSNpc::PropertyLevelMax>();
+                iLevel = temp.NPC.GetProperty<PSNpc::PropertyLevel>();
+
+                entity.NPC.AccessProperty<PSNpc::PropertyLevelMax>() = iLevelMax;
+                entity.NPC.AccessProperty<PSNpc::PropertyLevel>() = iLevel;
+            }
         }
     }
     else
@@ -222,6 +230,9 @@ void TestMatrix()
     bCRect rect = {bCPoint(ScreenX - 20, ScreenY - 20), bCPoint(ScreenX + 20, ScreenY + 20)};
     g_Label.MoveWindow(rect);
     g_Label.SetWindowTextA(bCUnicodeString(PlayerTarget.GetName()));
+
+    bCVector test = {LocalPoint.GetX(), LocalPoint.GetY(), LocalPoint.GetZ()};
+    static_cast<gCCameraAI_PS*>(Entity::GetCamera().m_pEngineEntityPropertySet);
 }
 
 void CheckFocusBodyStats()
